@@ -131,6 +131,8 @@ function wireStatsTracking(controller, statsService, appMenu) {
 
 /**
  * Shows/hides Word Drop specific options when the game mode changes.
+ * Continent and sovereignty filters remain visible in all modes since
+ * Word Drop also uses them to determine which countries to include.
  */
 function wireWordDropModeToggle() {
     const gameModeFilter = document.getElementById('gameModeFilter');
@@ -138,17 +140,17 @@ function wireWordDropModeToggle() {
 
     if (!gameModeFilter || !wordDropOptions) return;
 
-    // Collect standard filter elements (everything after wordDropOptions)
-    const standardEls = [
-        ...document.querySelectorAll('#filterContainer .filter-row'),
-        document.getElementById('maxCountries')
-    ].filter(el => el && !wordDropOptions.contains(el));
+    // Elements that only apply to the standard game modes (not Word Drop)
+    const standardOnlyEls = [
+        document.getElementById('maxCountries'),
+        document.querySelector('.practice-mode-container')?.closest('.filter-row'),
+    ].filter(Boolean);
 
     const toggleOptions = () => {
         const isWordDrop = gameModeFilter.value === 'wordDrop';
         wordDropOptions.hidden = !isWordDrop;
 
-        standardEls.forEach(el => {
+        standardOnlyEls.forEach(el => {
             if (el) el.style.display = isWordDrop ? 'none' : '';
         });
     };
