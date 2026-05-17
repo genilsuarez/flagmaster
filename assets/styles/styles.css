@@ -84,7 +84,7 @@ body {
     border-radius: var(--radius-xl);
     box-shadow: 0 12px 48px rgba(28, 25, 23, 0.15),
                 0 0 0 1px var(--warm-gray);
-    overflow: visible;
+    overflow: hidden;
     position: relative;
     animation: stageEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -100,33 +100,45 @@ body {
     }
 }
 
-/* Decorative corner accents */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Decorative corner accents - disabled temporarily for debugging
 .game-wrapper::before,
 .game-wrapper::after {
     content: '';
     position: absolute;
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--terracotta);
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--terracotta);
     z-index: 10;
-    opacity: 0.3;
+    opacity: 0.4;
 }
 
 .game-wrapper::before {
-    top: -6px;
-    left: -6px;
+    top: 8px;
+    left: 8px;
     border-right: none;
     border-bottom: none;
-    border-radius: 12px 0 0 0;
+    border-radius: 8px 0 0 0;
 }
 
 .game-wrapper::after {
-    bottom: -6px;
-    right: -6px;
+    bottom: 8px;
+    right: 8px;
     border-left: none;
     border-top: none;
-    border-radius: 0 0 12px 0;
+    border-radius: 0 0 8px 0;
 }
+*/
 
 /* HEADER — Game Show Title Bar */
 .game-header {
@@ -137,7 +149,7 @@ body {
     overflow: hidden;
 }
 
-/* Animated background pattern */
+/* Animated background pattern - simplified */
 .game-header::before {
     content: '';
     position: absolute;
@@ -149,13 +161,15 @@ body {
         rgba(255, 255, 255, 0.03) 20px,
         rgba(255, 255, 255, 0.03) 40px
     );
-    animation: headerShine 20s linear infinite;
+    pointer-events: none;
 }
 
+/* Animation disabled for debugging
 @keyframes headerShine {
     from { transform: translateX(-40px); }
     to { transform: translateX(0); }
 }
+*/
 
 .header-top {
     display: flex;
@@ -352,25 +366,6 @@ body {
     position: relative;
 }
 
-/* Spotlight effect behind flag */
-.container::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(
-        circle,
-        rgba(122, 155, 127, 0.08) 0%,
-        rgba(199, 125, 95, 0.04) 40%,
-        transparent 70%
-    );
-    pointer-events: none;
-    z-index: 0;
-}
-
 /* FLAG — Center Stage Hero with Dramatic Presence */
 .flag {
     width: 100%;
@@ -389,7 +384,6 @@ body {
     cursor: pointer;
     display: block;
     position: relative;
-    z-index: 1;
     animation: flagReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     animation-delay: 0.2s;
     animation-fill-mode: both;
@@ -521,7 +515,7 @@ body {
     box-shadow: 0 6px 20px rgba(28, 25, 23, 0.12);
 }
 
-/* Animated shine effect */
+/* Animated shine effect - disabled for debugging
 #redCounter::before, #blueCounter::before, #greenCounter::before {
     content: '';
     position: absolute;
@@ -542,6 +536,7 @@ body {
     0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
     50% { transform: translateX(0%) translateY(0%) rotate(45deg); }
 }
+*/
 
 #redCounter {
     background: linear-gradient(135deg, #fdf6f4 0%, #fce8e3 100%);
@@ -1051,6 +1046,7 @@ body.landing-mode .landing-hero {
     color: var(--charcoal);
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: linear-gradient(165deg, var(--cream-bg) 0%, var(--soft-sand) 100%);
 }
 
 /* LANDING NAV */
@@ -1058,65 +1054,86 @@ body.landing-mode .landing-hero {
     position: relative;
     z-index: 3;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: var(--space-lg) var(--space-xl);
+    padding: var(--space-xl) var(--space-xl);
     width: 100%;
+    gap: var(--space-2xl);
 }
 
 .landing-logo {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     font-family: var(--font-display);
-    font-size: 1.15rem;
+    font-size: 1.5rem;
     font-weight: 400;
     color: var(--ink);
     text-decoration: none;
-    transition: opacity var(--duration-quick) var(--ease-gentle);
+    transition: all 0.3s var(--ease-gentle);
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-lg);
+    order: 2;
 }
 
 .landing-logo:hover {
-    opacity: 0.7;
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .landing-logo-icon {
-    width: 22px;
-    height: 22px;
-    color: var(--deep-sage);
+    width: 32px;
+    height: 32px;
+    color: var(--terracotta);
+    filter: drop-shadow(0 2px 6px rgba(199, 125, 95, 0.3));
 }
 
 .landing-nav-actions {
     display: flex;
     align-items: center;
     gap: var(--space-md);
+    position: absolute;
+    right: var(--space-xl);
+    order: 3;
 }
 
 .landing-nav-btn {
     display: inline-flex;
     align-items: center;
     gap: var(--space-sm);
-    height: 40px;
-    padding: 0 var(--space-md);
+    height: 44px;
+    padding: 0 var(--space-lg);
     border-radius: var(--radius-pill);
-    border: 1.5px solid var(--warm-gray);
-    background: var(--warm-white);
-    color: var(--charcoal);
+    border: none;
+    background: var(--ink);
+    color: var(--warm-white);
     cursor: pointer;
     font-family: var(--font-body);
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: all var(--duration-quick) var(--ease-gentle);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 12px rgba(28, 25, 23, 0.15);
+    position: absolute;
+    left: var(--space-xl);
+    order: 1;
 }
 
 .landing-nav-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
 }
 
 .landing-nav-btn:hover {
-    border-color: var(--stone);
-    background: var(--soft-sand);
+    background: var(--charcoal);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(28, 25, 23, 0.2);
+}
+
+.landing-nav-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(28, 25, 23, 0.15);
 }
 
 .landing-nav-btn-label {
@@ -1133,8 +1150,8 @@ body.landing-mode .landing-hero {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: var(--space-xl) var(--space-lg);
-    max-width: 800px;
+    padding: 0 var(--space-2xl);
+    max-width: 900px;
     margin: 0 auto;
     width: 100%;
 }
@@ -1143,19 +1160,20 @@ body.landing-mode .landing-hero {
     display: inline-flex;
     align-items: center;
     gap: var(--space-sm);
-    padding: 6px var(--space-md);
+    padding: 8px var(--space-lg);
     border-radius: var(--radius-pill);
-    background: transparent;
-    border: 1.5px solid var(--deep-sage);
+    background: linear-gradient(135deg, rgba(107, 154, 112, 0.08) 0%, rgba(107, 154, 112, 0.12) 100%);
+    border: 2px solid var(--deep-sage);
     color: var(--deep-sage);
     font-family: var(--font-body);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     opacity: 0;
-    animation: fadeInUp 0.5s var(--ease-gentle) forwards;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     animation-delay: 0ms;
+    box-shadow: 0 4px 12px rgba(107, 154, 112, 0.15);
 }
 
 .landing-badge svg {
@@ -1166,78 +1184,115 @@ body.landing-mode .landing-hero {
 
 .landing-title {
     font-family: var(--font-display);
-    font-size: clamp(2.8rem, 8vw, 5rem);
+    font-size: clamp(3rem, 9vw, 5.5rem);
     font-weight: 400;
-    line-height: 1.0;
-    letter-spacing: -0.02em;
-    margin: var(--space-lg) 0 var(--space-md);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: var(--space-2xl) 0 var(--space-xl);
     color: var(--ink);
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: var(--space-xs);
+    text-shadow: 0 2px 8px rgba(28, 25, 23, 0.06);
 }
 
 .landing-title span {
     display: block;
     opacity: 0;
-    animation: fadeInUp 0.5s var(--ease-gentle) forwards;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.landing-title span:nth-child(1) { animation-delay: 80ms; }
+.landing-title span:nth-child(1) {
+    animation-delay: 100ms;
+}
 .landing-title span:nth-child(2) {
-    animation-delay: 160ms;
+    animation-delay: 200ms;
     color: var(--terracotta);
+    position: relative;
+}
+
+.landing-title span:nth-child(2)::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--terracotta) 0%, transparent 100%);
+    border-radius: 2px;
 }
 
 .landing-subtitle {
     font-family: var(--font-body);
-    font-size: clamp(0.9rem, 1.6vw, 1.05rem);
-    font-weight: 400;
+    font-size: clamp(1rem, 1.8vw, 1.15rem);
+    font-weight: 500;
     line-height: 1.6;
-    color: var(--stone);
-    max-width: 440px;
-    margin: 0 auto var(--space-xl);
+    color: var(--charcoal);
+    max-width: 520px;
+    margin: 0 auto var(--space-2xl);
     opacity: 0;
-    animation: fadeInUp 0.5s var(--ease-gentle) forwards;
-    animation-delay: 240ms;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 300ms;
 }
 
 .landing-actions {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-lg);
     opacity: 0;
-    animation: fadeInUp 0.5s var(--ease-gentle) forwards;
-    animation-delay: 320ms;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 400ms;
 }
 
 .landing-cta {
     display: inline-flex;
     align-items: center;
     gap: var(--space-sm);
-    padding: 14px var(--space-xl);
+    padding: 16px var(--space-2xl);
     border-radius: var(--radius-pill);
     border: none;
-    background: var(--ink);
+    background: linear-gradient(135deg, var(--deep-sage) 0%, var(--sage) 100%);
     color: var(--warm-white);
     font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: all var(--duration-moderate) var(--ease-gentle);
-    box-shadow: var(--shadow-medium);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 24px rgba(74, 122, 80, 0.3),
+                0 0 0 0 rgba(74, 122, 80, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.landing-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--sage) 0%, var(--deep-sage) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .landing-cta:hover {
-    background: var(--charcoal);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lifted);
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(74, 122, 80, 0.4),
+                0 0 0 4px rgba(74, 122, 80, 0.2);
+}
+
+.landing-cta:hover::before {
+    opacity: 1;
 }
 
 .landing-cta:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-soft);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(74, 122, 80, 0.3);
+}
+
+.landing-cta span {
+    position: relative;
+    z-index: 1;
 }
 
 .landing-cta span:last-child {
@@ -1288,11 +1343,11 @@ body.landing-mode .landing-hero {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--space-xl);
-    border-top: 2px solid var(--soft-sand);
-    background: var(--warm-white);
+    border-top: 3px solid var(--sage);
+    background: linear-gradient(180deg, var(--warm-white) 0%, var(--cream-bg) 100%);
     opacity: 0;
-    animation: fadeInUp 0.5s var(--ease-gentle) forwards;
-    animation-delay: 400ms;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 500ms;
 }
 
 .landing-steps li {
@@ -1303,10 +1358,11 @@ body.landing-mode .landing-hero {
 
 .landing-steps .step-num {
     font-family: var(--font-display);
-    font-size: 1.8rem;
+    font-size: 2.2rem;
     font-weight: 400;
-    color: var(--soft-sand);
-    margin-bottom: var(--space-xs);
+    color: var(--terracotta);
+    opacity: 0.5;
+    margin-bottom: var(--space-sm);
     line-height: 1;
 }
 
@@ -1332,11 +1388,11 @@ body.landing-mode .landing-hero {
 .landing-progress {
     margin: calc(-1 * var(--space-md)) auto var(--space-xl);
     font-family: var(--font-body);
-    font-size: 0.85rem;
-    color: var(--stone);
+    font-size: 0.9rem;
+    color: var(--charcoal);
     opacity: 0;
-    animation: fadeInUp 0.5s var(--ease-gentle) forwards;
-    animation-delay: 280ms;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 350ms;
 }
 
 .landing-progress[hidden] {
