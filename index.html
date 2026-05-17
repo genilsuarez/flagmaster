@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Flag Quiz</title>
+    <title>Quiz de Banderas | Desafía tu Geografía</title>
     <!-- Preconnect to flag CDN for faster image loads -->
     <link rel="preconnect" href="https://flagcdn.com" crossorigin>
     <link rel="dns-prefetch" href="https://flagcdn.com">
@@ -15,15 +15,15 @@
 </head>
 <body class="landing-mode">
     <!-- ===== LANDING HERO ===== -->
-    <section id="landingHero" class="landing-hero" aria-label="Welcome to Flag Quiz">
+    <section id="landingHero" class="landing-hero" aria-label="Bienvenido al Quiz de Banderas">
         <nav class="landing-nav">
-            <button id="landingMenuBtn" class="landing-nav-btn landing-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="appDrawer">
+            <button id="landingMenuBtn" class="landing-nav-btn landing-menu-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="appDrawer">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="4" y1="7" x2="20" y2="7"/>
                     <line x1="4" y1="12" x2="20" y2="12"/>
                     <line x1="4" y1="17" x2="20" y2="17"/>
                 </svg>
-                <span class="landing-nav-btn-label">Menu</span>
+                <span class="landing-nav-btn-label">Menú</span>
             </button>
             <a class="landing-logo" href="#">
                 <svg class="landing-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -32,7 +32,7 @@
                     <path d="M12 3a14 14 0 0 1 0 18"/>
                     <path d="M12 3a14 14 0 0 0 0 18"/>
                 </svg>
-                <span>Flag Quiz</span>
+                <span>Quiz de Banderas</span>
             </a>
             <div class="landing-nav-actions">
                 <div id="streakBadge" class="streak-badge" hidden>
@@ -50,21 +50,21 @@
                     <path d="M12 3a14 14 0 0 1 0 18"/>
                     <path d="M12 3a14 14 0 0 0 0 18"/>
                 </svg>
-                Geography Quiz
+                Desafío Geográfico
             </span>
             <h1 class="landing-title">
-                <span>Learn Every Flag</span>
-                <span>On The Planet</span>
+                <span>Aprende Todas</span>
+                <span>Las Banderas del Mundo</span>
             </h1>
             <p class="landing-subtitle">
-                Pon a prueba tu geografía con más de 250 banderas y capitales del mundo.
+                Pon a prueba tu conocimiento con más de 250 banderas y capitales. ¿Cuántas podrás reconocer?
             </p>
             <p id="landingProgress" class="landing-progress" hidden>
                 Has acertado <strong class="progress-current">0</strong> de <strong class="progress-total">250</strong> banderas
             </p>
             <div class="landing-actions">
                 <button id="landingCTA" class="landing-cta" type="button">
-                    <span class="cta-text">Start Playing</span>
+                    <span class="cta-text">Comenzar Juego</span>
                     <span aria-hidden="true">→</span>
                 </button>
                 <button id="landingSettingsBtn" class="landing-settings-btn" type="button" aria-label="Configuración">
@@ -117,9 +117,9 @@
         </ol>
     </section>
 
-    <!-- ===== APP DRAWER (hamburger menu) ===== -->
+    <!-- ===== APP DRAWER (menú hamburguesa) ===== -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
-    <aside id="appDrawer" class="app-drawer" aria-label="Main menu" aria-hidden="true">
+    <aside id="appDrawer" class="app-drawer" aria-label="Menú principal" aria-hidden="true">
         <header class="drawer-header">
             <div class="landing-logo">
                 <svg class="landing-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -128,9 +128,9 @@
                     <path d="M12 3a14 14 0 0 1 0 18"/>
                     <path d="M12 3a14 14 0 0 0 0 18"/>
                 </svg>
-                <span>Flag Quiz</span>
+                <span>Quiz de Banderas</span>
             </div>
-            <button id="drawerCloseBtn" class="drawer-close" aria-label="Close menu">
+            <button id="drawerCloseBtn" class="drawer-close" aria-label="Cerrar menú">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="6" y1="6" x2="18" y2="18"/>
                     <line x1="6" y1="18" x2="18" y2="6"/>
@@ -138,10 +138,10 @@
             </button>
         </header>
 
-        <nav class="drawer-nav" aria-label="Drawer navigation">
+        <nav class="drawer-nav" aria-label="Navegación del menú">
             <button class="drawer-item" data-action="home">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12 12 4l9 8"/><path d="M5 10v10h14V10"/></svg>
-                <span>Home</span>
+                <span>Inicio</span>
             </button>
             <button class="drawer-item drawer-item--primary" data-action="play">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
@@ -187,8 +187,8 @@
         <div class="app-modal__backdrop" data-close="true"></div>
         <div class="app-modal__panel">
             <header class="app-modal__header">
-                <h2 id="appModalTitle">Title</h2>
-                <button class="app-modal__close" data-close="true" aria-label="Close">
+                <h2 id="appModalTitle">Título</h2>
+                <button class="app-modal__close" data-close="true" aria-label="Cerrar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <line x1="6" y1="6" x2="18" y2="18"/>
                         <line x1="6" y1="18" x2="18" y2="6"/>
@@ -199,11 +199,11 @@
         </div>
     </div>
 
-    <!-- ===== GAME UI ===== -->
+    <!-- ===== INTERFAZ DEL JUEGO ===== -->
     <div class="game-wrapper">
         <div class="game-header">
             <div class="header-top">
-                <h1>Flag Quiz</h1>
+                <h1>Quiz de Banderas</h1>
                 <div class="header-controls">
                     <button id="skipButton" class="game-btn game-btn--skip" hidden aria-label="Saltar bandera">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
@@ -211,21 +211,21 @@
                     </button>
                     <button id="endGameButton" class="game-btn game-btn--end" hidden aria-label="Finalizar juego">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                        <span>Finalizar</span>
+                        <span>Terminar</span>
                     </button>
-                    <button id="startButton">Start Game</button>
+                    <button id="startButton">¡Jugar!</button>
                 </div>
             </div>
         </div>
-        
+
         <div class="container">
             <div id="gameHint" class="game-hint" hidden>
                 <span class="game-hint__icon">👆</span>
-                <span class="game-hint__text">Toca la bandera para revelar el país</span>
+                <span class="game-hint__text">Presiona la bandera para revelar el país</span>
             </div>
-            <img id="flagImage" class="flag" src="https://flagcdn.com/un.svg" alt="Country Flag">
+            <img id="flagImage" class="flag" src="https://flagcdn.com/un.svg" alt="Bandera del país">
             <p id="countryInfo" class="hidden-keep-space"></p>
-            <p id="capitalInfo">Capital Name</p>
+            <p id="capitalInfo">Nombre de la capital</p>
             <div id="teamsContainer" class="teams-action-bar"></div>
         </div>
     </div>

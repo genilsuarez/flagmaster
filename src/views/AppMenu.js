@@ -8,13 +8,13 @@ const MODAL_TEMPLATES = {
         title: 'Acerca de',
         body: () => `
             <div class="modal-section">
-                <p><strong>Flag Quiz</strong> es un juego interactivo para aprender las banderas y capitales de los países del mundo.</p>
-                <p>Juega solo o compite con 2 equipos (con empate si responden al mismo tiempo), filtra por continente, activa el modo práctica o desafía tu memoria con el cronómetro.</p>
+                <p><strong>Quiz de Banderas</strong> es un juego interactivo para aprender las banderas y capitales de todos los países del mundo.</p>
+                <p>Juega solo o compite con hasta 3 equipos (con empate si responden al mismo tiempo), filtra por continente, activa el modo práctica o desafía tu memoria con el cronómetro.</p>
             </div>
             <div class="modal-section">
                 <h3>Créditos</h3>
-                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#ec4899">flagcdn.com</a>.</p>
-                <p>Construido con vanilla JavaScript y Vite.</p>
+                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#c77d5f">flagcdn.com</a>.</p>
+                <p>Diseñado y construido con vanilla JavaScript y Vite.</p>
             </div>
         `
     },
@@ -32,11 +32,11 @@ const MODAL_TEMPLATES = {
                 </li>
                 <li>
                     <span class="howto-num">3</span>
-                    <div><h4>Pulsa Start Playing</h4><p>Verás una bandera y tendrás segundos para recordar el país.</p></div>
+                    <div><h4>Presiona ¡Jugar!</h4><p>Verás una bandera y tendrás que identificar de qué país se trata.</p></div>
                 </li>
                 <li>
                     <span class="howto-num">4</span>
-                    <div><h4>Anota el acierto</h4><p>Toca el equipo ganador (Red, Green o Draw) o usa las teclas R, G, D.</p></div>
+                    <div><h4>Anota los puntos</h4><p>Presiona el equipo ganador (Rojo, Verde o Azul) o usa las teclas R, G, B.</p></div>
                 </li>
             </ol>
             <div class="modal-section" style="margin-top:18px">
@@ -51,13 +51,13 @@ const MODAL_TEMPLATES = {
         body: () => `
             <table class="shortcuts-table">
                 <tbody>
-                    <tr><td><span class="key">R</span></td><td>Punto para el equipo rojo</td></tr>
-                    <tr><td><span class="key">G</span></td><td>Punto para el equipo verde</td></tr>
-                    <tr><td><span class="key">D</span></td><td>Empate (Draw)</td></tr>
-                    <tr><td><span class="key">S</span></td><td>Saltar bandera actual</td></tr>
-                    <tr><td><span class="key">Space</span></td><td>Revelar respuesta</td></tr>
-                    <tr><td><span class="key">Esc</span></td><td>Finalizar juego</td></tr>
-                    <tr><td><span class="key">Click</span></td><td>Sobre la bandera revela el país</td></tr>
+                    <tr><td><span class="key">R</span></td><td>Punto para equipo rojo</td></tr>
+                    <tr><td><span class="key">G</span></td><td>Punto para equipo verde</td></tr>
+                    <tr><td><span class="key">B</span></td><td>Punto para equipo azul</td></tr>
+                    <tr><td><span class="key">S</span></td><td>Saltar bandera</td></tr>
+                    <tr><td><span class="key">Espacio</span></td><td>Revelar respuesta</td></tr>
+                    <tr><td><span class="key">Esc</span></td><td>Terminar juego</td></tr>
+                    <tr><td><span class="key">Click</span></td><td>Presiona la bandera para revelar</td></tr>
                 </tbody>
             </table>
         `
@@ -272,11 +272,11 @@ export class AppMenu {
         const ctaText = document.querySelector('#landingCTA .cta-text');
         if (ctaText) {
             if (stats.currentStreak > 0) {
-                ctaText.textContent = 'Continúa tu racha';
+                ctaText.textContent = '¡Continúa tu racha!';
             } else if (stats.gamesPlayed > 0) {
-                ctaText.textContent = 'Juega otra';
+                ctaText.textContent = '¡Jugar otra vez!';
             } else {
-                ctaText.textContent = 'Start Playing';
+                ctaText.textContent = 'Comenzar Juego';
             }
         }
     }

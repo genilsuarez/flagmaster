@@ -110,9 +110,9 @@ export class GameView {
 
     createTeamCounters(elements) {
         const teamConfigurations = [
-            { teamId: 'red', teamDisplayName: 'Red Team' },
-            { teamId: 'blue', teamDisplayName: 'Draw' },
-            { teamId: 'green', teamDisplayName: 'Green Team' }
+            { teamId: 'red', teamDisplayName: 'Equipo Rojo' },
+            { teamId: 'blue', teamDisplayName: 'Equipo Azul' },
+            { teamId: 'green', teamDisplayName: 'Equipo Verde' }
         ];
         const teamCounters = {};
         
@@ -212,7 +212,7 @@ export class GameView {
     }
 
     updateStartButton(isGameActive) {
-        this.elements.startButton.textContent = isGameActive ? 'End Game' : 'Start Game';
+        this.elements.startButton.textContent = isGameActive ? 'Terminar' : '¡Jugar!';
         this.elements.startButton.hidden = isGameActive;
         
         // Show/hide game action buttons
@@ -265,27 +265,27 @@ export class GameView {
         
         const maxScore = Math.max(...Object.values(teamScores));
         const winners = Object.keys(teamScores).filter(team => teamScores[team] === maxScore);
-        const teamNames = { red: 'Red Team', blue: 'Draw', green: 'Green Team' };
+        const teamNames = { red: 'Equipo Rojo', blue: 'Equipo Azul', green: 'Equipo Verde' };
         
         let winnerText;
         if (winners.length > 1) {
-            // Si hay empate entre equipos (red/green) y draw, el equipo gana
+            // Si hay empate entre equipos (red/green) y blue, el equipo gana
             if (winners.includes('blue') && (winners.includes('red') || winners.includes('green'))) {
                 const teamWinner = winners.find(team => team !== 'blue');
-                winnerText = `🏆 ${teamNames[teamWinner]} Wins!`;
+                winnerText = `🏆 ¡${teamNames[teamWinner]} Gana!`;
             } else {
-                winnerText = '🤝 It\'s a Tie!';
+                winnerText = '🤝 ¡Empate Total!';
             }
         } else if (winners[0] === 'blue') {
-            winnerText = '🤝 Most Draws!';
+            winnerText = '🤝 ¡Más Empates!';
         } else {
-            winnerText = `🏆 ${teamNames[winners[0]]} Wins!`;
+            winnerText = `🏆 ¡${teamNames[winners[0]]} Gana!`;
         }
         
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>🎉 Game Over! 🎉</h2>
+                    <h2>🎉 ¡Juego Terminado! 🎉</h2>
                 </div>
                 <div class="modal-body">
                     <div class="winner-announcement">
@@ -293,15 +293,15 @@ export class GameView {
                     </div>
                     <div class="final-scores">
                         <div class="score-item red">
-                            <span class="team-name">Red Team</span>
+                            <span class="team-name">Equipo Rojo</span>
                             <span class="score">${teamScores.red}</span>
                         </div>
                         <div class="score-item blue">
-                            <span class="team-name">Draw</span>
+                            <span class="team-name">Equipo Azul</span>
                             <span class="score">${teamScores.blue}</span>
                         </div>
                         <div class="score-item green">
-                            <span class="team-name">Green Team</span>
+                            <span class="team-name">Equipo Verde</span>
                             <span class="score">${teamScores.green}</span>
                         </div>
                     </div>
