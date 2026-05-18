@@ -157,9 +157,10 @@ export class WordDropController {
         const elapsedSeconds = this.view.getElapsedAnswerSeconds();
         const result = this.service.validateAnswer(answer);
 
-        // Apply time penalty: lose 5 points per second elapsed
-        const timePenalty = elapsedSeconds * 5;
-        const adjustedScore = result.correct ? Math.max(5, result.score - timePenalty) : result.score;
+        // Time penalty: first 5 seconds free, then -3 pts per second after that
+        const penaltySeconds = Math.max(0, elapsedSeconds - 5);
+        const timePenalty = penaltySeconds * 3;
+        const adjustedScore = result.correct ? Math.max(10, result.score - timePenalty) : result.score;
 
         // Reveal all letters
         this.view.revealAllLetters(this.service.currentRound.word);
