@@ -29,7 +29,7 @@ export class WordDropController {
     }
 
     bindEvents() {
-        this.view.onGuessPressed = () => this.handleGuessPressed();
+        this.view.onGuessPressed = () => this.triggerGuess();
         this.view.onAnswerSubmitted = (answer) => this.handleAnswerSubmitted(answer);
         this.view.onNextPressed = () => this.advanceToNextRound();
         this.view.onAnswerTimeout = () => this.handleAnswerTimeout();
@@ -49,7 +49,7 @@ export class WordDropController {
     /**
      * Centralized keyboard handler for Word Drop mode.
      * Uses current phase to determine action:
-     * - 'revealing': letters are dropping, Space to guess
+     * - 'revealing': letters are dropping, Enter/Space to guess
      * - 'input': player is typing answer (handled by input's own listener)
      * - 'review': feedback shown, Enter to advance
      */
@@ -57,9 +57,10 @@ export class WordDropController {
         if (!this.isActive) return;
 
         if (e.key === 'Enter') {
-            // Only handle Enter for the review phase here.
-            // The input phase Enter is handled by the input's own keydown listener.
-            if (this.phase === 'review') {
+            if (this.phase === 'revealing') {
+                e.preventDefault();
+                this.triggerGuess();
+            } else if (this.phase === 'review') {
                 e.preventDefault();
                 this.advanceToNextRound();
             }
@@ -68,7 +69,7 @@ export class WordDropController {
 
         if (e.code === 'Space' && this.phase === 'revealing') {
             e.preventDefault();
-            this.handleGuessPressed();
+            this.triggerGuess();
         }
     }
 
@@ -154,11 +155,13 @@ export class WordDropController {
     }
 
     /**
-     * Called when the player presses "¡Ya sé!"
+     * Triggers the guess action — freezes the round and shows the input.
+     * Called by the "¡Ya sé!" button, Enter key, or Space key.
      */
-    handleGuessPressed() {
+    triggerGuess() {
         if (!this.isActive || !this.service.currentRound) return;
         if (this.service.currentRound.answered) return;
+        if (this.phase !== 'revealing') return;
 
         // Cancel the reveal start timeout if it hasn't fired yet
         if (this.revealStartTimeout) {
