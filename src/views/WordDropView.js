@@ -19,6 +19,7 @@ export class WordDropView {
         this.onAnswerSubmitted = null;
         this.onNextPressed = null;
         this.onAnswerTimeout = null;
+        this.onEndGame = null;
         this.answerCountdownInterval = null;
         this.answerTimeLeft = 10;
 
@@ -50,6 +51,15 @@ export class WordDropView {
         topBar.appendChild(this.scoreDisplay);
         topBar.appendChild(this.difficultyBadge);
         topBar.appendChild(this.livesDisplay);
+
+        // End game button
+        this.endGameButton = document.createElement('button');
+        this.endGameButton.className = 'word-drop-end-btn';
+        this.endGameButton.textContent = 'Terminar';
+        this.endGameButton.addEventListener('click', () => {
+            if (this.onEndGame) this.onEndGame();
+        });
+        topBar.appendChild(this.endGameButton);
 
         // Flag hint (optional)
         this.flagHint = document.createElement('img');

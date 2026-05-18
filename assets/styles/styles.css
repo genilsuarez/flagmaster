@@ -1934,6 +1934,24 @@ body.landing-mode .landing-hero {
     width: 100%;
 }
 
+.word-drop-end-btn {
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--rust);
+    border: 1.5px solid var(--rust);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-quick) var(--ease-gentle);
+}
+
+.word-drop-end-btn:hover {
+    background: var(--rust);
+    color: var(--warm-white);
+}
+
 .word-drop-score {
     display: flex;
     align-items: center;
