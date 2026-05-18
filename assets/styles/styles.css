@@ -463,9 +463,9 @@ body {
 
 #capitalInfo {
     margin: 0 0 var(--space-xl);
-    font-family: var(--font-body);
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
     font-style: normal;
     color: var(--ocean);
     min-height: 1.5rem;
@@ -476,8 +476,7 @@ body {
     visibility: hidden;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.85rem;
+    letter-spacing: 0.02em;
 }
 
 /* TEAMS CONTAINER — Scoreboard */
@@ -2278,7 +2277,7 @@ body.landing-mode .landing-hero {
     }
 
     #capitalInfo {
-        font-size: 0.75rem;
+        font-size: 1.1rem;
         margin-bottom: var(--space-lg);
     }
 
