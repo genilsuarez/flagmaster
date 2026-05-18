@@ -142,7 +142,6 @@ function wireWordDropModeToggle() {
 
     // Elements that only apply to the standard game modes (not Word Drop)
     const standardOnlyEls = [
-        document.getElementById('maxCountries'),
         document.querySelector('.practice-mode-container')?.closest('.filter-row'),
     ].filter(Boolean);
 
