@@ -202,6 +202,7 @@ export class WordDropView {
         this.answerInput.disabled = false;
 
         // Flag hint
+        this.flagHint.classList.remove('flag-hint-reveal');
         if (showFlag && flagUrl) {
             this.flagHint.src = flagUrl;
             this.flagHint.hidden = false;
@@ -334,7 +335,7 @@ export class WordDropView {
      * @param {number} score
      * @param {string} correctWord
      */
-    showFeedback(correct, score, correctWord) {
+    showFeedback(correct, score, correctWord, flagUrl) {
         this.inputContainer.hidden = true;
         this.answerInput.disabled = true;
 
@@ -348,6 +349,13 @@ export class WordDropView {
             this.letterGrid.classList.add('grid-wrong');
         }
 
+        // In hard mode (no flag shown), reveal the flag after validation for learning
+        if (flagUrl && this.flagHint.hidden) {
+            this.flagHint.src = flagUrl;
+            this.flagHint.hidden = false;
+            this.flagHint.classList.add('flag-hint-reveal');
+        }
+
         setTimeout(() => {
             this.letterGrid.classList.remove('grid-correct', 'grid-wrong');
         }, 600);
@@ -359,12 +367,20 @@ export class WordDropView {
     /**
      * Shows feedback when word completes without answer.
      */
-    showTimeoutFeedback(word) {
+    showTimeoutFeedback(word, flagUrl) {
         this.guessButton.hidden = true;
         this.inputContainer.hidden = true;
         this.answerInput.disabled = true;
         this.feedbackEl.textContent = `⏱ Tiempo agotado. Era: ${word}`;
         this.feedbackEl.className = 'word-drop-feedback feedback-timeout';
+
+        // In hard mode, reveal the flag for learning
+        if (flagUrl && this.flagHint.hidden) {
+            this.flagHint.src = flagUrl;
+            this.flagHint.hidden = false;
+            this.flagHint.classList.add('flag-hint-reveal');
+        }
+
         this.nextButton.hidden = false;
         this.nextButton.focus();
     }

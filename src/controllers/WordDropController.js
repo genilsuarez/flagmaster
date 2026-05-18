@@ -191,7 +191,7 @@ export class WordDropController {
         // Update score
         this.totalScore += adjustedScore;
         this.view.updateScore(Math.max(0, this.totalScore));
-        this.view.showFeedback(result.correct, adjustedScore, result.word);
+        this.view.showFeedback(result.correct, adjustedScore, result.word, this.service.currentRound.country?.flagUrl);
 
         // Track stats
         if (result.correct && this.statsService) {
@@ -224,7 +224,7 @@ export class WordDropController {
         if (!this.isActive || !this.service.currentRound) return;
 
         this.view.revealAllLetters(this.service.currentRound.word);
-        this.view.showFeedback(false, -15, this.service.currentRound.word);
+        this.view.showFeedback(false, -15, this.service.currentRound.word, this.service.currentRound.country?.flagUrl);
 
         this.totalScore -= 15;
         this.view.updateScore(Math.max(0, this.totalScore));
@@ -259,7 +259,7 @@ export class WordDropController {
 
         this.service.currentRound.answered = true;
         this.view.revealAllLetters(this.service.currentRound.word);
-        this.view.showTimeoutFeedback(this.service.currentRound.word);
+        this.view.showTimeoutFeedback(this.service.currentRound.word, this.service.currentRound.country?.flagUrl);
 
         // Survival mode: lose a life
         if (this.isSurvivalMode) {
