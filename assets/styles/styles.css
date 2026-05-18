@@ -2158,6 +2158,26 @@ body.landing-mode .landing-hero {
     transform: translateY(-1px);
 }
 
+.word-drop-answer-countdown {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--ocean);
+    text-align: center;
+    margin-top: var(--space-sm);
+    transition: color var(--duration-quick) var(--ease-gentle);
+}
+
+.word-drop-answer-countdown.countdown-urgent {
+    color: var(--rust);
+    animation: countdownPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
 .word-drop-next-btn {
     padding: var(--space-md) var(--space-2xl);
     border-radius: var(--radius-pill);

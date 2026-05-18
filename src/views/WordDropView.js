@@ -18,6 +18,9 @@ export class WordDropView {
         this.onGuessPressed = null;
         this.onAnswerSubmitted = null;
         this.onNextPressed = null;
+        this.onAnswerTimeout = null;
+        this.answerCountdownInterval = null;
+        this.answerTimeLeft = 10;
 
         this.buildDOM();
     }
@@ -93,6 +96,12 @@ export class WordDropView {
 
         this.inputContainer.appendChild(this.answerInput);
         this.inputContainer.appendChild(submitBtn);
+
+        // Countdown element for answer time
+        this.countdownEl = document.createElement('div');
+        this.countdownEl.className = 'word-drop-answer-countdown';
+        this.countdownEl.hidden = true;
+        this.inputContainer.appendChild(this.countdownEl);
 
         // Next button (shown after feedback)
         this.nextButton = document.createElement('button');
@@ -239,6 +248,59 @@ export class WordDropView {
         this.guessButton.hidden = true;
         this.inputContainer.hidden = false;
         this.answerInput.focus();
+        this.startAnswerCountdown();
+    }
+
+    /**
+     * Starts a 10-second countdown for answering.
+     */
+    startAnswerCountdown() {
+        this.answerTimeLeft = 10;
+        this.updateCountdownDisplay();
+        this.countdownEl.hidden = false;
+
+        this.answerCountdownInterval = setInterval(() => {
+            this.answerTimeLeft--;
+            this.updateCountdownDisplay();
+
+            if (this.answerTimeLeft <= 0) {
+                this.stopAnswerCountdown();
+                // Auto-submit empty (timeout)
+                if (this.onAnswerTimeout) this.onAnswerTimeout();
+            }
+        }, 1000);
+    }
+
+    /**
+     * Stops the answer countdown.
+     */
+    stopAnswerCountdown() {
+        if (this.answerCountdownInterval) {
+            clearInterval(this.answerCountdownInterval);
+            this.answerCountdownInterval = null;
+        }
+        this.countdownEl.hidden = true;
+    }
+
+    /**
+     * Updates the countdown display element.
+     */
+    updateCountdownDisplay() {
+        if (this.countdownEl) {
+            this.countdownEl.textContent = `⏱ ${this.answerTimeLeft}s`;
+            if (this.answerTimeLeft <= 3) {
+                this.countdownEl.classList.add('countdown-urgent');
+            } else {
+                this.countdownEl.classList.remove('countdown-urgent');
+            }
+        }
+    }
+
+    /**
+     * Returns how many seconds elapsed since the countdown started.
+     */
+    getElapsedAnswerSeconds() {
+        return 10 - (this.answerTimeLeft || 0);
     }
 
     /**
@@ -247,6 +309,7 @@ export class WordDropView {
     submitAnswer() {
         const answer = this.answerInput.value.trim();
         if (!answer) return;
+        this.stopAnswerCountdown();
         if (this.onAnswerSubmitted) this.onAnswerSubmitted(answer);
     }
 
@@ -349,6 +412,7 @@ export class WordDropView {
         this.nextButton.hidden = true;
         this.answerInput.value = '';
         this.flagHint.hidden = true;
+        this.stopAnswerCountdown();
         this.updateScore(0);
         this.updateLives(3);
     }

@@ -31,6 +31,7 @@ export class WordDropController {
         this.view.onGuessPressed = () => this.handleGuessPressed();
         this.view.onAnswerSubmitted = (answer) => this.handleAnswerSubmitted(answer);
         this.view.onNextPressed = () => this.advanceToNextRound();
+        this.view.onAnswerTimeout = () => this.handleAnswerTimeout();
 
         this.service.onLetterRevealed = (position, char) => {
             this.view.revealLetter(position, char);
@@ -153,15 +154,20 @@ export class WordDropController {
     handleAnswerSubmitted(answer) {
         if (!this.isActive || !this.service.currentRound) return;
 
+        const elapsedSeconds = this.view.getElapsedAnswerSeconds();
         const result = this.service.validateAnswer(answer);
+
+        // Apply time penalty: lose 5 points per second elapsed
+        const timePenalty = elapsedSeconds * 5;
+        const adjustedScore = result.correct ? Math.max(5, result.score - timePenalty) : result.score;
 
         // Reveal all letters
         this.view.revealAllLetters(this.service.currentRound.word);
 
         // Update score
-        this.totalScore += result.score;
+        this.totalScore += adjustedScore;
         this.view.updateScore(Math.max(0, this.totalScore));
-        this.view.showFeedback(result.correct, result.score, result.word);
+        this.view.showFeedback(result.correct, adjustedScore, result.word);
 
         // Track stats
         if (result.correct && this.statsService) {
@@ -182,6 +188,30 @@ export class WordDropController {
         }
 
         // Wait for user to press "Siguiente"
+        this.currentIndex++;
+    }
+
+    /**
+     * Called when the answer countdown reaches 0.
+     */
+    handleAnswerTimeout() {
+        if (!this.isActive || !this.service.currentRound) return;
+
+        this.view.revealAllLetters(this.service.currentRound.word);
+        this.view.showFeedback(false, -15, this.service.currentRound.word);
+
+        this.totalScore -= 15;
+        this.view.updateScore(Math.max(0, this.totalScore));
+
+        if (this.isSurvivalMode) {
+            this.lives--;
+            this.view.updateLives(this.lives);
+            if (this.lives <= 0) {
+                this.roundTransitionTimeout = setTimeout(() => this.endGame(), 1500);
+                return;
+            }
+        }
+
         this.currentIndex++;
     }
 
