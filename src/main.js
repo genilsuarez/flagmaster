@@ -56,12 +56,25 @@ function exitLanding(controller, wordDropController) {
  */
 function startWordDropGame(controller, wordDropController) {
     const filters = controller.view.getFilterValues();
-    const countries = controller.countryService.filterCountries(filters);
+    let countries = controller.countryService.filterCountries({
+        ...filters,
+        maxCount: undefined // get all matching, we'll slice after shuffle
+    });
 
     if (countries.length === 0) {
         alert('No countries match the selected filters');
         document.body.classList.add('landing-mode');
         return;
+    }
+
+    // Shuffle first, then limit — ensures different countries each game
+    countries = [...countries];
+    for (let i = countries.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [countries[i], countries[j]] = [countries[j], countries[i]];
+    }
+    if (filters.maxCount && filters.maxCount > 0 && filters.maxCount < countries.length) {
+        countries = countries.slice(0, filters.maxCount);
     }
 
     const categoryEl = document.getElementById('wordDropCategory');
@@ -73,7 +86,7 @@ function startWordDropGame(controller, wordDropController) {
     const showFlag = difficulty === 'easy';
 
     wordDropController.start({
-        countries: [...countries],
+        countries,
         category: categoryEl?.value || 'country',
         speed: speedEl?.value || 'normal',
         showFlag,
