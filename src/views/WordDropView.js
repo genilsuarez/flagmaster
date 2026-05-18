@@ -101,7 +101,11 @@ export class WordDropView {
         submitBtn.addEventListener('click', () => this.submitAnswer());
 
         this.answerInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') this.submitAnswer();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.submitAnswer();
+            }
         });
 
         this.inputContainer.appendChild(this.answerInput);

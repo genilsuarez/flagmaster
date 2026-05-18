@@ -17,6 +17,7 @@ export class WordDropController {
         this.totalScore = 0;
         this.lives = 3;
         this.isActive = false;
+        this.phase = 'revealing'; // 'revealing' | 'input' | 'review'
         this.isSurvivalMode = true;
         this.showFlag = true;
         this.category = 'country'; // 'country' | 'capital'
@@ -42,22 +43,33 @@ export class WordDropController {
             this.handleWordCompleted();
         };
 
-        // Keyboard shortcuts: Space to guess, Enter to advance
-        this._keyHandler = (e) => {
-            if (!this.isActive) return;
-            if (e.code === 'Space' && this.view.inputContainer.hidden && !this.view.guessButton.hidden) {
-                e.preventDefault();
-                this.handleGuessPressed();
-            }
-            // Enter to advance when "Siguiente" button is visible
-            // But not if the answer was just submitted in this same event cycle
-            if (e.key === 'Enter' && !this.view.nextButton.hidden && this.view.inputContainer.hidden && !this._justSubmitted) {
-                e.preventDefault();
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    }
+
+    /**
+     * Centralized keyboard handler for Word Drop mode.
+     * Uses current phase to determine action:
+     * - 'revealing': letters are dropping, Space to guess
+     * - 'input': player is typing answer, Enter to submit
+     * - 'review': feedback shown, Enter to advance
+     */
+    handleKeyDown(e) {
+        if (!this.isActive) return;
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (this.phase === 'input') {
+                this.view.submitAnswer();
+            } else if (this.phase === 'review') {
                 this.advanceToNextRound();
             }
-            this._justSubmitted = false;
-        };
-        document.addEventListener('keydown', this._keyHandler);
+            return;
+        }
+
+        if (e.code === 'Space' && this.phase === 'revealing') {
+            e.preventDefault();
+            this.handleGuessPressed();
+        }
     }
 
     /**
@@ -99,6 +111,7 @@ export class WordDropController {
         this.totalScore = 0;
         this.lives = 3;
         this.isActive = true;
+        this.phase = 'revealing';
 
         this.view.show();
         this.view.reset();
@@ -116,6 +129,7 @@ export class WordDropController {
     startRound() {
         // Always clear previous timers before starting a new round
         this.clearPendingTimers();
+        this.phase = 'revealing';
 
         if (this.currentIndex >= this.countries.length) {
             this.endGame();
@@ -153,6 +167,7 @@ export class WordDropController {
         }
 
         this.service.freezeRound();
+        this.phase = 'input';
         this.view.showInput();
     }
 
@@ -161,7 +176,7 @@ export class WordDropController {
      */
     handleAnswerSubmitted(answer) {
         if (!this.isActive || !this.service.currentRound) return;
-        this._justSubmitted = true;
+        this.phase = 'review';
 
         const elapsedSeconds = this.view.getElapsedAnswerSeconds();
         const result = this.service.validateAnswer(answer);
@@ -206,7 +221,7 @@ export class WordDropController {
      */
     handleAnswerTimeout() {
         if (!this.isActive || !this.service.currentRound) return;
-        this._justSubmitted = true;
+        this.phase = 'review';
 
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showFeedback(false, -15, this.service.currentRound.word);
@@ -242,6 +257,7 @@ export class WordDropController {
         if (this.service.currentRound.answered) return;
 
         this.service.currentRound.answered = true;
+        this.phase = 'review';
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showTimeoutFeedback(this.service.currentRound.word);
 
@@ -368,7 +384,7 @@ export class WordDropController {
      * Destroys the controller and removes event listeners.
      */
     destroy() {
-        document.removeEventListener('keydown', this._keyHandler);
+        this.isActive = false;
         this.clearPendingTimers();
     }
 }
