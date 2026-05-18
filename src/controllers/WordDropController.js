@@ -50,10 +50,12 @@ export class WordDropController {
                 this.handleGuessPressed();
             }
             // Enter to advance when "Siguiente" button is visible
-            if (e.key === 'Enter' && !this.view.nextButton.hidden) {
+            // But not if the answer was just submitted in this same event cycle
+            if (e.key === 'Enter' && !this.view.nextButton.hidden && this.view.inputContainer.hidden && !this._justSubmitted) {
                 e.preventDefault();
                 this.advanceToNextRound();
             }
+            this._justSubmitted = false;
         };
         document.addEventListener('keydown', this._keyHandler);
     }
@@ -159,6 +161,7 @@ export class WordDropController {
      */
     handleAnswerSubmitted(answer) {
         if (!this.isActive || !this.service.currentRound) return;
+        this._justSubmitted = true;
 
         const elapsedSeconds = this.view.getElapsedAnswerSeconds();
         const result = this.service.validateAnswer(answer);
@@ -203,6 +206,7 @@ export class WordDropController {
      */
     handleAnswerTimeout() {
         if (!this.isActive || !this.service.currentRound) return;
+        this._justSubmitted = true;
 
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showFeedback(false, -15, this.service.currentRound.word);
