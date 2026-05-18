@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wireLandingHero(controller, wordDropController, appMenu);
     wireStatsTracking(controller, statsService, appMenu);
     wireWordDropModeToggle();
+    wireSettingsPersistence();
 });
 
 function exitLanding(controller, wordDropController) {
@@ -161,4 +162,76 @@ function wireWordDropModeToggle() {
 
     gameModeFilter.addEventListener('change', toggleOptions);
     toggleOptions();
+}
+
+const SETTINGS_KEY = 'flagsQuiz_settings';
+
+/**
+ * Persists filter/settings values to localStorage on change,
+ * and restores them on page load.
+ */
+function wireSettingsPersistence() {
+    const controls = {
+        gameModeFilter: document.getElementById('gameModeFilter'),
+        continentFilter: document.getElementById('continentFilter'),
+        sovereignFilter: document.getElementById('sovereignFilter'),
+        maxCountries: document.getElementById('maxCountries'),
+        practiceMode: document.getElementById('practiceMode'),
+        randomMode: document.getElementById('randomMode'),
+        wordDropDifficulty: document.getElementById('wordDropDifficulty'),
+        wordDropCategory: document.getElementById('wordDropCategory'),
+        wordDropSpeed: document.getElementById('wordDropSpeed'),
+        wordDropSurvival: document.getElementById('wordDropSurvival'),
+        capitalsHintMode: document.getElementById('capitalsHintMode'),
+    };
+
+    // Restore saved settings
+    restoreSettings(controls);
+
+    // Save on any change
+    Object.values(controls).forEach(el => {
+        if (!el) return;
+        const event = (el.type === 'checkbox') ? 'change' : 'change';
+        el.addEventListener(event, () => saveSettings(controls));
+    });
+}
+
+function saveSettings(controls) {
+    const settings = {};
+    Object.entries(controls).forEach(([key, el]) => {
+        if (!el) return;
+        if (el.type === 'checkbox') {
+            settings[key] = el.checked;
+        } else {
+            settings[key] = el.value;
+        }
+    });
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch (e) { /* quota exceeded or private mode */ }
+}
+
+function restoreSettings(controls) {
+    let settings;
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return;
+        settings = JSON.parse(raw);
+    } catch (e) { return; }
+
+    Object.entries(settings).forEach(([key, value]) => {
+        const el = controls[key];
+        if (!el) return;
+        if (el.type === 'checkbox') {
+            el.checked = value;
+        } else {
+            el.value = value;
+        }
+    });
+
+    // Trigger change on gameModeFilter to update UI visibility
+    const gameModeFilter = controls.gameModeFilter;
+    if (gameModeFilter) {
+        gameModeFilter.dispatchEvent(new Event('change'));
+    }
 }
