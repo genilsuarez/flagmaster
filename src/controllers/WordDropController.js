@@ -41,12 +41,17 @@ export class WordDropController {
             this.handleWordCompleted();
         };
 
-        // Keyboard shortcut: Space to guess
+        // Keyboard shortcuts: Space to guess, Enter to advance
         this._keyHandler = (e) => {
             if (!this.isActive) return;
             if (e.code === 'Space' && this.view.inputContainer.hidden && !this.view.guessButton.hidden) {
                 e.preventDefault();
                 this.handleGuessPressed();
+            }
+            // Enter to advance when "Siguiente" button is visible
+            if (e.key === 'Enter' && !this.view.nextButton.hidden) {
+                e.preventDefault();
+                this.advanceToNextRound();
             }
         };
         document.addEventListener('keydown', this._keyHandler);

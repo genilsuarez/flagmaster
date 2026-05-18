@@ -185,6 +185,7 @@ export class WordDropView {
         this.inputContainer.hidden = true;
         this.nextButton.hidden = true;
         this.answerInput.value = '';
+        this.answerInput.disabled = false;
 
         // Flag hint
         if (showFlag && flagUrl) {
@@ -321,6 +322,7 @@ export class WordDropView {
      */
     showFeedback(correct, score, correctWord) {
         this.inputContainer.hidden = true;
+        this.answerInput.disabled = true;
 
         if (correct) {
             this.feedbackEl.textContent = `✓ ¡Correcto! +${score} puntos`;
@@ -337,6 +339,7 @@ export class WordDropView {
         }, 600);
 
         this.nextButton.hidden = false;
+        this.nextButton.focus();
     }
 
     /**
@@ -345,9 +348,11 @@ export class WordDropView {
     showTimeoutFeedback(word) {
         this.guessButton.hidden = true;
         this.inputContainer.hidden = true;
+        this.answerInput.disabled = true;
         this.feedbackEl.textContent = `⏱ Tiempo agotado. Era: ${word}`;
         this.feedbackEl.className = 'word-drop-feedback feedback-timeout';
         this.nextButton.hidden = false;
+        this.nextButton.focus();
     }
 
     /**
