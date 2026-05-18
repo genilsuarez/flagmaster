@@ -1431,7 +1431,7 @@ body.landing-mode .landing-hero {
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    opacity: 0.06;
+    opacity: 0.18;
     mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, transparent 25%, black 75%);
 }
 
@@ -1440,7 +1440,7 @@ body.landing-mode .landing-hero {
     width: 90px;
     height: auto;
     border-radius: var(--radius-sm);
-    filter: saturate(0.5) contrast(0.9);
+    filter: saturate(0.7) contrast(0.9);
     animation: flagDrift 22s ease-in-out infinite;
 }
 
