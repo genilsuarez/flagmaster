@@ -17,6 +17,7 @@ export class WordDropView {
 
         this.onGuessPressed = null;
         this.onAnswerSubmitted = null;
+        this.onNextPressed = null;
 
         this.buildDOM();
     }
@@ -93,6 +94,15 @@ export class WordDropView {
         this.inputContainer.appendChild(this.answerInput);
         this.inputContainer.appendChild(submitBtn);
 
+        // Next button (shown after feedback)
+        this.nextButton = document.createElement('button');
+        this.nextButton.className = 'word-drop-next-btn';
+        this.nextButton.textContent = 'Siguiente →';
+        this.nextButton.hidden = true;
+        this.nextButton.addEventListener('click', () => {
+            if (this.onNextPressed) this.onNextPressed();
+        });
+
         // Assemble
         this.container.appendChild(topBar);
         this.container.appendChild(this.flagHint);
@@ -100,6 +110,7 @@ export class WordDropView {
         this.container.appendChild(this.feedbackEl);
         this.container.appendChild(this.guessButton);
         this.container.appendChild(this.inputContainer);
+        this.container.appendChild(this.nextButton);
 
         // Insert into game wrapper
         const gameWrapper = document.querySelector('.game-wrapper');
@@ -163,6 +174,7 @@ export class WordDropView {
         this.guessButton.hidden = false;
         this.guessButton.disabled = false;
         this.inputContainer.hidden = true;
+        this.nextButton.hidden = true;
         this.answerInput.value = '';
 
         // Flag hint
@@ -260,6 +272,8 @@ export class WordDropView {
         setTimeout(() => {
             this.letterGrid.classList.remove('grid-correct', 'grid-wrong');
         }, 600);
+
+        this.nextButton.hidden = false;
     }
 
     /**
@@ -270,6 +284,7 @@ export class WordDropView {
         this.inputContainer.hidden = true;
         this.feedbackEl.textContent = `⏱ Tiempo agotado. Era: ${word}`;
         this.feedbackEl.className = 'word-drop-feedback feedback-timeout';
+        this.nextButton.hidden = false;
     }
 
     /**
@@ -331,6 +346,7 @@ export class WordDropView {
         this.guessButton.hidden = false;
         this.guessButton.disabled = false;
         this.inputContainer.hidden = true;
+        this.nextButton.hidden = true;
         this.answerInput.value = '';
         this.flagHint.hidden = true;
         this.updateScore(0);

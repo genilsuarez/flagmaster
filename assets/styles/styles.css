@@ -2158,6 +2158,25 @@ body.landing-mode .landing-hero {
     transform: translateY(-1px);
 }
 
+.word-drop-next-btn {
+    padding: var(--space-md) var(--space-2xl);
+    border-radius: var(--radius-pill);
+    background: var(--deep-sage);
+    color: var(--warm-white);
+    border: none;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-quick) var(--ease-gentle);
+    margin-top: var(--space-md);
+}
+
+.word-drop-next-btn:hover {
+    background: var(--sage);
+    transform: translateY(-1px);
+}
+
 .word-drop-options {
     flex-direction: column;
     gap: var(--space-md);

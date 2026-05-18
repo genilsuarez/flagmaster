@@ -30,6 +30,7 @@ export class WordDropController {
     bindEvents() {
         this.view.onGuessPressed = () => this.handleGuessPressed();
         this.view.onAnswerSubmitted = (answer) => this.handleAnswerSubmitted(answer);
+        this.view.onNextPressed = () => this.advanceToNextRound();
 
         this.service.onLetterRevealed = (position, char) => {
             this.view.revealLetter(position, char);
@@ -180,12 +181,16 @@ export class WordDropController {
             }
         }
 
-        // Move to next round
+        // Wait for user to press "Siguiente"
         this.currentIndex++;
-        this.roundTransitionTimeout = setTimeout(() => {
-            this.roundTransitionTimeout = null;
-            this.startRound();
-        }, 1800);
+    }
+
+    /**
+     * Called when the player presses "Siguiente" to advance.
+     */
+    advanceToNextRound() {
+        if (!this.isActive) return;
+        this.startRound();
     }
 
     /**
@@ -209,12 +214,8 @@ export class WordDropController {
             }
         }
 
-        // Move to next round
+        // Wait for user to press "Siguiente"
         this.currentIndex++;
-        this.roundTransitionTimeout = setTimeout(() => {
-            this.roundTransitionTimeout = null;
-            this.startRound();
-        }, 2200);
     }
 
     /**
