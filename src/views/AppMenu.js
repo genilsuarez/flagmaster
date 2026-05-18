@@ -271,10 +271,8 @@ export class AppMenu {
 
         const ctaText = document.querySelector('#landingCTA .cta-text');
         if (ctaText) {
-            if (stats.currentStreak > 0) {
-                ctaText.textContent = '¡Continúa tu racha!';
-            } else if (stats.gamesPlayed > 0) {
-                ctaText.textContent = '¡Jugar otra vez!';
+            if (stats.gamesPlayed > 0) {
+                ctaText.textContent = '¡Jugar!';
             } else {
                 ctaText.textContent = 'Comenzar Juego';
             }
