@@ -188,12 +188,28 @@ export class GameView {
             this.elements.countryInfo.classList.add('hidden-keep-space');
             this.elements.countryInfo.textContent = '';
             
-            // Swap flag immediately — CSS handles the crossfade
-            this.elements.flagImage.src = country.flagUrl;
-            
             if (this.gameState && this.gameState.gameMode === 'capitals') {
-                this.elements.countryInfo.textContent = country.displayName;
-                this.elements.countryInfo.classList.remove('hidden-keep-space');
+                const hintMode = this.gameState.capitalsHintMode || 'flagAndName';
+                
+                // Show/hide flag based on hint mode
+                if (hintMode === 'nameOnly') {
+                    this.elements.flagImage.style.display = 'none';
+                } else {
+                    this.elements.flagImage.style.display = '';
+                    this.elements.flagImage.src = country.flagUrl;
+                }
+                
+                // Show/hide country name based on hint mode
+                if (hintMode === 'flagOnly') {
+                    this.elements.countryInfo.classList.add('hidden-keep-space');
+                } else {
+                    this.elements.countryInfo.textContent = country.displayName;
+                    this.elements.countryInfo.classList.remove('hidden-keep-space');
+                }
+            } else {
+                // Flags mode: show flag, hide name
+                this.elements.flagImage.style.display = '';
+                this.elements.flagImage.src = country.flagUrl;
             }
         }
     }
@@ -400,12 +416,14 @@ export class GameView {
     }
 
     setDefaultFlag() {
+        this.elements.flagImage.style.display = '';
         this.elements.flagImage.src = "https://flagcdn.com/un.svg";
     }
 
     getFilterValues() {
         const practiceInput = this.elements.practiceModeCheckbox?.querySelector('input');
         const randomInput = this.elements.randomModeCheckbox?.querySelector('input');
+        const capitalsHintMode = document.getElementById('capitalsHintMode');
         
         return {
             continent: this.elements.continentFilter?.value || 'All',
@@ -413,7 +431,8 @@ export class GameView {
             gameMode: this.elements.gameModeFilter?.value || 'flags',
             maxCount: parseInt(this.elements.maxCountriesInput?.value || '50', 10),
             practiceMode: practiceInput?.checked || false,
-            randomMode: randomInput?.checked || true
+            randomMode: randomInput?.checked || true,
+            capitalsHintMode: capitalsHintMode?.value || 'flagAndName'
         };
     }
 

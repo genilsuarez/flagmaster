@@ -270,6 +270,7 @@ export class GameController {
         this.gameState.isPracticeMode = filters.practiceMode;
         this.gameState.gameMode = filters.gameMode;
         this.gameState.isRandomMode = filters.randomMode;
+        this.gameState.capitalsHintMode = filters.capitalsHintMode || 'flagAndName';
     }
 
     resetCountryState() {

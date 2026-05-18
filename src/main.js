@@ -137,6 +137,7 @@ function wireStatsTracking(controller, statsService, appMenu) {
 function wireWordDropModeToggle() {
     const gameModeFilter = document.getElementById('gameModeFilter');
     const wordDropOptions = document.getElementById('wordDropOptions');
+    const capitalsOptions = document.getElementById('capitalsOptions');
 
     if (!gameModeFilter || !wordDropOptions) return;
 
@@ -146,8 +147,12 @@ function wireWordDropModeToggle() {
     ].filter(Boolean);
 
     const toggleOptions = () => {
-        const isWordDrop = gameModeFilter.value === 'wordDrop';
+        const mode = gameModeFilter.value;
+        const isWordDrop = mode === 'wordDrop';
+        const isCapitals = mode === 'capitals';
+
         wordDropOptions.hidden = !isWordDrop;
+        if (capitalsOptions) capitalsOptions.hidden = !isCapitals;
 
         standardOnlyEls.forEach(el => {
             if (el) el.style.display = isWordDrop ? 'none' : '';
