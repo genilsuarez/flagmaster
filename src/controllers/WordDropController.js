@@ -50,17 +50,17 @@ export class WordDropController {
      * Centralized keyboard handler for Word Drop mode.
      * Uses current phase to determine action:
      * - 'revealing': letters are dropping, Space to guess
-     * - 'input': player is typing answer, Enter to submit
+     * - 'input': player is typing answer (handled by input's own listener)
      * - 'review': feedback shown, Enter to advance
      */
     handleKeyDown(e) {
         if (!this.isActive) return;
 
         if (e.key === 'Enter') {
-            e.preventDefault();
-            if (this.phase === 'input') {
-                this.view.submitAnswer();
-            } else if (this.phase === 'review') {
+            // Only handle Enter for the review phase here.
+            // The input phase Enter is handled by the input's own keydown listener.
+            if (this.phase === 'review') {
+                e.preventDefault();
                 this.advanceToNextRound();
             }
             return;
@@ -176,7 +176,6 @@ export class WordDropController {
      */
     handleAnswerSubmitted(answer) {
         if (!this.isActive || !this.service.currentRound) return;
-        this.phase = 'review';
 
         const elapsedSeconds = this.view.getElapsedAnswerSeconds();
         const result = this.service.validateAnswer(answer);
@@ -212,8 +211,10 @@ export class WordDropController {
             }
         }
 
-        // Wait for user to press "Siguiente"
         this.currentIndex++;
+
+        // Delay phase change to prevent same-event bubbling from triggering advance
+        setTimeout(() => { this.phase = 'review'; }, 0);
     }
 
     /**
@@ -221,7 +222,6 @@ export class WordDropController {
      */
     handleAnswerTimeout() {
         if (!this.isActive || !this.service.currentRound) return;
-        this.phase = 'review';
 
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showFeedback(false, -15, this.service.currentRound.word);
@@ -239,6 +239,7 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        setTimeout(() => { this.phase = 'review'; }, 0);
     }
 
     /**
@@ -257,7 +258,6 @@ export class WordDropController {
         if (this.service.currentRound.answered) return;
 
         this.service.currentRound.answered = true;
-        this.phase = 'review';
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showTimeoutFeedback(this.service.currentRound.word);
 
@@ -271,8 +271,8 @@ export class WordDropController {
             }
         }
 
-        // Wait for user to press "Siguiente"
         this.currentIndex++;
+        this.phase = 'review';
     }
 
     /**
