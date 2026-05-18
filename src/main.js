@@ -23,10 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
         onHome: () => appMenu.updateMotivationUI()
     });
 
+    wireSettingsPersistence();
     wireLandingHero(controller, wordDropController, appMenu);
     wireStatsTracking(controller, statsService, appMenu);
     wireWordDropModeToggle();
-    wireSettingsPersistence();
+
+    // Re-restore settings after GameController finishes async init
+    // (initializeGame overwrites maxCountries after loading countries)
+    const waitForInit = setInterval(() => {
+        if (controller.countryService.countries && controller.countryService.countries.length > 0) {
+            clearInterval(waitForInit);
+            wireSettingsPersistence(true);
+        }
+    }, 50);
 });
 
 function exitLanding(controller, wordDropController) {
@@ -169,8 +178,9 @@ const SETTINGS_KEY = 'flagsQuiz_settings';
 /**
  * Persists filter/settings values to localStorage on change,
  * and restores them on page load.
+ * @param {boolean} restoreOnly - If true, only restore without re-wiring listeners
  */
-function wireSettingsPersistence() {
+function wireSettingsPersistence(restoreOnly = false) {
     const controls = {
         gameModeFilter: document.getElementById('gameModeFilter'),
         continentFilter: document.getElementById('continentFilter'),
@@ -188,11 +198,16 @@ function wireSettingsPersistence() {
     // Restore saved settings
     restoreSettings(controls);
 
+    if (restoreOnly) return;
+
     // Save on any change
-    Object.values(controls).forEach(el => {
+    Object.entries(controls).forEach(([key, el]) => {
         if (!el) return;
-        const event = (el.type === 'checkbox') ? 'change' : 'change';
-        el.addEventListener(event, () => saveSettings(controls));
+        el.addEventListener('change', () => saveSettings(controls));
+        // Also listen to input for number fields
+        if (el.type === 'number') {
+            el.addEventListener('input', () => saveSettings(controls));
+        }
     });
 }
 
@@ -224,8 +239,23 @@ function restoreSettings(controls) {
         if (!el) return;
         if (el.type === 'checkbox') {
             el.checked = value;
+        } else if (el.type === 'number') {
+            // Only restore if within valid range
+            const max = parseInt(el.max, 10);
+            const numVal = parseInt(value, 10);
+            if (!isNaN(numVal) && (!max || numVal <= max) && numVal >= 1) {
+                el.value = value;
+            }
         } else {
-            el.value = value;
+            // Verify the value is a valid option for select elements
+            if (el.tagName === 'SELECT') {
+                const options = Array.from(el.options).map(o => o.value);
+                if (options.includes(value)) {
+                    el.value = value;
+                }
+            } else {
+                el.value = value;
+            }
         }
     });
 
