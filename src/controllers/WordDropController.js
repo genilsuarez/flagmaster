@@ -126,7 +126,7 @@ export class WordDropController {
             if (this.isActive && this.service.currentRound && !this.service.currentRound.answered) {
                 this.service.startRevealing();
             }
-        }, 600);
+        }, 200);
     }
 
     /**

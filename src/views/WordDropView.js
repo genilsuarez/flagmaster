@@ -118,11 +118,15 @@ export class WordDropView {
         const countryInfo = document.getElementById('countryInfo');
         const capitalInfo = document.getElementById('capitalInfo');
         const teamsContainer = document.getElementById('teamsContainer');
+        const startButton = document.getElementById('startButton');
+        const gameHeader = document.querySelector('.game-header');
 
         if (flagImg) flagImg.style.display = 'none';
         if (countryInfo) countryInfo.style.display = 'none';
         if (capitalInfo) capitalInfo.style.display = 'none';
         if (teamsContainer) teamsContainer.style.display = 'none';
+        if (startButton) startButton.style.display = 'none';
+        if (gameHeader) gameHeader.style.display = 'none';
     }
 
     /**
@@ -134,11 +138,15 @@ export class WordDropView {
         const countryInfo = document.getElementById('countryInfo');
         const capitalInfo = document.getElementById('capitalInfo');
         const teamsContainer = document.getElementById('teamsContainer');
+        const startButton = document.getElementById('startButton');
+        const gameHeader = document.querySelector('.game-header');
 
         if (flagImg) flagImg.style.display = '';
         if (countryInfo) countryInfo.style.display = '';
         if (capitalInfo) capitalInfo.style.display = '';
         if (teamsContainer) teamsContainer.style.display = '';
+        if (startButton) startButton.style.display = '';
+        if (gameHeader) gameHeader.style.display = '';
     }
 
     /**
