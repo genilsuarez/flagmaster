@@ -29,6 +29,16 @@ export class GameView {
         if (!elements.flagImage || !elements.countryInfo || !elements.capitalInfo) {
             throw new Error('Required DOM elements not found');
         }
+
+        // Fallback: if SVG fails, retry with PNG; if PNG also fails, leave broken
+        elements.flagImage.onerror = () => {
+            const src = elements.flagImage.src;
+            if (src.includes('flagcdn.com') && src.endsWith('.svg')) {
+                const code = src.split('/').pop().replace('.svg', '');
+                elements.flagImage.onerror = null;
+                elements.flagImage.src = `https://flagcdn.com/w320/${code}.png`;
+            }
+        };
         
         try {
             elements.filterContainer = this.createFilterContainer(elements);

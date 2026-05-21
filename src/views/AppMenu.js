@@ -9,7 +9,7 @@ const MODAL_TEMPLATES = {
         body: () => `
             <div class="modal-section">
                 <p><strong>Quiz de Banderas</strong> es un juego interactivo para aprender las banderas y capitales de todos los países del mundo.</p>
-                <p>Juega solo o compite con hasta 3 equipos (con empate si responden al mismo tiempo), filtra por continente, activa el modo práctica o desafía tu memoria con el cronómetro.</p>
+                <p>Juega solo o compite con 2 equipos (con empate si responden al mismo tiempo), filtra por continente, activa el modo práctica o desafía tu memoria con el cronómetro.</p>
             </div>
             <div class="modal-section">
                 <h3>Créditos</h3>

@@ -3185,8 +3185,35 @@ body.landing-mode .landing-hero {
         font-size: 1.4rem;
     }
 
+    .mode-selector {
+        gap: var(--space-sm);
+    }
+
     .mode-card {
-        padding: var(--space-lg);
+        padding: var(--space-md) var(--space-sm);
+        align-items: center;
+        text-align: center;
+        gap: var(--space-xs);
+        aspect-ratio: 1 / 1;
+        justify-content: center;
+    }
+
+    .mode-card__icon {
+        font-size: 1.5rem;
+    }
+
+    .mode-card__name {
+        font-size: 0.82rem;
+        line-height: 1.2;
+    }
+
+    .mode-card__description {
+        display: none;
+    }
+
+    .mode-card__badge {
+        font-size: 0.58rem;
+        padding: 2px 5px;
     }
 
     .parametrization {
