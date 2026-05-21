@@ -93,7 +93,7 @@
             <li>
                 <span class="step-num">01</span>
                 <h3>Desafía tu memoria</h3>
-                <p>Modo banderas o capitales, tú eliges.</p>
+                <p>Bandera Flash, Capital Quest y más.</p>
             </li>
             <li>
                 <span class="step-num">02</span>
@@ -193,8 +193,14 @@
         </div>
     </div>
 
+    <!-- ===== MODE SELECTOR SCREEN ===== -->
+    <div id="modeSelectorScreen" class="screen-hidden" aria-label="Selección de modo de juego"></div>
+
+    <!-- ===== PARAMETRIZATION SCREEN ===== -->
+    <div id="parametrizationScreen" class="screen-hidden" aria-label="Configuración de partida"></div>
+
     <!-- ===== INTERFAZ DEL JUEGO ===== -->
-    <div class="game-wrapper">
+    <div class="game-wrapper screen-hidden">
         <div class="game-header">
             <div class="header-top">
                 <h1>Quiz de Banderas</h1>
@@ -220,21 +226,11 @@
             <div id="teamsContainer" class="teams-action-bar"></div>
         </div>
     </div>
-    
-    <div id="filterContainer">
+
+    <!-- Legacy filter panel (hidden, kept for settings persistence compatibility) -->
+    <div id="filterContainer" hidden>
         <div class="filter-panel">
-            <div class="filter-panel-header">
-                <h3 class="filter-panel-title">Configuración</h3>
-                <button class="filter-close-btn">✕</button>
-            </div>
-
-            <select id="gameModeFilter" class="primary-control">
-                <option value="flags" selected>🏴 Modo Banderas</option>
-                <option value="capitals">🏛️ Modo Capitales</option>
-                <option value="wordDrop">✏️ Letras en Caída</option>
-            </select>
-
-            <!-- Capitals mode hint options -->
+            <input type="hidden" id="gameModeFilter" value="flags">
             <div id="capitalsOptions" class="capitals-options" hidden>
                 <select id="capitalsHintMode" class="filter-control">
                     <option value="flagAndName" selected>Bandera + Nombre del país</option>
@@ -242,59 +238,22 @@
                     <option value="nameOnly">Solo nombre del país</option>
                 </select>
             </div>
-
-            <!-- Word Drop options -->
-            <div id="wordDropOptions" class="word-drop-options" hidden>
-                <select id="wordDropDifficulty" class="filter-control">
-                    <option value="easy" selected>🟢 Fácil — Con bandera</option>
-                    <option value="hard">🔴 Difícil — Sin bandera</option>
-                </select>
-                <div class="filter-row">
-                    <select id="wordDropCategory" class="filter-control">
-                        <option value="country" selected>🌍 Países</option>
-                        <option value="capital">🏛️ Capitales</option>
-                    </select>
-                    <select id="wordDropSpeed" class="filter-control">
-                        <option value="slow">🐢 Lento</option>
-                        <option value="normal" selected>⚡ Normal</option>
-                        <option value="fast">🚀 Rápido</option>
-                    </select>
-                </div>
-                <label class="filter-toggle">
-                    <input id="wordDropSurvival" type="checkbox" checked>
-                    <span>Modo supervivencia</span>
-                </label>
-            </div>
-
-            <!-- Standard filters -->
-            <div class="filter-row">
-                <select id="continentFilter" class="filter-control">
-                    <option value="All">🌍 Todos</option>
-                    <option value="Africa">🌍 África</option>
-                    <option value="America">🌎 América</option>
-                    <option value="Asia">🌏 Asia</option>
-                    <option value="Europe">🇪🇺 Europa</option>
-                    <option value="Oceania">🏝️ Oceanía</option>
-                </select>
-                <select id="sovereignFilter" class="filter-control">
-                    <option value="All">🌐 Todos</option>
-                    <option value="Yes" selected>🏳️ Soberanos</option>
-                    <option value="No">🏢 Territorios</option>
-                </select>
-            </div>
-
-            <input id="maxCountries" type="number" min="1" placeholder="Cantidad de países" class="filter-control">
-
-            <div class="filter-row">
-                <label class="filter-toggle practice-mode-container">
-                    <input id="practiceMode" type="checkbox">
-                    <span>Práctica</span>
-                </label>
-                <label class="filter-toggle random-mode-container">
-                    <input id="randomMode" type="checkbox" checked>
-                    <span>Aleatorio</span>
-                </label>
-            </div>
+            <select id="continentFilter" class="filter-control" hidden>
+                <option value="All">🌍 Todos</option>
+                <option value="Africa">🌍 África</option>
+                <option value="America">🌎 América</option>
+                <option value="Asia">🌏 Asia</option>
+                <option value="Europe">🇪🇺 Europa</option>
+                <option value="Oceania">🏝️ Oceanía</option>
+            </select>
+            <select id="sovereignFilter" class="filter-control" hidden>
+                <option value="All">🌐 Todos</option>
+                <option value="Yes" selected>🏳️ Soberanos</option>
+                <option value="No">🏢 Territorios</option>
+            </select>
+            <input id="maxCountries" type="number" min="1" placeholder="Cantidad de países" class="filter-control" hidden>
+            <input id="practiceMode" type="checkbox" hidden>
+            <input id="randomMode" type="checkbox" checked hidden>
         </div>
     </div>
     

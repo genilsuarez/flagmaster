@@ -1,8 +1,18 @@
 /**
  * Service for persisting user stats and achievements in localStorage.
  * Enables the motivation features (streak, achievements, progress).
+ * Tracks both global stats and per-mode stats for individual game modes.
  */
 const STORAGE_KEY = 'flagquiz_stats_v1';
+const MODES_COMPLETED_KEY = 'flagquiz_modes_completed';
+const POWERUPS_USED_KEY = 'flagquiz_powerups_used';
+
+const DEFAULT_MODE_STATS = {
+    gamesPlayed: 0,
+    totalScore: 0,
+    bestScore: 0,
+    totalCorrect: 0,
+};
 
 const DEFAULT_STATS = {
     gamesPlayed: 0,
@@ -19,7 +29,8 @@ const DEFAULT_STATS = {
         lightning: false,   // Finish a full game under 60s
         conqueror: false,   // All countries from a continent
         persistent: false   // 7 day streak
-    }
+    },
+    modeStats: {},
 };
 
 export class StatsService {
@@ -31,11 +42,16 @@ export class StatsService {
     load() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return { ...DEFAULT_STATS };
+            if (!raw) return { ...DEFAULT_STATS, modeStats: {} };
             const parsed = JSON.parse(raw);
-            return { ...DEFAULT_STATS, ...parsed, achievements: { ...DEFAULT_STATS.achievements, ...(parsed.achievements || {}) } };
+            return {
+                ...DEFAULT_STATS,
+                ...parsed,
+                achievements: { ...DEFAULT_STATS.achievements, ...(parsed.achievements || {}) },
+                modeStats: parsed.modeStats || {},
+            };
         } catch {
-            return { ...DEFAULT_STATS };
+            return { ...DEFAULT_STATS, modeStats: {} };
         }
     }
 
@@ -48,7 +64,24 @@ export class StatsService {
     }
 
     getStats() {
-        return { ...this.stats };
+        return { ...this.stats, modeStats: { ...this.stats.modeStats } };
+    }
+
+    /**
+     * Returns per-mode stats for a specific mode.
+     * @param {string} modeId - Mode identifier
+     * @returns {object} Mode stats (gamesPlayed, totalScore, bestScore, totalCorrect)
+     */
+    getModeStats(modeId) {
+        return { ...DEFAULT_MODE_STATS, ...(this.stats.modeStats[modeId] || {}) };
+    }
+
+    /**
+     * Returns all per-mode stats.
+     * @returns {object} Map of modeId → mode stats
+     */
+    getAllModeStats() {
+        return { ...this.stats.modeStats };
     }
 
     /**
@@ -67,8 +100,8 @@ export class StatsService {
     }
 
     /**
-     * Called after every finished game.
-     * @param {object} payload - { correct, wrong, elapsedSeconds, totalCountries }
+     * Called after every finished game (legacy method for backward compatibility).
+     * @param {object} payload - { correct, wrong, elapsedSeconds }
      */
     recordGame({ correct = 0, wrong = 0, elapsedSeconds = 0 } = {}) {
         const today = this.today();
@@ -99,6 +132,114 @@ export class StatsService {
         return this.getStats();
     }
 
+    /**
+     * Records an individual game session with mode-specific stats.
+     * Updates both global stats and per-mode stats.
+     *
+     * @param {object} sessionResults - Full session results from GameSessionManager
+     * @param {string} sessionResults.modeId - Mode identifier
+     * @param {number} sessionResults.totalScore - Total score for the session
+     * @param {number} sessionResults.correct - Number of correct answers
+     * @param {number} sessionResults.wrong - Number of wrong answers
+     * @param {number} sessionResults.elapsedSeconds - Total session time
+     * @param {number} [sessionResults.powerUpsUsed] - Power-ups used this session
+     * @returns {object} Updated stats
+     */
+    recordIndividualGame(sessionResults) {
+        const { modeId, totalScore = 0, correct = 0, wrong = 0, elapsedSeconds = 0, powerUpsUsed = 0 } = sessionResults;
+
+        // Update global stats via existing method
+        this.recordGame({ correct, wrong, elapsedSeconds });
+
+        // Update per-mode stats
+        if (modeId) {
+            if (!this.stats.modeStats[modeId]) {
+                this.stats.modeStats[modeId] = { ...DEFAULT_MODE_STATS };
+            }
+            const mode = this.stats.modeStats[modeId];
+            mode.gamesPlayed += 1;
+            mode.totalScore += totalScore;
+            mode.totalCorrect += correct;
+            if (totalScore > mode.bestScore) {
+                mode.bestScore = totalScore;
+            }
+        }
+
+        // Update modesCompleted counter
+        if (modeId) {
+            this.updateModesCompleted(modeId);
+        }
+
+        // Update powerUpsUsed counter
+        if (powerUpsUsed > 0) {
+            this.updatePowerUpsUsed(powerUpsUsed);
+        }
+
+        this.save();
+        return this.getStats();
+    }
+
+    /**
+     * Updates the modesCompleted list in localStorage.
+     * @param {string} modeId - Mode just completed
+     * @returns {string[]} Updated list of completed modes
+     */
+    updateModesCompleted(modeId) {
+        try {
+            const stored = localStorage.getItem(MODES_COMPLETED_KEY);
+            const modes = stored ? JSON.parse(stored) : [];
+            if (!modes.includes(modeId)) {
+                modes.push(modeId);
+                localStorage.setItem(MODES_COMPLETED_KEY, JSON.stringify(modes));
+            }
+            return modes;
+        } catch {
+            return [modeId];
+        }
+    }
+
+    /**
+     * Gets the list of modes completed at least once.
+     * @returns {string[]}
+     */
+    getModesCompleted() {
+        try {
+            const stored = localStorage.getItem(MODES_COMPLETED_KEY);
+            return stored ? JSON.parse(stored) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Updates the cumulative power-ups used counter.
+     * @param {number} count - Number of power-ups used this session
+     * @returns {number} Updated total
+     */
+    updatePowerUpsUsed(count) {
+        try {
+            const stored = localStorage.getItem(POWERUPS_USED_KEY);
+            const total = (stored ? parseInt(stored, 10) : 0) + count;
+            localStorage.setItem(POWERUPS_USED_KEY, total.toString());
+            return total;
+        } catch {
+            return count;
+        }
+    }
+
+    /**
+     * Gets the cumulative power-ups used count.
+     * @returns {number}
+     */
+    getPowerUpsUsed() {
+        try {
+            const stored = localStorage.getItem(POWERUPS_USED_KEY);
+            return stored ? parseInt(stored, 10) : 0;
+        } catch {
+            return 0;
+        }
+    }
+
     recordCountryCorrect(countryCode) {
         if (!countryCode) return;
         if (!this.stats.uniqueCountriesCorrect.includes(countryCode)) {
@@ -119,7 +260,7 @@ export class StatsService {
     }
 
     reset() {
-        this.stats = { ...DEFAULT_STATS, achievements: { ...DEFAULT_STATS.achievements } };
+        this.stats = { ...DEFAULT_STATS, achievements: { ...DEFAULT_STATS.achievements }, modeStats: {} };
         this.save();
     }
 

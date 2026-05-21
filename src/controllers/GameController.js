@@ -4,10 +4,14 @@ import { GameService } from '../services/GameService.js';
 import { GameView } from '../views/GameView.js';
 
 /**
- * Main controller orchestrating the flag guessing game
+ * Main controller orchestrating the flag guessing game (team modes: Bandera Flash / Capital Quest)
  */
 export class GameController {
-    constructor() {
+    /**
+     * @param {Object} [options] - Optional configuration
+     * @param {function} [options.onGameEnd] - Callback invoked when the game ends, receives { teamScores, elapsedSeconds, totalFlags }
+     */
+    constructor(options = {}) {
         this.gameState = new GameState();
         this.countryService = new CountryService();
         this.gameService = new GameService(this.gameState);
@@ -19,6 +23,7 @@ export class GameController {
         this.defaultCountdownSeconds = 4;
         this.practiceCountdownSeconds = 2;
         this.countryInfoRevealed = false;
+        this.onGameEnd = options.onGameEnd || null;
         
         this.initializeGame();
     }
@@ -99,6 +104,49 @@ export class GameController {
         this.displayCurrentFlag();
     }
 
+    /**
+     * Starts the game with externally provided config and country pool.
+     * Used by GameSessionManager to orchestrate team modes.
+     *
+     * @param {Object} config - Configuration from ParametrizationView
+     * @param {string} config.continent - Continent filter
+     * @param {string} config.sovereigntyStatus - Sovereignty filter
+     * @param {number} config.maxCount - Country count
+     * @param {boolean} [config.practiceMode] - Practice mode toggle
+     * @param {boolean} [config.randomOrder] - Random order toggle
+     * @param {Object} [config.modeOptions] - Mode-specific options (teams, hintMode)
+     * @param {string} config.modeId - Mode identifier ('banderaFlash' or 'capitalQuest')
+     * @param {import('../models/Country.js').Country[]} pool - Pre-filtered country pool
+     */
+    startWithConfig(config, pool) {
+        if (!pool || pool.length === 0) {
+            alert('No countries match the selected filters');
+            return;
+        }
+
+        this.filteredCountries = pool;
+
+        // Map mode ID to internal game mode
+        const gameMode = config.modeId === 'capitalQuest' ? 'capitals' : 'flags';
+
+        // Configure game state from external config
+        this.gameState.isPracticeMode = config.practiceMode || false;
+        this.gameState.gameMode = gameMode;
+        this.gameState.isRandomMode = config.randomOrder !== false;
+        this.gameState.capitalsHintMode = config.modeOptions?.hintMode || 'flagAndName';
+
+        this.gameService.startGame(this.filteredCountries);
+        this.view.updateStartButton(true);
+        this.view.setFiltersEnabled(false);
+        this.view.hideSettingsPanel();
+        this.view.setSettingsButtonVisible(false);
+        this.resetTeamScores();
+        this.startTimer();
+        this.view.showProgressContainer();
+        this.updateProgress();
+        this.displayCurrentFlag();
+    }
+
     endGame() {
         this.gameService.endGame();
         this.stopTimer();
@@ -114,6 +162,17 @@ export class GameController {
         this.view.hideProgressContainer();
         this.updateMaxCountriesLimit();
         this.resetTeamScores();
+
+        // Notify GameSessionManager that the game ended
+        if (this.onGameEnd) {
+            const elapsed = this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0;
+            this.onGameEnd({
+                teamScores: { ...this.gameState.teamScores },
+                elapsedSeconds: elapsed,
+                totalFlags: this.filteredCountries.length,
+            });
+        }
+
         // Return to landing after game ends
         document.body.classList.add('landing-mode');
     }
@@ -335,5 +394,22 @@ export class GameController {
         if (teamColor) {
             this.handleTeamScore(teamColor);
         }
+    }
+
+    /**
+     * Stops the game (alias for endGame, used by GameSessionManager).
+     */
+    stop() {
+        if (this.gameState.isActive) {
+            this.endGame();
+        }
+    }
+
+    /**
+     * Cleans up the controller (used by GameSessionManager).
+     */
+    destroy() {
+        this.stop();
+        this.stopTimer();
     }
 }

@@ -6,9 +6,20 @@ import { WordDropService } from '../services/WordDropService.js';
 import { WordDropView } from '../views/WordDropView.js';
 
 export class WordDropController {
-    constructor(countryService, statsService) {
+    /**
+     * @param {object} countryService - Country data service
+     * @param {object} statsService - Stats persistence service
+     * @param {object} [options] - Optional callbacks for GameSessionManager integration
+     * @param {function} [options.onGameEnd] - Callback when game ends with results data
+     * @param {function} [options.onCorrectAnswer] - Callback when a word is guessed correctly
+     * @param {function} [options.onIncorrectAnswer] - Callback when a word is guessed incorrectly or times out
+     */
+    constructor(countryService, statsService, options = {}) {
         this.countryService = countryService;
         this.statsService = statsService;
+        this.onGameEnd = options.onGameEnd || null;
+        this.onCorrectAnswer = options.onCorrectAnswer || null;
+        this.onIncorrectAnswer = options.onIncorrectAnswer || null;
         this.service = new WordDropService();
         this.view = new WordDropView();
 
@@ -204,6 +215,13 @@ export class WordDropController {
             }
         }
 
+        // Notify streak callbacks for GameSessionManager integration
+        if (result.correct) {
+            if (this.onCorrectAnswer) this.onCorrectAnswer();
+        } else {
+            if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+        }
+
         // If wrong in survival mode, lose a life
         if (!result.correct && this.isSurvivalMode) {
             this.lives--;
@@ -231,6 +249,9 @@ export class WordDropController {
 
         this.totalScore -= 15;
         this.view.updateScore(Math.max(0, this.totalScore));
+
+        // Notify streak callback for GameSessionManager integration
+        if (this.onIncorrectAnswer) this.onIncorrectAnswer();
 
         if (this.isSurvivalMode) {
             this.lives--;
@@ -264,6 +285,9 @@ export class WordDropController {
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showTimeoutFeedback(this.service.currentRound.word, this.service.currentRound.country?.flagUrl);
 
+        // Notify streak callback for GameSessionManager integration
+        if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+
         // Survival mode: lose a life
         if (this.isSurvivalMode) {
             this.lives--;
@@ -285,7 +309,20 @@ export class WordDropController {
         this.isActive = false;
         this.clearPendingTimers();
 
-        // Record game in stats
+        // Build game-end data for GameSessionManager integration
+        const endData = {
+            totalScore: Math.max(0, this.totalScore),
+            roundsReached: this.currentIndex,
+            roundHistory: this.buildRoundHistory(),
+        };
+
+        // If managed by GameSessionManager, route through onGameEnd callback
+        if (this.onGameEnd) {
+            this.onGameEnd(endData);
+            return;
+        }
+
+        // Legacy standalone mode: record game in stats directly
         if (this.statsService) {
             this.statsService.recordGame({
                 correct: this.currentIndex,
@@ -295,6 +332,33 @@ export class WordDropController {
         }
 
         this.showEndModal();
+    }
+
+    /**
+     * Builds a round history array compatible with GameSessionManager.
+     * @returns {Array<{correct: boolean, points: number, timeRemaining: number}>}
+     * @private
+     */
+    buildRoundHistory() {
+        // WordDropController doesn't track per-round history internally,
+        // so we build a synthetic one based on final state
+        const history = [];
+        // We don't have detailed per-round data, so provide what we can
+        for (let i = 0; i < this.currentIndex; i++) {
+            history.push({
+                correct: true, // approximation — detailed tracking would require more state
+                points: 0,
+                timeRemaining: 0,
+            });
+        }
+        // Mark incorrect rounds based on lives lost
+        if (this.isSurvivalMode) {
+            const livesLost = Math.max(0, 3 - this.lives);
+            for (let i = 0; i < livesLost && i < history.length; i++) {
+                history[history.length - 1 - i] = { correct: false, points: 0, timeRemaining: 0 };
+            }
+        }
+        return history;
     }
 
     /**

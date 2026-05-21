@@ -24,7 +24,7 @@ const MODAL_TEMPLATES = {
             <ol class="howto-steps">
                 <li>
                     <span class="howto-num">1</span>
-                    <div><h4>Elige tu modo</h4><p>Banderas, capitales o Letras en Caída desde Configuración.</p></div>
+                    <div><h4>Elige tu modo</h4><p>Bandera Flash, Capital Quest, Letras en Caída y más desde el selector de modos.</p></div>
                 </li>
                 <li>
                     <span class="howto-num">2</span>
@@ -71,6 +71,32 @@ const MODAL_TEMPLATES = {
             const bestTime = stats.bestTimeSeconds
                 ? `${Math.floor(stats.bestTimeSeconds / 60)}:${String(stats.bestTimeSeconds % 60).padStart(2, '0')}`
                 : '—';
+
+            // Per-mode stats section
+            const modeStats = stats.modeStats || {};
+            const modeNames = {
+                flagRush: '🚩 Flag Rush',
+                capitalClash: '⚔️ Capital Clash',
+                streakBlitz: '⚡ Streak Blitz',
+                geoPuzzle: '🧩 Geo Puzzle',
+                supervivencia: '💀 Supervivencia',
+                banderaFlash: '🏴 Bandera Flash',
+                capitalQuest: '🏛️ Capital Quest',
+                letrasEnCaida: '✏️ Letras en Caída',
+            };
+
+            const modeStatsHtml = Object.entries(modeNames)
+                .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0)
+                .map(([id, name]) => {
+                    const m = modeStats[id];
+                    return `
+                        <div class="mode-stat-row">
+                            <span class="mode-stat-name">${name}</span>
+                            <span class="mode-stat-detail">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'} · Mejor: ${m.bestScore.toLocaleString()}</span>
+                        </div>
+                    `;
+                }).join('');
+
             return `
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -101,6 +127,12 @@ const MODAL_TEMPLATES = {
                 <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);text-align:center;margin-top:8px">
                     Banderas únicas acertadas: <strong style="color:#ec4899">${stats.uniqueCountriesCorrect.length}</strong>
                 </p>
+                ${modeStatsHtml ? `
+                    <div class="mode-stats-section">
+                        <h3 class="mode-stats-title">Estadísticas por modo</h3>
+                        ${modeStatsHtml}
+                    </div>
+                ` : ''}
             `;
         }
     },

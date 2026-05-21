@@ -1,190 +1,250 @@
-import { GameController } from './controllers/GameController.js';
-import { WordDropController } from './controllers/WordDropController.js';
+import { AppRouter } from './AppRouter.js';
+import { GameSessionManager } from './controllers/GameSessionManager.js';
+import { CountryService } from './services/CountryService.js';
 import { StatsService } from './services/StatsService.js';
+import { AchievementService } from './services/AchievementService.js';
+import { ModeSelectorView } from './views/ModeSelectorView.js';
+import { ParametrizationView } from './views/ParametrizationView.js';
+import { GameEndModalView } from './views/GameEndModalView.js';
+import { AchievementToast } from './views/AchievementToast.js';
 import { AppMenu } from './views/AppMenu.js';
 
 /**
- * Application entry point
+ * Application entry point.
+ *
+ * Uses AppRouter for screen navigation and GameSessionManager for game orchestration.
+ * The flow is: Landing → ModeSelector → Parametrization → Game → (Results) → Landing.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    const controller = new GameController();
+    const countryService = new CountryService();
     const statsService = new StatsService();
-    const wordDropController = new WordDropController(controller.countryService, statsService);
+    const achievementService = new AchievementService();
 
-    const appMenu = new AppMenu({
+    const router = new AppRouter();
+
+    // Game container is the .game-wrapper element
+    const gameContainer = document.querySelector('.game-wrapper');
+
+    // Session manager orchestrates all game modes
+    const sessionManager = new GameSessionManager({
+        container: gameContainer,
+        countryService,
         statsService,
-        onPlay: () => exitLanding(controller, wordDropController),
-        onOpenSettings: () => {
-            const filterContainer = document.getElementById('filterContainer');
-            if (filterContainer) {
-                filterContainer.classList.add('show');
+        achievementService,
+        onSessionEnd: (results) => {
+            handleSessionEnd(results, router, gameEndModal);
+            // Show achievement toast notifications
+            if (results.newAchievements && results.newAchievements.length > 0) {
+                achievementToast.show(results.newAchievements);
             }
         },
-        onHome: () => appMenu.updateMotivationUI()
     });
 
-    wireSettingsPersistence();
-    wireLandingHero(controller, wordDropController, appMenu);
-    wireStatsTracking(controller, statsService, appMenu);
-    wireWordDropModeToggle();
+    // Game end modal for showing results
+    const gameEndModal = new GameEndModalView({
+        onPlayAgain: (modeId) => handlePlayAgain(modeId, router),
+        onHome: () => router.reset('landing'),
+    });
 
-    // Re-restore settings after GameController finishes async init
-    // (initializeGame overwrites maxCountries after loading countries)
+    // Achievement toast for unlock notifications
+    const achievementToast = new AchievementToast();
+
+    // Views for mode selection and parametrization
+    let modeSelectorView = null;
+    let parametrizationView = null;
+    let selectedModeId = null;
+
+    // App menu (drawer)
+    const appMenu = new AppMenu({
+        statsService,
+        onPlay: () => router.navigate('modeSelector'),
+        onOpenSettings: () => router.navigate('modeSelector'),
+        onHome: () => {
+            router.reset('landing');
+            appMenu.updateMotivationUI();
+        },
+    });
+
+    // Listen for navigation events to initialize/destroy views
+    document.addEventListener('app:navigate', (event) => {
+        const { screen, params } = event.detail;
+
+        switch (screen) {
+            case 'landing':
+                destroyViews();
+                appMenu.updateMotivationUI();
+                break;
+
+            case 'modeSelector':
+                destroyViews();
+                modeSelectorView = new ModeSelectorView({
+                    onSelect: (modeId) => {
+                        selectedModeId = modeId;
+                        router.navigate('parametrization', { modeId });
+                    },
+                });
+                break;
+
+            case 'parametrization':
+                if (modeSelectorView) {
+                    modeSelectorView.destroy();
+                    modeSelectorView = null;
+                }
+                const modeId = params.modeId || selectedModeId;
+                if (!modeId) {
+                    router.back();
+                    return;
+                }
+                parametrizationView = new ParametrizationView({
+                    countryService,
+                    onBack: () => router.back(),
+                    onPlay: (config) => startGame(config, router, sessionManager, countryService),
+                });
+                parametrizationView.setMode(modeId);
+                break;
+
+            case 'game':
+                if (parametrizationView) {
+                    parametrizationView.destroy();
+                    parametrizationView = null;
+                }
+                break;
+        }
+    });
+
+    // Wire Landing CTA → navigate to mode selector
+    const landingCTA = document.getElementById('landingCTA');
+    landingCTA?.addEventListener('click', () => {
+        router.navigate('modeSelector');
+    });
+
+    // Wire landing settings button → navigate to mode selector
+    const landingSettingsBtn = document.getElementById('landingSettingsBtn');
+    landingSettingsBtn?.addEventListener('click', () => {
+        router.navigate('modeSelector');
+    });
+
+    // Preserve settings persistence (legacy filter elements)
+    wireSettingsPersistence();
+
+    // Wait for country data to load, then restore settings
     const waitForInit = setInterval(() => {
-        if (controller.countryService.countries && controller.countryService.countries.length > 0) {
+        if (countryService.countries && countryService.countries.length > 0) {
             clearInterval(waitForInit);
             wireSettingsPersistence(true);
         }
     }, 50);
-});
 
-function exitLanding(controller, wordDropController) {
-    const gameModeFilter = document.getElementById('gameModeFilter');
-    const gameMode = gameModeFilter?.value || 'flags';
-
-    document.body.classList.remove('landing-mode');
-
-    if (gameMode === 'wordDrop') {
-        startWordDropGame(controller, wordDropController);
-    } else {
-        document.getElementById('startButton')?.click();
-    }
-}
-
-/**
- * Starts a Word Drop game using the current filter settings.
- */
-function startWordDropGame(controller, wordDropController) {
-    const filters = controller.view.getFilterValues();
-    let countries = controller.countryService.filterCountries({
-        ...filters,
-        maxCount: undefined // get all matching, we'll slice after shuffle
+    // Load country data
+    countryService.loadCountries().catch(err => {
+        console.error('Failed to load countries:', err);
     });
 
-    if (countries.length === 0) {
-        alert('No countries match the selected filters');
-        document.body.classList.add('landing-mode');
+    /**
+     * Destroys mode selector and parametrization views.
+     */
+    function destroyViews() {
+        if (modeSelectorView) {
+            modeSelectorView.destroy();
+            modeSelectorView = null;
+        }
+        if (parametrizationView) {
+            parametrizationView.destroy();
+            parametrizationView = null;
+        }
+    }
+});
+
+/**
+ * Starts a game session with the given config from ParametrizationView.
+ */
+function startGame(config, router, sessionManager, countryService) {
+    const { modeId, continent, sovereigntyStatus, maxCount, modeOptions, practiceMode, randomOrder } = config;
+
+    // Filter the country pool
+    let pool = countryService.filterCountries({
+        continent,
+        sovereigntyStatus,
+        maxCount: undefined, // get all matching first
+    });
+
+    // Shuffle if random order (default)
+    if (randomOrder !== false) {
+        pool = [...pool];
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+    }
+
+    // Apply max count limit
+    if (maxCount && maxCount > 0 && maxCount < pool.length) {
+        pool = pool.slice(0, maxCount);
+    }
+
+    if (pool.length === 0) {
+        alert('No hay países que coincidan con los filtros seleccionados');
         return;
     }
 
-    // Shuffle first, then limit — ensures different countries each game
-    countries = [...countries];
-    for (let i = countries.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [countries[i], countries[j]] = [countries[j], countries[i]];
-    }
-    if (filters.maxCount && filters.maxCount > 0 && filters.maxCount < countries.length) {
-        countries = countries.slice(0, filters.maxCount);
-    }
+    // Navigate to game screen
+    router.navigate('game');
 
-    const categoryEl = document.getElementById('wordDropCategory');
-    const speedEl = document.getElementById('wordDropSpeed');
-    const difficultyEl = document.getElementById('wordDropDifficulty');
-    const survivalEl = document.getElementById('wordDropSurvival');
-
-    const difficulty = difficultyEl?.value || 'easy';
-    const showFlag = difficulty === 'easy';
-
-    wordDropController.start({
-        countries,
-        category: categoryEl?.value || 'country',
-        speed: speedEl?.value || 'normal',
-        showFlag,
-        survival: survivalEl?.checked !== false,
-        difficulty
-    });
+    // Start the session through GameSessionManager
+    sessionManager.startSession(modeId, {
+        modeOptions: modeOptions || {},
+        continent,
+        sovereignty: sovereigntyStatus,
+        maxCount,
+        practiceMode,
+        randomOrder,
+    }, pool);
 }
 
 /**
- * Wires the main landing CTA and return-to-landing on game end.
+ * Handles session end: shows the game end modal with results.
  */
-function wireLandingHero(controller, wordDropController, appMenu) {
-    const body = document.body;
-    const cta = document.getElementById('landingCTA');
-    const settingsBtn = document.getElementById('landingSettingsBtn');
+function handleSessionEnd(results, router, gameEndModal) {
+    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements } = results;
 
-    cta?.addEventListener('click', () => exitLanding(controller, wordDropController));
+    // Determine if this was a team mode
+    const teamModes = ['banderaFlash', 'capitalQuest'];
+    if (teamModes.includes(modeId) && results.roundHistory) {
+        // Team mode: show team scores
+        const teamScores = {};
+        // Build team scores from round history (simplified)
+        teamScores.red = results.correct || 0;
+        teamScores.blue = results.wrong || 0;
+        teamScores.green = 0;
 
-    // Settings gear button opens the config panel directly
-    settingsBtn?.addEventListener('click', () => {
-        const filterContainer = document.getElementById('filterContainer');
-        if (filterContainer) {
-            filterContainer.classList.add('show');
-        }
-    });
-
-    // Return to landing when the game end modal's "Play Again" is pressed
-    document.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target instanceof HTMLElement && target.classList.contains('modal-close-btn')) {
-            body.classList.add('landing-mode');
-            appMenu.updateMotivationUI();
-        }
-    });
-}
-
-/**
- * Hooks into GameController lifecycle to record stats without mutating it.
- * Wraps endGame so we capture results right before the modal is shown.
- */
-function wireStatsTracking(controller, statsService, appMenu) {
-    const originalEndGame = controller.endGame.bind(controller);
-    controller.endGame = function patchedEndGame() {
-        const scores = this.gameState.teamScores;
-        const correct = (scores?.red || 0) + (scores?.green || 0);
-        const wrong = scores?.blue || 0;
-        const elapsed = this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0;
-        statsService.recordGame({ correct, wrong, elapsedSeconds: elapsed });
-        appMenu.updateMotivationUI();
-        return originalEndGame();
-    };
-
-    // Track unique countries correct when a team scores (not blue = draw)
-    const originalHandleTeamScore = controller.handleTeamScore.bind(controller);
-    controller.handleTeamScore = function patchedHandleTeamScore(teamColor) {
-        if (teamColor !== 'blue' && this.countryInfoRevealed && this.gameState.isActive) {
-            const country = this.gameService.getCurrentCountry(this.filteredCountries);
-            if (country?.englishName) statsService.recordCountryCorrect(country.englishName);
-        }
-        return originalHandleTeamScore(teamColor);
-    };
-}
-
-
-
-/**
- * Shows/hides Word Drop specific options when the game mode changes.
- * Continent and sovereignty filters remain visible in all modes since
- * Word Drop also uses them to determine which countries to include.
- */
-function wireWordDropModeToggle() {
-    const gameModeFilter = document.getElementById('gameModeFilter');
-    const wordDropOptions = document.getElementById('wordDropOptions');
-    const capitalsOptions = document.getElementById('capitalsOptions');
-
-    if (!gameModeFilter || !wordDropOptions) return;
-
-    // Elements that only apply to the standard game modes (not Word Drop)
-    const standardOnlyEls = [
-        document.querySelector('.practice-mode-container')?.closest('.filter-row'),
-    ].filter(Boolean);
-
-    const toggleOptions = () => {
-        const mode = gameModeFilter.value;
-        const isWordDrop = mode === 'wordDrop';
-        const isCapitals = mode === 'capitals';
-
-        wordDropOptions.hidden = !isWordDrop;
-        if (capitalsOptions) capitalsOptions.hidden = !isCapitals;
-
-        standardOnlyEls.forEach(el => {
-            if (el) el.style.display = isWordDrop ? 'none' : '';
+        gameEndModal.showTeamResults({
+            modeId,
+            teamScores,
+            newAchievements: newAchievements || [],
         });
-    };
-
-    gameModeFilter.addEventListener('change', toggleOptions);
-    toggleOptions();
+    } else {
+        // Individual mode: show individual stats
+        gameEndModal.showIndividualResults({
+            modeId,
+            totalScore: totalScore || 0,
+            correct: correct || 0,
+            wrong: wrong || 0,
+            maxStreak: maxStreak || 0,
+            elapsedSeconds: elapsedSeconds || 0,
+            newAchievements: newAchievements || [],
+        });
+    }
 }
+
+/**
+ * Handles "Play Again" from the game end modal.
+ * Navigates back to parametrization with the same mode pre-selected.
+ */
+function handlePlayAgain(modeId, router) {
+    router.navigate('parametrization', { modeId });
+}
+
+// ─── Settings Persistence (Legacy) ─────────────────────────────────────────
 
 const SETTINGS_KEY = 'flagsQuiz_settings';
 
@@ -201,10 +261,6 @@ function wireSettingsPersistence(restoreOnly = false) {
         maxCountries: document.getElementById('maxCountries'),
         practiceMode: document.getElementById('practiceMode'),
         randomMode: document.getElementById('randomMode'),
-        wordDropDifficulty: document.getElementById('wordDropDifficulty'),
-        wordDropCategory: document.getElementById('wordDropCategory'),
-        wordDropSpeed: document.getElementById('wordDropSpeed'),
-        wordDropSurvival: document.getElementById('wordDropSurvival'),
         capitalsHintMode: document.getElementById('capitalsHintMode'),
     };
 
@@ -217,7 +273,6 @@ function wireSettingsPersistence(restoreOnly = false) {
     Object.entries(controls).forEach(([key, el]) => {
         if (!el) return;
         el.addEventListener('change', () => saveSettings(controls));
-        // Also listen to input for number fields
         if (el.type === 'number') {
             el.addEventListener('input', () => saveSettings(controls));
         }
@@ -253,14 +308,12 @@ function restoreSettings(controls) {
         if (el.type === 'checkbox') {
             el.checked = value;
         } else if (el.type === 'number') {
-            // Only restore if within valid range
             const max = parseInt(el.max, 10);
             const numVal = parseInt(value, 10);
             if (!isNaN(numVal) && (!max || numVal <= max) && numVal >= 1) {
                 el.value = value;
             }
         } else {
-            // Verify the value is a valid option for select elements
             if (el.tagName === 'SELECT') {
                 const options = Array.from(el.options).map(o => o.value);
                 if (options.includes(value)) {
