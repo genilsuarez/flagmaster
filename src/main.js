@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const appMenu = new AppMenu({
         statsService,
         onPlay: () => router.navigate('modeSelector'),
-        onOpenSettings: () => router.navigate('modeSelector'),
+        onOpenSettings: () => openSettingsModal(),
         onHome: () => {
             router.reset('landing');
             appMenu.updateMotivationUI();
@@ -119,11 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
         router.navigate('modeSelector');
     });
 
-    // Wire landing settings button → navigate to mode selector
+    // Wire landing settings button → open settings modal (separate from play flow)
     const landingSettingsBtn = document.getElementById('landingSettingsBtn');
-    landingSettingsBtn?.addEventListener('click', () => {
-        router.navigate('modeSelector');
-    });
+    landingSettingsBtn?.addEventListener('click', () => openSettingsModal());
 
     // Preserve settings persistence (legacy filter elements)
     wireSettingsPersistence();
@@ -243,6 +241,126 @@ function handleSessionEnd(results, router, gameEndModal) {
  */
 function handlePlayAgain(modeId, router) {
     router.navigate('parametrization', { modeId });
+}
+
+// ─── Settings Modal ─────────────────────────────────────────────────────────
+
+function openSettingsModal() {
+    if (document.querySelector('.settings-modal-overlay')) return; // already open
+
+    let saved = {};
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) saved = JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'settings-modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'settingsModalTitle');
+    overlay.innerHTML = `
+        <div class="settings-modal">
+            <div class="settings-modal__header">
+                <h2 id="settingsModalTitle" class="settings-modal__title">Preferencias</h2>
+                <button class="settings-modal__close" aria-label="Cerrar" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="settings-modal__body">
+                <div class="settings-field">
+                    <label class="settings-field__label" for="sm-continent">Continente</label>
+                    <select id="sm-continent" name="continentFilter" class="settings-field__control">
+                        <option value="All">🌍 Todos</option>
+                        <option value="Africa">🌍 África</option>
+                        <option value="America">🌎 América</option>
+                        <option value="Asia">🌏 Asia</option>
+                        <option value="Europe">🇪🇺 Europa</option>
+                        <option value="Oceania">🏝️ Oceanía</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label class="settings-field__label" for="sm-sovereign">Países incluidos</label>
+                    <select id="sm-sovereign" name="sovereignFilter" class="settings-field__control">
+                        <option value="All">🌐 Todos</option>
+                        <option value="Yes">🏳️ Estados soberanos</option>
+                        <option value="No">🏢 Territorios</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label class="settings-field__label" for="sm-max">Cantidad de países</label>
+                    <input id="sm-max" name="maxCountries" type="number" min="5" max="250"
+                           placeholder="Ej: 50" class="settings-field__control">
+                </div>
+                <label class="settings-toggle">
+                    <span class="settings-toggle__label">Orden aleatorio</span>
+                    <span class="settings-toggle__track">
+                        <input id="sm-random" name="randomMode" type="checkbox" class="settings-toggle__input">
+                        <span class="settings-toggle__thumb" aria-hidden="true"></span>
+                    </span>
+                </label>
+            </div>
+            <div class="settings-modal__footer">
+                <button class="settings-modal__cancel" type="button">Cancelar</button>
+                <button class="settings-modal__save" type="button">Guardar</button>
+            </div>
+        </div>
+    `;
+
+    // Populate with saved values
+    const modal = overlay.querySelector('.settings-modal');
+    const sel = (name) => modal.querySelector(`[name="${name}"]`);
+    if (saved.continentFilter) sel('continentFilter').value = saved.continentFilter;
+    if (saved.sovereignFilter) sel('sovereignFilter').value = saved.sovereignFilter;
+    if (saved.maxCountries)    sel('maxCountries').value    = saved.maxCountries;
+    sel('randomMode').checked = saved.randomMode !== false;
+
+    document.body.appendChild(overlay);
+    // Animate in
+    requestAnimationFrame(() => overlay.classList.add('is-open'));
+    modal.querySelector('.settings-modal__close').focus();
+
+    const close = () => {
+        overlay.classList.remove('is-open');
+        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    };
+
+    overlay.querySelector('.settings-modal__close').addEventListener('click', close);
+    overlay.querySelector('.settings-modal__cancel').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+    });
+
+    overlay.querySelector('.settings-modal__save').addEventListener('click', () => {
+        const next = {
+            continentFilter: sel('continentFilter').value,
+            sovereignFilter: sel('sovereignFilter').value,
+            maxCountries:    sel('maxCountries').value,
+            randomMode:      sel('randomMode').checked,
+        };
+        // Merge preserving other keys (gameMode, practiceMode, etc.)
+        try {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...saved, ...next }));
+        } catch (e) { /* quota exceeded */ }
+
+        // Sync legacy hidden inputs so ParametrizationView picks them up
+        const sync = {
+            continentFilter: document.getElementById('continentFilter'),
+            sovereignFilter: document.getElementById('sovereignFilter'),
+            maxCountries:    document.getElementById('maxCountries'),
+            randomMode:      document.getElementById('randomMode'),
+        };
+        if (sync.continentFilter) sync.continentFilter.value    = next.continentFilter;
+        if (sync.sovereignFilter) sync.sovereignFilter.value    = next.sovereignFilter;
+        if (sync.maxCountries)    sync.maxCountries.value       = next.maxCountries;
+        if (sync.randomMode)      sync.randomMode.checked       = next.randomMode;
+
+        close();
+    });
 }
 
 // ─── Settings Persistence (Legacy) ─────────────────────────────────────────
