@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedModeId = modeId;
                         router.navigate('parametrization', { modeId });
                     },
+                    onBack: () => router.back(),
                 });
                 break;
 
