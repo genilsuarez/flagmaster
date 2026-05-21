@@ -3177,12 +3177,14 @@ body.landing-mode .landing-hero {
 /* RESPONSIVE — New component breakpoints (mobile-first) */
 @media (max-width: 767px) {
     .mode-selector {
-        grid-template-columns: 1fr;
-        gap: var(--space-md);
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-sm);
+        max-width: 100%;
     }
 
     .mode-selector__heading {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
+        margin-bottom: var(--space-md);
     }
 
     .mode-selector {
@@ -3190,20 +3192,24 @@ body.landing-mode .landing-hero {
     }
 
     .mode-card {
-        padding: var(--space-md) var(--space-sm);
+        padding: var(--space-sm) var(--space-xs);
         align-items: center;
         text-align: center;
-        gap: var(--space-xs);
+        gap: 4px;
         aspect-ratio: 1 / 1;
         justify-content: center;
+        border-radius: var(--radius-md);
+        min-height: 0;
     }
 
     .mode-card__icon {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
+        line-height: 1;
     }
 
     .mode-card__name {
-        font-size: 0.82rem;
+        font-size: 0.7rem;
+        font-weight: 600;
         line-height: 1.2;
     }
 
@@ -3212,8 +3218,9 @@ body.landing-mode .landing-hero {
     }
 
     .mode-card__badge {
-        font-size: 0.58rem;
-        padding: 2px 5px;
+        font-size: 0.55rem;
+        padding: 2px 4px;
+        margin-top: 0;
     }
 
     .parametrization {
