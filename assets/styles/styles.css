@@ -3187,6 +3187,10 @@ body.landing-mode .landing-hero {
         margin-bottom: var(--space-md);
     }
 
+    .mode-selector {
+        gap: var(--space-sm);
+    }
+
     .mode-card {
         padding: var(--space-sm) var(--space-xs);
         align-items: center;
