@@ -199,7 +199,7 @@ export class ModeSelectorView {
      * @private
      */
     _getColumnCount() {
-        return window.innerWidth > 767 ? 2 : 1;
+        return window.innerWidth > 767 ? 2 : 3;
     }
 
     /**
