@@ -254,6 +254,26 @@ function openSettingsModal() {
         if (raw) saved = JSON.parse(raw);
     } catch (e) { /* ignore */ }
 
+    const continentOptions = [
+        { value: 'All',     label: '🌍 Todos' },
+        { value: 'Africa',  label: 'África' },
+        { value: 'America', label: 'América' },
+        { value: 'Asia',    label: 'Asia' },
+        { value: 'Europe',  label: 'Europa' },
+        { value: 'Oceania', label: 'Oceanía' },
+    ];
+    const sovereignOptions = [
+        { value: 'All', label: '🌐 Todos' },
+        { value: 'Yes', label: '🏳️ Soberanos' },
+        { value: 'No',  label: '🏢 Territorios' },
+    ];
+
+    const activeCont = saved.continentFilter || 'All';
+    const activeSov  = saved.sovereignFilter || 'All';
+
+    const makeChips = (options, activeValue, name) =>
+        options.map(o => `<button type="button" class="settings-chip${o.value === activeValue ? ' is-selected' : ''}" data-group="${name}" data-value="${o.value}">${o.label}</button>`).join('');
+
     const overlay = document.createElement('div');
     overlay.className = 'settings-modal-overlay';
     overlay.setAttribute('role', 'dialog');
@@ -262,7 +282,10 @@ function openSettingsModal() {
     overlay.innerHTML = `
         <div class="settings-modal">
             <div class="settings-modal__header">
-                <h2 id="settingsModalTitle" class="settings-modal__title">Preferencias</h2>
+                <div class="settings-modal__header-text">
+                    <h2 id="settingsModalTitle" class="settings-modal__title">Ajustes de partida</h2>
+                    <p class="settings-modal__subtitle">Se aplicarán como punto de partida en cada juego</p>
+                </div>
                 <button class="settings-modal__close" aria-label="Cerrar" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
@@ -272,51 +295,51 @@ function openSettingsModal() {
             </div>
             <div class="settings-modal__body">
                 <div class="settings-field">
-                    <label class="settings-field__label" for="sm-continent">Continente</label>
-                    <select id="sm-continent" name="continentFilter" class="settings-field__control">
-                        <option value="All">🌍 Todos</option>
-                        <option value="Africa">🌍 África</option>
-                        <option value="America">🌎 América</option>
-                        <option value="Asia">🌏 Asia</option>
-                        <option value="Europe">🇪🇺 Europa</option>
-                        <option value="Oceania">🏝️ Oceanía</option>
-                    </select>
+                    <span class="settings-field__label">🌍 Continente</span>
+                    <div class="settings-chips" role="group" aria-label="Continente">
+                        ${makeChips(continentOptions, activeCont, 'continentFilter')}
+                    </div>
                 </div>
                 <div class="settings-field">
-                    <label class="settings-field__label" for="sm-sovereign">Países incluidos</label>
-                    <select id="sm-sovereign" name="sovereignFilter" class="settings-field__control">
-                        <option value="All">🌐 Todos</option>
-                        <option value="Yes">🏳️ Estados soberanos</option>
-                        <option value="No">🏢 Territorios</option>
-                    </select>
+                    <span class="settings-field__label">🏳️ Países incluidos</span>
+                    <div class="settings-chips" role="group" aria-label="Países incluidos">
+                        ${makeChips(sovereignOptions, activeSov, 'sovereignFilter')}
+                    </div>
                 </div>
                 <div class="settings-field">
-                    <label class="settings-field__label" for="sm-max">Cantidad de países</label>
+                    <label class="settings-field__label" for="sm-max">🔢 Cantidad máxima</label>
                     <input id="sm-max" name="maxCountries" type="number" min="5" max="250"
-                           placeholder="Ej: 50" class="settings-field__control">
+                           placeholder="Ej: 50 (dejar vacío = todos)" class="settings-field__control"
+                           value="${saved.maxCountries || ''}">
                 </div>
                 <label class="settings-toggle">
-                    <span class="settings-toggle__label">Orden aleatorio</span>
+                    <span class="settings-toggle__label">
+                        <span class="settings-toggle__label-text">🔀 Orden aleatorio</span>
+                        <span class="settings-toggle__label-hint">Mezcla las banderas en cada partida</span>
+                    </span>
                     <span class="settings-toggle__track">
-                        <input id="sm-random" name="randomMode" type="checkbox" class="settings-toggle__input">
+                        <input id="sm-random" name="randomMode" type="checkbox" class="settings-toggle__input"${saved.randomMode !== false ? ' checked' : ''}>
                         <span class="settings-toggle__thumb" aria-hidden="true"></span>
                     </span>
                 </label>
             </div>
             <div class="settings-modal__footer">
                 <button class="settings-modal__cancel" type="button">Cancelar</button>
-                <button class="settings-modal__save" type="button">Guardar</button>
+                <button class="settings-modal__save" type="button">Guardar ajustes</button>
             </div>
         </div>
     `;
 
-    // Populate with saved values
+    // Chip selection logic
+    overlay.addEventListener('click', (e) => {
+        const chip = e.target.closest('.settings-chip');
+        if (!chip) return;
+        const group = chip.dataset.group;
+        overlay.querySelectorAll(`.settings-chip[data-group="${group}"]`).forEach(c => c.classList.remove('is-selected'));
+        chip.classList.add('is-selected');
+    });
+
     const modal = overlay.querySelector('.settings-modal');
-    const sel = (name) => modal.querySelector(`[name="${name}"]`);
-    if (saved.continentFilter) sel('continentFilter').value = saved.continentFilter;
-    if (saved.sovereignFilter) sel('sovereignFilter').value = saved.sovereignFilter;
-    if (saved.maxCountries)    sel('maxCountries').value    = saved.maxCountries;
-    sel('randomMode').checked = saved.randomMode !== false;
 
     document.body.appendChild(overlay);
     // Animate in
@@ -335,12 +358,14 @@ function openSettingsModal() {
         if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
     });
 
-    overlay.querySelector('.settings-modal__save').addEventListener('click', () => {
+    const saveBtn = overlay.querySelector('.settings-modal__save');
+    saveBtn.addEventListener('click', () => {
+        const getChipValue = (group) => overlay.querySelector(`.settings-chip[data-group="${group}"].is-selected`)?.dataset.value || 'All';
         const next = {
-            continentFilter: sel('continentFilter').value,
-            sovereignFilter: sel('sovereignFilter').value,
-            maxCountries:    sel('maxCountries').value,
-            randomMode:      sel('randomMode').checked,
+            continentFilter: getChipValue('continentFilter'),
+            sovereignFilter: getChipValue('sovereignFilter'),
+            maxCountries:    modal.querySelector('[name="maxCountries"]').value,
+            randomMode:      modal.querySelector('[name="randomMode"]').checked,
         };
         // Merge preserving other keys (gameMode, practiceMode, etc.)
         try {
@@ -354,12 +379,15 @@ function openSettingsModal() {
             maxCountries:    document.getElementById('maxCountries'),
             randomMode:      document.getElementById('randomMode'),
         };
-        if (sync.continentFilter) sync.continentFilter.value    = next.continentFilter;
-        if (sync.sovereignFilter) sync.sovereignFilter.value    = next.sovereignFilter;
-        if (sync.maxCountries)    sync.maxCountries.value       = next.maxCountries;
-        if (sync.randomMode)      sync.randomMode.checked       = next.randomMode;
+        if (sync.continentFilter) sync.continentFilter.value = next.continentFilter;
+        if (sync.sovereignFilter) sync.sovereignFilter.value = next.sovereignFilter;
+        if (sync.maxCountries)    sync.maxCountries.value    = next.maxCountries;
+        if (sync.randomMode)      sync.randomMode.checked    = next.randomMode;
 
-        close();
+        // Brief confirmation then close
+        saveBtn.classList.add('is-saved');
+        saveBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> ¡Guardado!`;
+        setTimeout(close, 700);
     });
 }
 
