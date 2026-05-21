@@ -216,11 +216,20 @@
                 <h3 class="filter-panel-title">Configuración</h3>
                 <button class="filter-close-btn">✕</button>
             </div>
-            <select id="gameModeFilter" class="primary-control">
-                <option value="flags" selected>🏴 Modo Banderas</option>
-                <option value="capitals">🏛️ Modo Capitales</option>
-            </select>
-            
+            <div class="game-mode-tiles">
+                <label class="game-mode-tile" id="modeTileFlags">
+                    <input type="radio" name="gameModeRadio" value="flags" checked>
+                    <span class="tile-icon">🏴</span>
+                    <span class="tile-label">Banderas</span>
+                </label>
+                <label class="game-mode-tile" id="modeTileCapitals">
+                    <input type="radio" name="gameModeRadio" value="capitals">
+                    <span class="tile-icon">🏛️</span>
+                    <span class="tile-label">Capitales</span>
+                </label>
+            </div>
+            <select id="gameModeFilter" class="primary-control" aria-hidden="true" tabindex="-1" style="display:none"></select>
+
             <select id="continentFilter" class="secondary-control">
                 <option value="All">🌍 Todos los continentes</option>
                 <option value="Africa">🌍 África</option>
@@ -229,27 +238,49 @@
                 <option value="Europe">🇪🇺 Europa</option>
                 <option value="Oceania">🏝️ Oceanía</option>
             </select>
-            
+
             <select id="sovereignFilter" class="secondary-control">
                 <option value="All">🌐 Todos los países</option>
                 <option value="Yes" selected>🏳️ Estados soberanos</option>
                 <option value="No">🏢 Territorios</option>
             </select>
-            
+
             <input id="maxCountries" type="number" min="1" placeholder="Max Countries" class="secondary-control">
-            
-            <div class="practice-mode-container">
-                <input id="practiceMode" type="checkbox">
-                <label for="practiceMode">Modo Práctica</label>
-            </div>
-            
-            <div class="random-mode-container">
-                <input id="randomMode" type="checkbox" checked>
-                <label for="randomMode">Modo Aleatorio</label>
+
+            <div class="mode-toggles-grid">
+                <div class="practice-mode-container">
+                    <span class="toggle-icon">📚</span>
+                    <input id="practiceMode" type="checkbox">
+                    <label for="practiceMode">Práctica</label>
+                </div>
+                <div class="random-mode-container">
+                    <span class="toggle-icon">🔀</span>
+                    <input id="randomMode" type="checkbox" checked>
+                    <label for="randomMode">Aleatorio</label>
+                </div>
             </div>
         </div>
     </div>
     
+    <script>
+        // Sync game-mode radio tiles → hidden select
+        document.querySelectorAll('input[name="gameModeRadio"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const sel = document.getElementById('gameModeFilter');
+                sel.value = radio.value;
+                sel.dispatchEvent(new Event('change'));
+                document.querySelectorAll('.game-mode-tile').forEach(t => t.classList.remove('active'));
+                radio.closest('.game-mode-tile').classList.add('active');
+            });
+        });
+        // Set initial active tile
+        document.addEventListener('DOMContentLoaded', () => {
+            const checked = document.querySelector('input[name="gameModeRadio"]:checked');
+            if (checked) checked.closest('.game-mode-tile').classList.add('active');
+            // Seed the hidden select with the default value
+            document.getElementById('gameModeFilter').value = checked ? checked.value : 'flags';
+        });
+    </script>
     <script type="module" src="src/main.js"></script>
 </body>
 </html>
