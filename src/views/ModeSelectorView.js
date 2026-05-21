@@ -11,11 +11,13 @@ export class ModeSelectorView {
      * @param {HTMLElement} [options.container] - DOM container (defaults to #modeSelectorScreen)
      * @param {function(string): void} options.onSelect - Callback invoked with the selected mode id
      */
-    constructor({ container, onSelect }) {
+    constructor({ container, onSelect, onBack }) {
         /** @type {HTMLElement} */
         this.container = container || document.getElementById('modeSelectorScreen');
         /** @type {function(string): void} */
         this.onSelect = onSelect;
+        /** @type {function(): void} */
+        this.onBack = onBack;
         /** @type {number} Index of the currently focused card */
         this.focusedIndex = 0;
         /** @type {HTMLElement[]} Rendered card elements */
@@ -31,6 +33,16 @@ export class ModeSelectorView {
         if (!this.container) return;
 
         this.container.innerHTML = '';
+
+        if (this.onBack) {
+            const backBtn = document.createElement('button');
+            backBtn.className = 'mode-selector__back-btn';
+            backBtn.setAttribute('aria-label', 'Volver');
+            backBtn.type = 'button';
+            backBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg> Volver';
+            backBtn.addEventListener('click', () => this.onBack());
+            this.container.appendChild(backBtn);
+        }
 
         const heading = document.createElement('h2');
         heading.className = 'mode-selector__heading';
