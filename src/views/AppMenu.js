@@ -8,13 +8,13 @@ const MODAL_TEMPLATES = {
         title: 'Acerca de',
         body: () => `
             <div class="modal-section">
-                <p><strong>Flag Quiz</strong> es un juego interactivo para aprender las banderas y capitales de los países del mundo.</p>
+                <p><strong>Quiz de Banderas</strong> es un juego interactivo para aprender las banderas y capitales de todos los países del mundo.</p>
                 <p>Juega solo o compite con 2 equipos (con empate si responden al mismo tiempo), filtra por continente, activa el modo práctica o desafía tu memoria con el cronómetro.</p>
             </div>
             <div class="modal-section">
                 <h3>Créditos</h3>
-                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#ec4899">flagcdn.com</a>.</p>
-                <p>Construido con vanilla JavaScript y Vite.</p>
+                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#c77d5f">flagcdn.com</a>.</p>
+                <p>Diseñado y construido con vanilla JavaScript y Vite.</p>
             </div>
         `
     },
@@ -24,7 +24,7 @@ const MODAL_TEMPLATES = {
             <ol class="howto-steps">
                 <li>
                     <span class="howto-num">1</span>
-                    <div><h4>Elige tu modo</h4><p>Banderas o capitales desde Configuración.</p></div>
+                    <div><h4>Elige tu modo</h4><p>Bandera Flash, Capital Quest, Letras en Caída y más desde el selector de modos.</p></div>
                 </li>
                 <li>
                     <span class="howto-num">2</span>
@@ -32,13 +32,18 @@ const MODAL_TEMPLATES = {
                 </li>
                 <li>
                     <span class="howto-num">3</span>
-                    <div><h4>Pulsa Start Playing</h4><p>Verás una bandera y tendrás segundos para recordar el país.</p></div>
+                    <div><h4>Presiona ¡Jugar!</h4><p>Verás una bandera y tendrás que identificar de qué país se trata.</p></div>
                 </li>
                 <li>
                     <span class="howto-num">4</span>
-                    <div><h4>Anota el acierto</h4><p>Toca el equipo ganador (Red, Green o Draw) o usa las teclas R, G, B.</p></div>
+                    <div><h4>Anota los puntos</h4><p>Presiona el equipo ganador (Rojo, Verde o Azul) o usa las teclas R, G, B.</p></div>
                 </li>
             </ol>
+            <div class="modal-section" style="margin-top:18px">
+                <h3>✏️ Letras en Caída</h3>
+                <p>Las letras del nombre aparecen una por una. Presiona <strong>¡Ya sé!</strong> (o Espacio) cuando creas saber la respuesta. Mientras menos letras se hayan revelado, más puntos ganas.</p>
+                <p>En modo supervivencia tienes 3 vidas. Si la palabra se completa sin responder, pierdes una vida.</p>
+            </div>
         `
     },
     shortcuts: {
@@ -46,10 +51,13 @@ const MODAL_TEMPLATES = {
         body: () => `
             <table class="shortcuts-table">
                 <tbody>
-                    <tr><td><span class="key">R</span></td><td>Punto para el equipo rojo</td></tr>
-                    <tr><td><span class="key">G</span></td><td>Punto para el equipo verde</td></tr>
-                    <tr><td><span class="key">D</span></td><td>Empate (Draw)</td></tr>
-                    <tr><td><span class="key">Click</span></td><td>Sobre la bandera revela el país antes del tiempo</td></tr>
+                    <tr><td><span class="key">R</span></td><td>Punto para equipo rojo</td></tr>
+                    <tr><td><span class="key">G</span></td><td>Punto para equipo verde</td></tr>
+                    <tr><td><span class="key">B</span></td><td>Punto para equipo azul</td></tr>
+                    <tr><td><span class="key">S</span></td><td>Saltar bandera</td></tr>
+                    <tr><td><span class="key">Espacio</span></td><td>Revelar respuesta</td></tr>
+                    <tr><td><span class="key">Esc</span></td><td>Terminar juego</td></tr>
+                    <tr><td><span class="key">Click</span></td><td>Presiona la bandera para revelar</td></tr>
                 </tbody>
             </table>
         `
@@ -63,6 +71,32 @@ const MODAL_TEMPLATES = {
             const bestTime = stats.bestTimeSeconds
                 ? `${Math.floor(stats.bestTimeSeconds / 60)}:${String(stats.bestTimeSeconds % 60).padStart(2, '0')}`
                 : '—';
+
+            // Per-mode stats section
+            const modeStats = stats.modeStats || {};
+            const modeNames = {
+                flagRush: '🚩 Flag Rush',
+                capitalClash: '⚔️ Capital Clash',
+                streakBlitz: '⚡ Streak Blitz',
+                geoPuzzle: '🧩 Geo Puzzle',
+                supervivencia: '💀 Supervivencia',
+                banderaFlash: '🏴 Bandera Flash',
+                capitalQuest: '🏛️ Capital Quest',
+                letrasEnCaida: '✏️ Letras en Caída',
+            };
+
+            const modeStatsHtml = Object.entries(modeNames)
+                .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0)
+                .map(([id, name]) => {
+                    const m = modeStats[id];
+                    return `
+                        <div class="mode-stat-row">
+                            <span class="mode-stat-name">${name}</span>
+                            <span class="mode-stat-detail">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'} · Mejor: ${m.bestScore.toLocaleString()}</span>
+                        </div>
+                    `;
+                }).join('');
+
             return `
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -93,6 +127,12 @@ const MODAL_TEMPLATES = {
                 <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);text-align:center;margin-top:8px">
                     Banderas únicas acertadas: <strong style="color:#ec4899">${stats.uniqueCountriesCorrect.length}</strong>
                 </p>
+                ${modeStatsHtml ? `
+                    <div class="mode-stats-section">
+                        <h3 class="mode-stats-title">Estadísticas por modo</h3>
+                        ${modeStatsHtml}
+                    </div>
+                ` : ''}
             `;
         }
     },
@@ -263,12 +303,10 @@ export class AppMenu {
 
         const ctaText = document.querySelector('#landingCTA .cta-text');
         if (ctaText) {
-            if (stats.currentStreak > 0) {
-                ctaText.textContent = 'Continúa tu racha';
-            } else if (stats.gamesPlayed > 0) {
-                ctaText.textContent = 'Juega otra';
+            if (stats.gamesPlayed > 0) {
+                ctaText.textContent = '¡Jugar!';
             } else {
-                ctaText.textContent = 'Start Playing';
+                ctaText.textContent = 'Comenzar Juego';
             }
         }
     }

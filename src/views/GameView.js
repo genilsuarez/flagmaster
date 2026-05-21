@@ -18,6 +18,8 @@ export class GameView {
             sovereignFilter: document.getElementById('sovereignFilter'),
             gameModeFilter: document.getElementById('gameModeFilter'),
             startButton: this.createStartButton(),
+            endGameButton: document.getElementById('endGameButton'),
+            skipButton: document.getElementById('skipButton'),
             teamsContainer: this.createTeamsContainer(),
             maxCountriesInput: this.createMaxCountriesInput(),
             practiceModeCheckbox: this.createPracticeModeCheckbox(),
@@ -117,9 +119,9 @@ export class GameView {
 
     createTeamCounters(elements) {
         const teamConfigurations = [
-            { teamId: 'red', teamDisplayName: 'Red Team' },
-            { teamId: 'blue', teamDisplayName: 'Draw' },
-            { teamId: 'green', teamDisplayName: 'Green Team' }
+            { teamId: 'red', teamDisplayName: 'Equipo Rojo' },
+            { teamId: 'blue', teamDisplayName: 'Equipo Azul' },
+            { teamId: 'green', teamDisplayName: 'Equipo Verde' }
         ];
         const teamCounters = {};
         
@@ -193,15 +195,31 @@ export class GameView {
 
     updateFlagDisplay(country) {
         if (country) {
-            this.elements.countryInfo.hidden = true;
+            this.elements.countryInfo.classList.add('hidden-keep-space');
             this.elements.countryInfo.textContent = '';
             
-            // Swap flag immediately — CSS handles the crossfade
-            this.elements.flagImage.src = country.flagUrl;
-            
             if (this.gameState && this.gameState.gameMode === 'capitals') {
-                this.elements.countryInfo.textContent = country.displayName;
-                this.elements.countryInfo.hidden = false;
+                const hintMode = this.gameState.capitalsHintMode || 'flagAndName';
+                
+                // Show/hide flag based on hint mode
+                if (hintMode === 'nameOnly') {
+                    this.elements.flagImage.style.display = 'none';
+                } else {
+                    this.elements.flagImage.style.display = '';
+                    this.elements.flagImage.src = country.flagUrl;
+                }
+                
+                // Show/hide country name based on hint mode
+                if (hintMode === 'flagOnly') {
+                    this.elements.countryInfo.classList.add('hidden-keep-space');
+                } else {
+                    this.elements.countryInfo.textContent = country.displayName;
+                    this.elements.countryInfo.classList.remove('hidden-keep-space');
+                }
+            } else {
+                // Flags mode: show flag, hide name
+                this.elements.flagImage.style.display = '';
+                this.elements.flagImage.src = country.flagUrl;
             }
         }
     }
@@ -214,7 +232,16 @@ export class GameView {
     }
 
     updateStartButton(isGameActive) {
-        this.elements.startButton.textContent = isGameActive ? 'End Game' : 'Start Game';
+        this.elements.startButton.textContent = isGameActive ? 'Terminar' : '¡Jugar!';
+        this.elements.startButton.hidden = isGameActive;
+        
+        // Show/hide game action buttons
+        if (this.elements.endGameButton) {
+            this.elements.endGameButton.hidden = !isGameActive;
+        }
+        if (this.elements.skipButton) {
+            this.elements.skipButton.hidden = !isGameActive;
+        }
     }
 
     setFiltersEnabled(enabled) {
@@ -254,27 +281,27 @@ export class GameView {
         
         const maxScore = Math.max(...Object.values(teamScores));
         const winners = Object.keys(teamScores).filter(team => teamScores[team] === maxScore);
-        const teamNames = { red: 'Red Team', blue: 'Draw', green: 'Green Team' };
+        const teamNames = { red: 'Equipo Rojo', blue: 'Equipo Azul', green: 'Equipo Verde' };
         
         let winnerText;
         if (winners.length > 1) {
-            // Si hay empate entre equipos (red/green) y draw, el equipo gana
+            // Si hay empate entre equipos (red/green) y blue, el equipo gana
             if (winners.includes('blue') && (winners.includes('red') || winners.includes('green'))) {
                 const teamWinner = winners.find(team => team !== 'blue');
-                winnerText = `🏆 ${teamNames[teamWinner]} Wins!`;
+                winnerText = `🏆 ¡${teamNames[teamWinner]} Gana!`;
             } else {
-                winnerText = '🤝 It\'s a Tie!';
+                winnerText = '🤝 ¡Empate Total!';
             }
         } else if (winners[0] === 'blue') {
-            winnerText = '🤝 Most Draws!';
+            winnerText = '🤝 ¡Más Empates!';
         } else {
-            winnerText = `🏆 ${teamNames[winners[0]]} Wins!`;
+            winnerText = `🏆 ¡${teamNames[winners[0]]} Gana!`;
         }
         
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>🎉 Game Over! 🎉</h2>
+                    <h2>🎉 ¡Juego Terminado! 🎉</h2>
                 </div>
                 <div class="modal-body">
                     <div class="winner-announcement">
@@ -282,15 +309,15 @@ export class GameView {
                     </div>
                     <div class="final-scores">
                         <div class="score-item red">
-                            <span class="team-name">Red Team</span>
+                            <span class="team-name">Equipo Rojo</span>
                             <span class="score">${teamScores.red}</span>
                         </div>
                         <div class="score-item blue">
-                            <span class="team-name">Draw</span>
+                            <span class="team-name">Equipo Azul</span>
                             <span class="score">${teamScores.blue}</span>
                         </div>
                         <div class="score-item green">
-                            <span class="team-name">Green Team</span>
+                            <span class="team-name">Equipo Verde</span>
                             <span class="score">${teamScores.green}</span>
                         </div>
                     </div>
@@ -324,7 +351,7 @@ export class GameView {
             if (currentCountry) {
                 this.elements.countryInfo.textContent = currentCountry.displayName;
             }
-            this.elements.countryInfo.hidden = false;
+            this.elements.countryInfo.classList.remove('hidden-keep-space');
         }
     }
 
@@ -337,12 +364,12 @@ export class GameView {
     }
 
     hideCountryInfo() {
-        this.elements.countryInfo.hidden = true;
+        this.elements.countryInfo.classList.add('hidden-keep-space');
     }
 
     clearCountryInfo() {
-        this.elements.countryInfo.textContent = 'Country Name';
-        this.elements.countryInfo.hidden = true;
+        this.elements.countryInfo.textContent = '';
+        this.elements.countryInfo.classList.add('hidden-keep-space');
     }
 
     updateProgress(current, total) {
@@ -399,12 +426,14 @@ export class GameView {
     }
 
     setDefaultFlag() {
+        this.elements.flagImage.style.display = '';
         this.elements.flagImage.src = "https://flagcdn.com/un.svg";
     }
 
     getFilterValues() {
         const practiceInput = this.elements.practiceModeCheckbox?.querySelector('input');
         const randomInput = this.elements.randomModeCheckbox?.querySelector('input');
+        const capitalsHintMode = document.getElementById('capitalsHintMode');
         
         return {
             continent: this.elements.continentFilter?.value || 'All',
@@ -412,7 +441,8 @@ export class GameView {
             gameMode: this.elements.gameModeFilter?.value || 'flags',
             maxCount: parseInt(this.elements.maxCountriesInput?.value || '50', 10),
             practiceMode: practiceInput?.checked || false,
-            randomMode: randomInput?.checked || true
+            randomMode: randomInput?.checked || true,
+            capitalsHintMode: capitalsHintMode?.value || 'flagAndName'
         };
     }
 
