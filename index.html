@@ -58,11 +58,11 @@
             <p id="landingProgress" class="landing-progress" hidden>
                 Has acertado <strong class="progress-current">0</strong> de <strong class="progress-total">250</strong> banderas
             </p>
-            <div class="landing-actions">
-                <button id="landingCTA" class="landing-cta" type="button">
-                    <span class="cta-text">Comenzar Juego</span>
-                    <span aria-hidden="true">→</span>
-                </button>
+        </div>
+
+        <section class="landing-modes-section" aria-label="Modos de juego">
+            <div class="landing-modes-header">
+                <h2 class="landing-modes-label">Elige tu modo y empieza ya</h2>
                 <button id="landingSettingsBtn" class="landing-settings-btn" type="button" aria-label="Ajustes de partida">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="3"/>
@@ -71,47 +71,8 @@
                     <span class="landing-settings-btn__label" aria-hidden="true">Ajustes</span>
                 </button>
             </div>
-        </div>
-
-        <div class="landing-aurora" aria-hidden="true"></div>
-
-        <div class="landing-flags-grid" aria-hidden="true">
-            <img src="https://flagcdn.com/w80/br.png" alt="" loading="lazy" decoding="async" width="80" height="53">
-            <img src="https://flagcdn.com/w80/jp.png" alt="" loading="lazy" decoding="async" width="80" height="53">
-            <img src="https://flagcdn.com/w80/fr.png" alt="" loading="lazy" decoding="async" width="80" height="53">
-            <img src="https://flagcdn.com/w80/de.png" alt="" loading="lazy" decoding="async" width="80" height="60">
-            <img src="https://flagcdn.com/w80/ca.png" alt="" loading="lazy" decoding="async" width="80" height="40">
-            <img src="https://flagcdn.com/w80/us.png" alt="" loading="lazy" decoding="async" width="80" height="42">
-            <img src="https://flagcdn.com/w80/mx.png" alt="" loading="lazy" decoding="async" width="80" height="46">
-            <img src="https://flagcdn.com/w80/it.png" alt="" loading="lazy" decoding="async" width="80" height="53">
-            <img src="https://flagcdn.com/w80/in.png" alt="" loading="lazy" decoding="async" width="80" height="53">
-            <img src="https://flagcdn.com/w80/za.png" alt="" loading="lazy" decoding="async" width="80" height="53">
-            <img src="https://flagcdn.com/w80/au.png" alt="" loading="lazy" decoding="async" width="80" height="40">
-            <img src="https://flagcdn.com/w80/ar.png" alt="" loading="lazy" decoding="async" width="80" height="50">
-        </div>
-
-        <ol class="landing-steps">
-            <li>
-                <span class="step-num">01</span>
-                <h3>Desafía tu memoria</h3>
-                <p>Bandera Flash, Capital Quest y más.</p>
-            </li>
-            <li>
-                <span class="step-num">02</span>
-                <h3>Enfócate en una región</h3>
-                <p>Filtra por África, Europa, Asia, América u Oceanía.</p>
-            </li>
-            <li>
-                <span class="step-num">03</span>
-                <h3>Compite con amigos</h3>
-                <p>2 equipos compiten y hay empate si responden al mismo tiempo.</p>
-            </li>
-            <li>
-                <span class="step-num">04</span>
-                <h3>Supérate a ti mismo</h3>
-                <p>Modo práctica y cronómetro para romper tu récord.</p>
-            </li>
-        </ol>
+            <div id="landingModesGrid" class="landing-modes-grid"></div>
+        </section>
     </section>
 
     <!-- ===== APP DRAWER (menú hamburguesa) ===== -->

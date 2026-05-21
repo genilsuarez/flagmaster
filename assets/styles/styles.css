@@ -1062,11 +1062,11 @@ body.landing-mode #filterContainer:not(.show) {
 body.landing-mode .landing-hero {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
     color: var(--charcoal);
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -1168,13 +1168,11 @@ body.landing-mode .landing-hero {
 .landing-hero-content {
     position: relative;
     z-index: 2;
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     text-align: center;
-    padding: 0 var(--space-2xl);
+    padding: var(--space-xl) var(--space-2xl) var(--space-lg);
     max-width: 900px;
     margin: 0 auto;
     width: 100%;
@@ -1208,11 +1206,11 @@ body.landing-mode .landing-hero {
 
 .landing-title {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 9vw, 5.5rem);
+    font-size: clamp(2.2rem, 6vw, 4rem);
     font-weight: 400;
     line-height: 0.95;
     letter-spacing: -0.03em;
-    margin: var(--space-2xl) 0 var(--space-xl);
+    margin: var(--space-xl) 0 var(--space-md);
     color: var(--ink);
     display: flex;
     flex-direction: column;
@@ -1437,6 +1435,65 @@ body.landing-mode .landing-hero {
 .landing-progress strong {
     color: var(--terracotta);
     font-weight: 700;
+}
+
+/* LANDING MODES SECTION */
+.landing-modes-section {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 var(--space-xl) var(--space-2xl);
+    opacity: 0;
+    animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 300ms;
+}
+
+.landing-modes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+    gap: var(--space-md);
+}
+
+.landing-modes-label {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--stone);
+    margin: 0;
+}
+
+/* Mode cards inside landing grid: 4 columns, more compact */
+.landing-modes-grid .mode-selector {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 100%;
+    gap: var(--space-md);
+}
+
+.landing-modes-grid .mode-card {
+    padding: var(--space-md) var(--space-lg);
+    gap: var(--space-xs);
+}
+
+.landing-modes-grid .mode-card__icon {
+    font-size: 1.5rem;
+}
+
+.landing-modes-grid .mode-card__name {
+    font-size: 1rem;
+}
+
+.landing-modes-grid .mode-card__description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.75rem;
 }
 
 /* STREAK BADGE */
@@ -2440,21 +2497,26 @@ body.landing-mode .landing-hero {
         font-size: 0.85rem;
     }
 
-    .landing-actions {
-        gap: var(--space-sm);
-    }
-
     .landing-settings-btn {
         min-width: 48px;
         padding: 6px 8px;
     }
 
-    .landing-steps {
-        display: none;
+    .landing-modes-section {
+        padding: 0 var(--space-md) var(--space-xl);
     }
 
-    .landing-aurora {
-        opacity: 0.04;
+    .landing-modes-grid .mode-selector {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-sm);
+    }
+
+    .landing-modes-grid .mode-card {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .landing-modes-grid .mode-card__description {
+        display: none;
     }
 }
 

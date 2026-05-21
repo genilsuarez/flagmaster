@@ -11,13 +11,15 @@ export class ModeSelectorView {
      * @param {HTMLElement} [options.container] - DOM container (defaults to #modeSelectorScreen)
      * @param {function(string): void} options.onSelect - Callback invoked with the selected mode id
      */
-    constructor({ container, onSelect, onBack }) {
+    constructor({ container, onSelect, onBack, showHeading = true }) {
         /** @type {HTMLElement} */
         this.container = container || document.getElementById('modeSelectorScreen');
         /** @type {function(string): void} */
         this.onSelect = onSelect;
         /** @type {function(): void} */
         this.onBack = onBack;
+        /** @type {boolean} */
+        this.showHeading = showHeading;
         /** @type {number} Index of the currently focused card */
         this.focusedIndex = 0;
         /** @type {HTMLElement[]} Rendered card elements */
@@ -44,10 +46,12 @@ export class ModeSelectorView {
             this.container.appendChild(backBtn);
         }
 
-        const heading = document.createElement('h2');
-        heading.className = 'mode-selector__heading';
-        heading.textContent = 'Elige un Modo de Juego';
-        this.container.appendChild(heading);
+        if (this.showHeading) {
+            const heading = document.createElement('h2');
+            heading.className = 'mode-selector__heading';
+            heading.textContent = 'Elige un Modo de Juego';
+            this.container.appendChild(heading);
+        }
 
         const grid = document.createElement('div');
         grid.className = 'mode-selector';

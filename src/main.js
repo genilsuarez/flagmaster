@@ -50,14 +50,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const achievementToast = new AchievementToast();
 
     // Views for mode selection and parametrization
-    let modeSelectorView = null;
     let parametrizationView = null;
     let selectedModeId = null;
 
-    // App menu (drawer)
+    // Landing mode grid — rendered once, stays alive with the landing hero
+    const landingModesGrid = document.getElementById('landingModesGrid');
+    new ModeSelectorView({
+        container: landingModesGrid,
+        showHeading: false,
+        onSelect: (modeId) => startGameFromLanding(modeId, router, sessionManager, countryService),
+    });
+
+    // App menu (drawer) — "Jugar ahora" goes back to landing (modes are there)
     const appMenu = new AppMenu({
         statsService,
-        onPlay: () => router.navigate('modeSelector'),
+        onPlay: () => router.reset('landing'),
         onOpenSettings: () => openSettingsModal(),
         onHome: () => {
             router.reset('landing');
@@ -71,26 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch (screen) {
             case 'landing':
-                destroyViews();
+                if (parametrizationView) {
+                    parametrizationView.destroy();
+                    parametrizationView = null;
+                }
                 appMenu.updateMotivationUI();
                 break;
 
-            case 'modeSelector':
-                destroyViews();
-                modeSelectorView = new ModeSelectorView({
-                    onSelect: (modeId) => {
-                        selectedModeId = modeId;
-                        router.navigate('parametrization', { modeId });
-                    },
-                    onBack: () => router.back(),
-                });
-                break;
-
-            case 'parametrization':
-                if (modeSelectorView) {
-                    modeSelectorView.destroy();
-                    modeSelectorView = null;
-                }
+            case 'parametrization': {
                 const modeId = params.modeId || selectedModeId;
                 if (!modeId) {
                     router.back();
@@ -103,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 parametrizationView.setMode(modeId);
                 break;
+            }
 
             case 'game':
                 if (parametrizationView) {
@@ -113,13 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Wire Landing CTA → navigate to mode selector
-    const landingCTA = document.getElementById('landingCTA');
-    landingCTA?.addEventListener('click', () => {
-        router.navigate('modeSelector');
-    });
-
-    // Wire landing settings button → open settings modal (separate from play flow)
+    // Wire landing settings button → open settings modal
     const landingSettingsBtn = document.getElementById('landingSettingsBtn');
     landingSettingsBtn?.addEventListener('click', () => openSettingsModal());
 
@@ -153,6 +143,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+/**
+ * Starts a game directly from the landing mode grid using saved settings as defaults.
+ */
+function startGameFromLanding(modeId, router, sessionManager, countryService) {
+    let saved = {};
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) saved = JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+
+    const config = {
+        modeId,
+        continent: saved.continentFilter || 'All',
+        sovereigntyStatus: saved.sovereignFilter || 'All',
+        maxCount: parseInt(saved.maxCountries, 10) || 0,
+        modeOptions: {},
+        practiceMode: false,
+        randomOrder: saved.randomMode !== false,
+    };
+
+    startGame(config, router, sessionManager, countryService);
+}
 
 /**
  * Starts a game session with the given config from ParametrizationView.
