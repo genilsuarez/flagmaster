@@ -1,0 +1,66 @@
+/**
+ * Mode-specific option definitions for the BottomSheetView configuration panel.
+ * Each mode defines its own set of configurable options with schema:
+ * { id, label, type, default, min?, max?, options? }
+ *
+ * Consumed by BottomSheetView and any component needing mode configuration metadata.
+ */
+export const MODE_OPTIONS = {
+    flagRush: [
+        { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 10, min: 5, max: 30 },
+        { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 5, max: 50 },
+    ],
+    capitalClash: [
+        { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 15, min: 5, max: 30 },
+        { id: 'variant', label: 'Variante', type: 'select', options: [
+            { value: 'default', label: 'País → Capital' },
+            { value: 'inverse', label: 'Capital → País' },
+        ], default: 'default' },
+        { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 5, max: 50 },
+    ],
+    streakBlitz: [
+        { id: 'sessionTime', label: 'Tiempo de sesión (s)', type: 'number', default: 90, min: 30, max: 180 },
+        { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 10, min: 5, max: 20 },
+    ],
+    geoPuzzle: [
+        { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 3, max: 30 },
+    ],
+    supervivencia: [
+        { id: 'timePerQuestion', label: 'Tiempo inicial (s)', type: 'number', default: 15, min: 10, max: 30 },
+    ],
+    banderaFlash: [
+        { id: 'teams', label: 'Número de equipos', type: 'number', default: 2, min: 2, max: 4 },
+    ],
+    capitalQuest: [
+        { id: 'teams', label: 'Número de equipos', type: 'number', default: 2, min: 2, max: 4 },
+        { id: 'hintMode', label: 'Pista', type: 'select', options: [
+            { value: 'flagAndName', label: 'Bandera + Nombre del país' },
+            { value: 'flagOnly', label: 'Solo bandera' },
+            { value: 'nameOnly', label: 'Solo nombre del país' },
+        ], default: 'flagAndName' },
+    ],
+    letrasEnCaida: [
+        { id: 'difficulty', label: 'Dificultad', type: 'select', options: [
+            { value: 'easy', label: '🟢 Fácil — Con bandera' },
+            { value: 'hard', label: '🔴 Difícil — Sin bandera' },
+        ], default: 'easy' },
+        { id: 'category', label: 'Categoría', type: 'select', options: [
+            { value: 'country', label: '🌍 Países' },
+            { value: 'capital', label: '🏛️ Capitales' },
+        ], default: 'country' },
+        { id: 'speed', label: 'Velocidad', type: 'select', options: [
+            { value: 'slow', label: '🐢 Lento' },
+            { value: 'normal', label: '⚡ Normal' },
+            { value: 'fast', label: '🚀 Rápido' },
+        ], default: 'normal' },
+    ],
+};
+
+/**
+ * Returns the options array for a given mode ID.
+ * @param {string} modeId - The mode identifier (e.g. 'flagRush', 'capitalQuest')
+ * @returns {Array<{id: string, label: string, type: string, default: *, min?: number, max?: number, options?: Array<{value: string, label: string}>}>}
+ */
+export function getOptionsForMode(modeId) {
+    return MODE_OPTIONS[modeId] || [];
+}

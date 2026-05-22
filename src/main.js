@@ -3,17 +3,17 @@ import { GameSessionManager } from './controllers/GameSessionManager.js';
 import { CountryService } from './services/CountryService.js';
 import { StatsService } from './services/StatsService.js';
 import { AchievementService } from './services/AchievementService.js';
-import { ModeSelectorView } from './views/ModeSelectorView.js';
-import { ParametrizationView } from './views/ParametrizationView.js';
+import { BottomSheetView } from './views/BottomSheetView.js';
 import { GameEndModalView } from './views/GameEndModalView.js';
 import { AchievementToast } from './views/AchievementToast.js';
 import { AppMenu } from './views/AppMenu.js';
+import { GAME_MODES } from './models/ModeDefinition.js';
 
 /**
  * Application entry point.
  *
  * Uses AppRouter for screen navigation and GameSessionManager for game orchestration.
- * The flow is: Landing → ModeSelector → Parametrization → Game → (Results) → Landing.
+ * The flow is: Home → BottomSheet (config) → Game → (Results) → Home.
  */
 document.addEventListener('DOMContentLoaded', () => {
     const countryService = new CountryService();
@@ -25,6 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Game container is the .game-wrapper element
     const gameContainer = document.querySelector('.game-wrapper');
 
+    // Bottom sheet for game configuration
+    const bottomSheet = new BottomSheetView({
+        countryService,
+        onPlay: (config) => startGame(config, router, sessionManager, countryService),
+        onDismiss: () => {
+            // Sheet closed without playing — no action needed
+        },
+    });
+
     // Session manager orchestrates all game modes
     const sessionManager = new GameSessionManager({
         container: gameContainer,
@@ -32,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statsService,
         achievementService,
         onSessionEnd: (results) => {
-            handleSessionEnd(results, router, gameEndModal);
+            handleSessionEnd(results, router, gameEndModal, bottomSheet);
             // Show achievement toast notifications
             if (results.newAchievements && results.newAchievements.length > 0) {
                 achievementToast.show(results.newAchievements);
@@ -42,95 +51,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Game end modal for showing results
     const gameEndModal = new GameEndModalView({
-        onPlayAgain: (modeId) => handlePlayAgain(modeId, router),
-        onHome: () => router.reset('landing'),
+        onPlayAgain: (modeId) => handlePlayAgain(modeId, router, bottomSheet),
+        onHome: () => router.reset('home'),
     });
 
     // Achievement toast for unlock notifications
     const achievementToast = new AchievementToast();
 
-    // Views for mode selection and parametrization
-    let modeSelectorView = null;
-    let parametrizationView = null;
-    let selectedModeId = null;
-
     // App menu (drawer)
     const appMenu = new AppMenu({
         statsService,
-        onPlay: () => router.navigate('modeSelector'),
+        onPlay: () => bottomSheet.open(null), // open sheet without pre-selected mode (fallback)
         onOpenSettings: () => openSettingsModal(),
         onHome: () => {
-            router.reset('landing');
+            router.reset('home');
             appMenu.updateMotivationUI();
         },
     });
 
-    // Listen for navigation events to initialize/destroy views
+    // Listen for navigation events to manage view lifecycle
     document.addEventListener('app:navigate', (event) => {
         const { screen, params } = event.detail;
 
         switch (screen) {
-            case 'landing':
-                destroyViews();
+            case 'home':
                 appMenu.updateMotivationUI();
-                break;
-
-            case 'modeSelector':
-                destroyViews();
-                modeSelectorView = new ModeSelectorView({
-                    onSelect: (modeId) => {
-                        selectedModeId = modeId;
-                        router.navigate('parametrization', { modeId });
-                    },
-                    onBack: () => router.back(),
-                });
-                break;
-
-            case 'parametrization':
-                if (modeSelectorView) {
-                    modeSelectorView.destroy();
-                    modeSelectorView = null;
-                }
-                const modeId = params.modeId || selectedModeId;
-                if (!modeId) {
-                    router.back();
-                    return;
-                }
-                parametrizationView = new ParametrizationView({
-                    countryService,
-                    onBack: () => router.back(),
-                    onPlay: (config) => startGame(config, router, sessionManager, countryService),
-                });
-                parametrizationView.setMode(modeId);
+                updateLandingProgress(statsService, countryService);
                 break;
 
             case 'game':
-                if (parametrizationView) {
-                    parametrizationView.destroy();
-                    parametrizationView = null;
-                }
+                // Game screen is managed by GameSessionManager
                 break;
         }
     });
 
-    // Wire Landing CTA → navigate to mode selector
-    const landingCTA = document.getElementById('landingCTA');
-    landingCTA?.addEventListener('click', () => {
-        router.navigate('modeSelector');
-    });
-
-    // Wire landing settings button → open settings modal (separate from play flow)
-    const landingSettingsBtn = document.getElementById('landingSettingsBtn');
-    landingSettingsBtn?.addEventListener('click', () => openSettingsModal());
-
     // Preserve settings persistence (legacy filter elements)
     wireSettingsPersistence();
 
-    // Wait for country data to load, then restore settings
+    // Wait for country data to load, then initialize and restore settings
     const waitForInit = setInterval(() => {
         if (countryService.countries && countryService.countries.length > 0) {
             clearInterval(waitForInit);
             wireSettingsPersistence(true);
+
+            // Update landing progress text
+            updateLandingProgress(statsService, countryService);
+
+            // Render mode cards directly into the landing
+            renderModeCards(bottomSheet);
+
+            // Wire settings button to open settings modal
+            const settingsBtn = document.getElementById('landingSettingsBtn');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => openSettingsModal());
+            }
         }
     }, 50);
 
@@ -138,24 +112,85 @@ document.addEventListener('DOMContentLoaded', () => {
     countryService.loadCountries().catch(err => {
         console.error('Failed to load countries:', err);
     });
-
-    /**
-     * Destroys mode selector and parametrization views.
-     */
-    function destroyViews() {
-        if (modeSelectorView) {
-            modeSelectorView.destroy();
-            modeSelectorView = null;
-        }
-        if (parametrizationView) {
-            parametrizationView.destroy();
-            parametrizationView = null;
-        }
-    }
 });
 
 /**
- * Starts a game session with the given config from ParametrizationView.
+ * Updates the landing progress text with current stats.
+ */
+function updateLandingProgress(statsService, countryService) {
+    const progressEl = document.getElementById('landingProgress');
+    if (!progressEl) return;
+
+    try {
+        const stats = statsService.getStats();
+        const uniqueCorrect = Array.isArray(stats.uniqueCountriesCorrect) ? stats.uniqueCountriesCorrect.length : 0;
+        const total = countryService.countries.length;
+
+        const currentEl = progressEl.querySelector('.progress-current');
+        const totalEl = progressEl.querySelector('.progress-total');
+
+        if (currentEl) currentEl.textContent = uniqueCorrect;
+        if (totalEl) totalEl.textContent = total;
+
+        progressEl.hidden = false;
+    } catch {
+        // Ignore errors
+    }
+}
+
+/**
+ * Renders mode cards directly into the landing hero.
+ * Clicking a card opens the BottomSheet for that mode.
+ */
+function renderModeCards(bottomSheet) {
+    const container = document.getElementById('modeCardsContainer');
+    if (!container) return;
+
+    const modes = Object.values(GAME_MODES);
+    const teamModes = modes.filter(m => m.category === 'team');
+    const individualModes = modes.filter(m => m.category === 'individual');
+
+    // Team section
+    const teamLabel = document.createElement('h3');
+    teamLabel.className = 'landing-modes__label';
+    teamLabel.textContent = 'Modos en Equipo';
+    container.appendChild(teamLabel);
+
+    const teamGrid = document.createElement('div');
+    teamGrid.className = 'landing-modes__grid';
+    teamModes.forEach(mode => teamGrid.appendChild(createModeCard(mode, bottomSheet)));
+    container.appendChild(teamGrid);
+
+    // Individual section
+    const indLabel = document.createElement('h3');
+    indLabel.className = 'landing-modes__label';
+    indLabel.textContent = 'Modos Individuales';
+    container.appendChild(indLabel);
+
+    const indGrid = document.createElement('div');
+    indGrid.className = 'landing-modes__grid';
+    individualModes.forEach(mode => indGrid.appendChild(createModeCard(mode, bottomSheet)));
+    container.appendChild(indGrid);
+}
+
+/**
+ * Creates a single mode card button.
+ */
+function createModeCard(mode, bottomSheet) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'landing-mode-card';
+    btn.setAttribute('aria-label', `${mode.name} — ${mode.category === 'team' ? 'Equipos' : 'Individual'}`);
+    btn.innerHTML = `
+        <span class="landing-mode-card__icon" aria-hidden="true">${mode.icon}</span>
+        <span class="landing-mode-card__name">${mode.name}</span>
+    `;
+    btn.addEventListener('click', () => bottomSheet.open(mode.id));
+    return btn;
+}
+
+/**
+ * Starts a game session with the given config from BottomSheetView.
  */
 function startGame(config, router, sessionManager, countryService) {
     const { modeId, continent, sovereigntyStatus, maxCount, modeOptions, practiceMode, randomOrder } = config;
@@ -203,8 +238,11 @@ function startGame(config, router, sessionManager, countryService) {
 /**
  * Handles session end: shows the game end modal with results.
  */
-function handleSessionEnd(results, router, gameEndModal) {
+function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
     const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements } = results;
+
+    // Navigate back to home
+    router.reset('home');
 
     // Determine if this was a team mode
     const teamModes = ['banderaFlash', 'capitalQuest'];
@@ -237,10 +275,14 @@ function handleSessionEnd(results, router, gameEndModal) {
 
 /**
  * Handles "Play Again" from the game end modal.
- * Navigates back to parametrization with the same mode pre-selected.
+ * Opens the BottomSheet for the same mode to allow quick replay.
  */
-function handlePlayAgain(modeId, router) {
-    router.navigate('parametrization', { modeId });
+function handlePlayAgain(modeId, router, bottomSheet) {
+    router.reset('home');
+    // Open bottom sheet for the mode after a brief delay to let the home screen render
+    setTimeout(() => {
+        bottomSheet.open(modeId);
+    }, 100);
 }
 
 // ─── Settings Modal ─────────────────────────────────────────────────────────
@@ -347,7 +389,7 @@ function openSettingsModal() {
             localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...saved, ...next }));
         } catch (e) { /* quota exceeded */ }
 
-        // Sync legacy hidden inputs so ParametrizationView picks them up
+        // Sync legacy hidden inputs for settings persistence
         const sync = {
             continentFilter: document.getElementById('continentFilter'),
             sovereignFilter: document.getElementById('sovereignFilter'),

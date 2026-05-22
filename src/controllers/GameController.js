@@ -108,7 +108,7 @@ export class GameController {
      * Starts the game with externally provided config and country pool.
      * Used by GameSessionManager to orchestrate team modes.
      *
-     * @param {Object} config - Configuration from ParametrizationView
+     * @param {Object} config - Configuration from BottomSheetView
      * @param {string} config.continent - Continent filter
      * @param {string} config.sovereigntyStatus - Sovereignty filter
      * @param {number} config.maxCount - Country count

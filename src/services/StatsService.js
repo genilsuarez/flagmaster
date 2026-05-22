@@ -22,6 +22,7 @@ const DEFAULT_STATS = {
     currentStreak: 0,
     longestStreak: 0,
     lastPlayedDate: null,
+    lastPlayedMode: null,
     uniqueCountriesCorrect: [],
     achievements: {
         explorer: false,    // 10 correct answers total
@@ -74,6 +75,14 @@ export class StatsService {
      */
     getModeStats(modeId) {
         return { ...DEFAULT_MODE_STATS, ...(this.stats.modeStats[modeId] || {}) };
+    }
+
+    /**
+     * Returns the last played mode ID, or null if no game has been played.
+     * @returns {string|null}
+     */
+    getLastPlayedMode() {
+        return this.stats.lastPlayedMode || null;
     }
 
     /**
@@ -150,6 +159,11 @@ export class StatsService {
 
         // Update global stats via existing method
         this.recordGame({ correct, wrong, elapsedSeconds });
+
+        // Track last played mode
+        if (modeId) {
+            this.stats.lastPlayedMode = modeId;
+        }
 
         // Update per-mode stats
         if (modeId) {

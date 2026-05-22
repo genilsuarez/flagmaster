@@ -173,7 +173,7 @@ export class AppMenu {
 
         this.drawer = document.getElementById('appDrawer');
         this.overlay = document.getElementById('drawerOverlay');
-        this.menuBtn = document.getElementById('landingMenuBtn');
+        this.menuBtn = document.getElementById('homeMenuBtn') || document.querySelector('[data-action="menu"]');
         this.closeBtn = document.getElementById('drawerCloseBtn');
         this.modal = document.getElementById('appModal');
         this.modalTitle = document.getElementById('appModalTitle');
@@ -187,6 +187,15 @@ export class AppMenu {
         this.menuBtn?.addEventListener('click', () => this.openDrawer());
         this.closeBtn?.addEventListener('click', () => this.closeDrawer());
         this.overlay?.addEventListener('click', () => this.closeDrawer());
+
+        // Event delegation for dynamically rendered menu buttons
+        document.addEventListener('click', (e) => {
+            const menuTrigger = e.target.closest('[data-action="menu"]');
+            if (menuTrigger && !this.menuBtn) {
+                this.menuBtn = menuTrigger;
+                this.openDrawer();
+            }
+        });
 
         // Drawer items
         this.drawer?.querySelectorAll('.drawer-item').forEach(btn => {
@@ -207,24 +216,26 @@ export class AppMenu {
     }
 
     openDrawer() {
+        if (!this.menuBtn) {
+            this.menuBtn = document.getElementById('homeMenuBtn') || document.querySelector('[data-action="menu"]');
+        }
         this.overlay.classList.add('show');
         this.drawer.classList.add('open');
         this.drawer.setAttribute('aria-hidden', 'false');
-        this.menuBtn.setAttribute('aria-expanded', 'true');
+        this.menuBtn?.setAttribute('aria-expanded', 'true');
     }
 
     closeDrawer() {
         this.overlay.classList.remove('show');
         this.drawer.classList.remove('open');
         this.drawer.setAttribute('aria-hidden', 'true');
-        this.menuBtn.setAttribute('aria-expanded', 'false');
+        this.menuBtn?.setAttribute('aria-expanded', 'false');
     }
 
     handleDrawerAction(action) {
         switch (action) {
             case 'home':
                 this.closeDrawer();
-                document.body.classList.add('landing-mode');
                 this.updateMotivationUI();
                 this.onHome?.();
                 break;
@@ -290,24 +301,6 @@ export class AppMenu {
             }
         }
 
-        const progressEl = document.getElementById('landingProgress');
-        if (progressEl) {
-            const count = stats.uniqueCountriesCorrect?.length || 0;
-            if (count > 0) {
-                progressEl.hidden = false;
-                progressEl.querySelector('.progress-current').textContent = count;
-            } else {
-                progressEl.hidden = true;
-            }
-        }
 
-        const ctaText = document.querySelector('#landingCTA .cta-text');
-        if (ctaText) {
-            if (stats.gamesPlayed > 0) {
-                ctaText.textContent = '¡Jugar!';
-            } else {
-                ctaText.textContent = 'Comenzar Juego';
-            }
-        }
     }
 }
