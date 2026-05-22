@@ -32,7 +32,7 @@ export class CapitalClashController {
     static DEFAULT_ROUNDS = 10;
 
     /** @type {number} Feedback display duration in milliseconds */
-    static FEEDBACK_DELAY_MS = 300;
+    static FEEDBACK_DELAY_MS = 1500;
 
     /**
      * @param {Object} options
@@ -88,7 +88,8 @@ export class CapitalClashController {
      * @param {string} [modeOptions.variant] - 'default' or 'inverse' (default 'default')
      */
     start(countryPool, modeOptions = {}) {
-        this.pool = countryPool.slice();
+        // Filter out countries without a valid capital
+        this.pool = countryPool.filter(c => c.capital && c.capital !== 'Sin capital' && c.capital !== 'Desconocida');
         this.totalRounds = modeOptions.rounds || CapitalClashController.DEFAULT_ROUNDS;
         this.timePerQuestion = modeOptions.timePerQuestion || CapitalClashController.DEFAULT_TIME;
         this.variant = modeOptions.variant || 'default';

@@ -115,12 +115,12 @@ describe('HomeView', () => {
         expect(cards.length).toBe(2);
     });
 
-    it('renders 6 mode cards in individual section', () => {
+    it('renders 5 mode cards in individual section', () => {
         const view = new HomeView({ container, statsService, countryService, onModeSelect });
         view.render();
         const indGrid = container.querySelector('.home-view__section--individual .home-view__modes-grid');
         const cards = indGrid.querySelectorAll('.mode-card');
-        expect(cards.length).toBe(6);
+        expect(cards.length).toBe(5);
     });
 
     it('calls onModeSelect when a mode card is clicked', () => {
@@ -148,7 +148,7 @@ describe('HomeView', () => {
         // Engagement section should still exist (not re-rendered from scratch)
         expect(container.querySelector('.engagement-section')).not.toBeNull();
         // Mode cards should still be there
-        expect(container.querySelectorAll('.mode-card').length).toBe(8);
+        expect(container.querySelectorAll('.mode-card').length).toBe(7);
     });
 
     it('destroy() removes the element from the DOM', () => {

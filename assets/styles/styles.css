@@ -79,12 +79,12 @@ body {
 /* GAME WRAPPER — Quiz Show Stage */
 .game-wrapper {
     max-width: 640px;
-    margin: var(--space-lg) auto;
+    margin: var(--space-sm) auto;
     background: linear-gradient(165deg, var(--warm-white) 0%, var(--cream-bg) 100%);
     border-radius: var(--radius-xl);
     box-shadow: 0 12px 48px rgba(28, 25, 23, 0.15),
                 0 0 0 1px var(--warm-gray);
-    overflow: hidden;
+    overflow: clip;
     position: relative;
     animation: stageEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -361,7 +361,14 @@ body {
 
 /* CONTAINER — Main Stage Area */
 .container {
-    padding: var(--space-2xl) var(--space-xl) var(--space-xl);
+    padding: var(--space-md) var(--space-md) var(--space-sm);
+    text-align: center;
+    position: relative;
+}
+
+/* GAME MODE CONTENT — Render target for individual mode controllers */
+.game-mode-content {
+    padding: var(--space-md) var(--space-md) var(--space-lg);
     text-align: center;
     position: relative;
 }
@@ -369,35 +376,21 @@ body {
 /* FLAG — Center Stage Hero with Dramatic Presence */
 .flag {
     width: 100%;
-    max-width: 380px;
-    height: 220px;
+    max-width: 320px;
+    height: 180px;
     object-fit: contain;
-    margin: 0 auto var(--space-xl);
+    margin: 0 auto var(--space-md);
     border-radius: var(--radius-lg);
-    box-shadow: 0 0 0 5px var(--warm-white),
-                0 0 0 8px var(--terracotta),
-                0 16px 48px rgba(28, 25, 23, 0.2);
+    box-shadow: 0 0 0 4px var(--warm-white),
+                0 0 0 6px var(--terracotta),
+                0 12px 36px rgba(28, 25, 23, 0.18);
     border: none;
     background: linear-gradient(135deg, var(--soft-sand) 0%, var(--warm-white) 100%);
-    padding: var(--space-lg);
+    padding: var(--space-md);
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     cursor: pointer;
     display: block;
     position: relative;
-    animation: flagReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    animation-delay: 0.2s;
-    animation-fill-mode: both;
-}
-
-@keyframes flagReveal {
-    from {
-        opacity: 0;
-        transform: scale(0.8) rotateY(90deg);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) rotateY(0deg);
-    }
 }
 
 .flag:hover {
@@ -423,7 +416,7 @@ body {
 .supervivencia-flag {
     width: 100%;
     max-width: 240px;
-    max-height: 150px;
+    height: 130px;
     object-fit: contain;
     margin: 0 auto var(--space-sm);
     border-radius: var(--radius-lg);
@@ -433,8 +426,6 @@ body {
     background: linear-gradient(135deg, var(--soft-sand) 0%, var(--warm-white) 100%);
     padding: var(--space-sm);
     display: block;
-    animation: flagReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    animation-fill-mode: both;
 }
 
 /* FLAG RUSH — Layout */
@@ -479,6 +470,392 @@ body {
     margin-top: var(--space-sm);
 }
 
+/* CAPITAL CLASH — Layout */
+.capital-clash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-xs);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, rgba(107, 143, 163, 0.08) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(107, 143, 163, 0.2);
+}
+
+.capital-clash-score {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.capital-clash-progress {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-weight: 500;
+}
+
+.capital-clash-timer {
+    margin: var(--space-xs) 0;
+}
+
+.capital-clash-streak {
+    min-height: 0;
+}
+
+.capital-clash-prompt {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--ink);
+    margin: var(--space-sm) 0;
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, rgba(107, 143, 163, 0.06) 0%, rgba(107, 143, 163, 0.12) 100%);
+    border-radius: var(--radius-md);
+    border: 2px dashed rgba(107, 143, 163, 0.3);
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.capital-clash-options {
+    margin-top: var(--space-sm);
+}
+
+.capital-clash-powerups {
+    margin-top: var(--space-sm);
+}
+
+/* STREAK BLITZ — Layout */
+.streak-blitz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-xs);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, rgba(196, 154, 92, 0.08) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(196, 154, 92, 0.2);
+}
+
+.streak-blitz-score {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.streak-blitz-question-count {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-weight: 500;
+}
+
+.streak-blitz-session-timer {
+    margin: var(--space-xs) 0;
+    opacity: 0.5;
+    transform: scaleY(0.6);
+    transform-origin: center;
+}
+
+.streak-blitz-question-timer {
+    margin: var(--space-xs) 0;
+}
+
+.streak-blitz-streak {
+    min-height: 0;
+}
+
+.streak-blitz-prompt {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--ink);
+    margin: var(--space-sm) 0;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.streak-blitz-options {
+    margin-top: var(--space-sm);
+}
+
+.streak-blitz-powerups {
+    margin-top: var(--space-sm);
+}
+
+/* SUPERVIVENCIA — Layout */
+.supervivencia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-xs);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, rgba(160, 75, 56, 0.08) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(160, 75, 56, 0.2);
+}
+
+.supervivencia-score {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.supervivencia-lives {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+}
+
+.supervivencia-round {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-weight: 500;
+}
+
+.supervivencia-timer {
+    margin: var(--space-xs) 0;
+}
+
+.supervivencia-streak {
+    min-height: 0;
+}
+
+.supervivencia-prompt {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--ink);
+    margin: var(--space-md) 0;
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.supervivencia-options {
+    margin-top: var(--space-sm);
+}
+
+.supervivencia-powerups {
+    margin-top: var(--space-sm);
+}
+
+/* GEO PUZZLE — Layout */
+.geo-puzzle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-xs);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, rgba(122, 155, 127, 0.08) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(122, 155, 127, 0.2);
+}
+
+.geo-puzzle-score {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.geo-puzzle-progress {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-weight: 500;
+}
+
+.geo-puzzle-hints {
+    margin: var(--space-md) 0;
+    text-align: left;
+    padding: var(--space-md);
+    background: var(--soft-sand);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--warm-gray);
+    min-height: 200px;
+}
+
+.geo-puzzle-hint {
+    padding: var(--space-xs) 0;
+    font-size: 0.95rem;
+    color: var(--charcoal);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 500;
+}
+
+.geo-puzzle-hint:last-child {
+    border-bottom: none;
+}
+
+.geo-puzzle-hint--animate {
+    animation: hintSlideIn 0.35s ease-out;
+}
+
+@keyframes hintSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.geo-puzzle-feedback {
+    margin: var(--space-sm) 0;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-height: 2rem;
+}
+
+.geo-puzzle-feedback--correct {
+    background: rgba(107, 154, 112, 0.1);
+    color: var(--deep-sage);
+    border: 1px solid rgba(107, 154, 112, 0.3);
+}
+
+.geo-puzzle-feedback--incorrect {
+    background: rgba(160, 75, 56, 0.1);
+    color: var(--rust);
+    border: 1px solid rgba(160, 75, 56, 0.3);
+}
+
+.geo-puzzle-feedback--failed {
+    background: rgba(160, 75, 56, 0.15);
+    color: var(--rust);
+    border: 1px solid rgba(160, 75, 56, 0.4);
+}
+
+/* Skip button (in header) */
+.geo-puzzle-skip-btn {
+    padding: var(--space-xs) var(--space-md);
+    border: 1px solid var(--warm-gray);
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--soft-sand);
+    color: var(--charcoal);
+    transition: all 0.2s;
+}
+
+.geo-puzzle-skip-btn:hover:not(:disabled) {
+    background: var(--warm-gray);
+}
+
+.geo-puzzle-skip-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* "¡Ya sé!" button */
+.geo-puzzle-guess-btn {
+    display: block;
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    margin-top: var(--space-md);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--sage);
+    color: var(--warm-white);
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+}
+
+.geo-puzzle-guess-btn:hover {
+    background: var(--deep-sage);
+    transform: translateY(-1px);
+}
+
+.geo-puzzle-guess-btn:active {
+    transform: translateY(0);
+}
+
+/* Input area */
+.geo-puzzle-input-area {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.geo-puzzle-input {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: 2px solid var(--warm-gray);
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    background: var(--warm-white);
+    transition: border-color 0.2s;
+    min-width: 0;
+}
+
+.geo-puzzle-input:focus {
+    outline: none;
+    border-color: var(--sage);
+}
+
+.geo-puzzle-submit {
+    padding: var(--space-sm) var(--space-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--sage);
+    color: var(--warm-white);
+}
+
+.geo-puzzle-submit:hover {
+    background: var(--deep-sage);
+}
+
+/* Countdown */
+.geo-puzzle-countdown {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--stone);
+    padding: var(--space-xs) var(--space-sm);
+    width: 100%;
+    text-align: center;
+    margin-top: var(--space-xs);
+}
+
+.geo-puzzle-countdown.countdown-urgent {
+    color: var(--rust);
+    animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 1; }
+    to { opacity: 0.5; }
+}
+
+
+
+
 /* COUNTRY INFO — Big Bold Reveal */
 #countryInfo {
     margin: 0 0 var(--space-md);
@@ -509,6 +886,14 @@ body {
     transform: scale(0.9);
 }
 
+#countryInfo.hidden-keep-space:empty {
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+}
+
 #countryInfo:not(.hidden-keep-space) {
     animation: countryReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -525,21 +910,48 @@ body {
 }
 
 #capitalInfo {
-    margin: 0 0 var(--space-xl);
+    margin: 0 0 var(--space-md);
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 2.2rem;
     font-weight: 400;
     font-style: normal;
     color: var(--ocean);
-    min-height: 1.5rem;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    min-height: 71px;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, rgba(107, 143, 163, 0.12) 100%);
+    border: 2px solid var(--ocean);
+    box-shadow: 0 4px 16px rgba(107, 143, 163, 0.15);
     opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    transform: scale(0.9);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    position: relative;
+    z-index: 1;
+}
+
+#capitalInfo.revealed {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+    animation: capitalReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes capitalReveal {
+    from {
+        opacity: 0;
+        transform: scale(0.85) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* TEAMS CONTAINER — Scoreboard */
@@ -1995,11 +2407,11 @@ body.screen-game .game-wrapper {
 
 /* WORD DROP MODE */
 .word-drop-container {
-    padding: var(--space-xl) var(--space-xl) var(--space-lg);
+    padding: var(--space-md) var(--space-md) var(--space-sm);
     text-align: center;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-lg);
+    gap: var(--space-sm);
 }
 
 .word-drop-container[hidden] {
@@ -2081,8 +2493,8 @@ body.screen-game .game-wrapper {
 
 .word-drop-flag-hint {
     width: 100%;
-    max-width: 200px;
-    height: 110px;
+    max-width: 180px;
+    height: 90px;
     object-fit: contain;
     border-radius: var(--radius-md);
     border: 2.5px solid rgba(28, 25, 23, 0.15);
@@ -2104,9 +2516,9 @@ body.screen-game .game-wrapper {
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-lg) 0;
-    min-height: 60px;
+    gap: var(--space-xs);
+    padding: var(--space-sm) 0;
+    min-height: 50px;
 }
 
 .word-drop-grid.grid-correct {
@@ -2132,8 +2544,8 @@ body.screen-game .game-wrapper {
 }
 
 .letter-box {
-    width: 38px;
-    height: 46px;
+    width: 34px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2141,7 +2553,7 @@ body.screen-game .game-wrapper {
     border: 2px solid var(--warm-gray);
     background: var(--warm-white);
     font-family: var(--font-body);
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: transparent;
     text-transform: uppercase;
@@ -2176,8 +2588,8 @@ body.screen-game .game-wrapper {
 }
 
 .word-drop-spacer {
-    width: 16px;
-    height: 46px;
+    width: 12px;
+    height: 40px;
 }
 
 .word-drop-feedback {
@@ -2200,7 +2612,7 @@ body.screen-game .game-wrapper {
 }
 
 .word-drop-guess-btn {
-    padding: var(--space-md) var(--space-2xl);
+    padding: var(--space-sm) var(--space-xl);
     border-radius: var(--radius-pill);
     font-family: var(--font-body);
     font-size: 0.9rem;
@@ -2406,16 +2818,20 @@ body.screen-game .game-wrapper {
     }
 
     .container {
-        padding: var(--space-lg) var(--space-md) var(--space-md);
+        padding: var(--space-sm) var(--space-sm) var(--space-sm);
+    }
+
+    .game-mode-content {
+        padding: var(--space-sm) var(--space-sm) var(--space-sm);
     }
 
     .flag {
-        height: 180px;
+        height: 150px;
         max-width: 100%;
-        margin-bottom: var(--space-lg);
-        box-shadow: 0 0 0 4px var(--warm-white),
-                    0 0 0 6px var(--terracotta),
-                    0 12px 32px rgba(28, 25, 23, 0.18);
+        margin-bottom: var(--space-sm);
+        box-shadow: 0 0 0 3px var(--warm-white),
+                    0 0 0 5px var(--terracotta),
+                    0 8px 24px rgba(28, 25, 23, 0.15);
     }
 
     .flag-rush-flag,
@@ -2423,7 +2839,7 @@ body.screen-game .game-wrapper {
     .geo-puzzle-flag,
     .supervivencia-flag {
         max-width: 200px;
-        max-height: 120px;
+        height: 110px;
         padding: var(--space-xs);
     }
 

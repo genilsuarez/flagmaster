@@ -19,14 +19,15 @@ export const MODE_OPTIONS = {
         { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 5, max: 50 },
     ],
     streakBlitz: [
+        { id: 'endCondition', label: 'Condición de fin', type: 'select', options: [
+            { value: 'time', label: '⚡ Contrarreloj (90s)' },
+            { value: 'lives', label: '💀 Supervivencia (3 vidas)' },
+        ], default: 'time' },
         { id: 'sessionTime', label: 'Tiempo de sesión (s)', type: 'number', default: 90, min: 30, max: 180 },
         { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 10, min: 5, max: 20 },
     ],
     geoPuzzle: [
         { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 3, max: 30 },
-    ],
-    supervivencia: [
-        { id: 'timePerQuestion', label: 'Tiempo inicial (s)', type: 'number', default: 15, min: 10, max: 30 },
     ],
     banderaFlash: [
         { id: 'teams', label: 'Número de equipos', type: 'number', default: 2, min: 2, max: 4 },

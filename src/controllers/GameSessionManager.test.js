@@ -133,12 +133,12 @@ describe('GameSessionManager', () => {
             expect(manager.session.modeId).toBe('geoPuzzle');
         });
 
-        it('creates a session for supervivencia mode', () => {
+        it('creates a session for streakBlitz in lives mode', () => {
             manager = new GameSessionManager({ container });
-            manager.startSession('supervivencia', { modeOptions: {} }, pool);
+            manager.startSession('streakBlitz', { modeOptions: { endCondition: 'lives' } }, pool);
 
             expect(manager.isActive).toBe(true);
-            expect(manager.session.modeId).toBe('supervivencia');
+            expect(manager.session.modeId).toBe('streakBlitz');
         });
 
         it('creates a session for banderaFlash (team mode)', () => {

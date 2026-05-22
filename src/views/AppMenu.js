@@ -79,7 +79,6 @@ const MODAL_TEMPLATES = {
                 capitalClash: '⚔️ Capital Clash',
                 streakBlitz: '⚡ Streak Blitz',
                 geoPuzzle: '🧩 Geo Puzzle',
-                supervivencia: '💀 Supervivencia',
                 banderaFlash: '🏴 Bandera Flash',
                 capitalQuest: '🏛️ Capital Quest',
                 letrasEnCaida: '✏️ Letras en Caída',

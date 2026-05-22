@@ -19,7 +19,6 @@ export class WordDropView {
         this.onAnswerSubmitted = null;
         this.onNextPressed = null;
         this.onAnswerTimeout = null;
-        this.onEndGame = null;
         this.answerCountdownInterval = null;
         this.answerTimeLeft = 10;
 
@@ -51,15 +50,6 @@ export class WordDropView {
         topBar.appendChild(this.scoreDisplay);
         topBar.appendChild(this.difficultyBadge);
         topBar.appendChild(this.livesDisplay);
-
-        // End game button
-        this.endGameButton = document.createElement('button');
-        this.endGameButton.className = 'word-drop-end-btn';
-        this.endGameButton.textContent = 'Terminar';
-        this.endGameButton.addEventListener('click', () => {
-            if (this.onEndGame) this.onEndGame();
-        });
-        topBar.appendChild(this.endGameButton);
 
         // Flag hint (optional)
         this.flagHint = document.createElement('img');
@@ -147,20 +137,7 @@ export class WordDropView {
      */
     show() {
         this.container.hidden = false;
-        // Hide standard game elements
-        const flagImg = document.getElementById('flagImage');
-        const countryInfo = document.getElementById('countryInfo');
-        const capitalInfo = document.getElementById('capitalInfo');
-        const teamsContainer = document.getElementById('teamsContainer');
-        const startButton = document.getElementById('startButton');
-        const gameHeader = document.querySelector('.game-header');
-
-        if (flagImg) flagImg.style.display = 'none';
-        if (countryInfo) countryInfo.style.display = 'none';
-        if (capitalInfo) capitalInfo.style.display = 'none';
-        if (teamsContainer) teamsContainer.style.display = 'none';
-        if (startButton) startButton.style.display = 'none';
-        if (gameHeader) gameHeader.style.display = 'none';
+        // Legacy elements are already hidden by GameSessionManager.prepareGameUI()
     }
 
     /**
@@ -168,19 +145,7 @@ export class WordDropView {
      */
     hide() {
         this.container.hidden = true;
-        const flagImg = document.getElementById('flagImage');
-        const countryInfo = document.getElementById('countryInfo');
-        const capitalInfo = document.getElementById('capitalInfo');
-        const teamsContainer = document.getElementById('teamsContainer');
-        const startButton = document.getElementById('startButton');
-        const gameHeader = document.querySelector('.game-header');
-
-        if (flagImg) flagImg.style.display = '';
-        if (countryInfo) countryInfo.style.display = '';
-        if (capitalInfo) capitalInfo.style.display = '';
-        if (teamsContainer) teamsContainer.style.display = '';
-        if (startButton) startButton.style.display = '';
-        if (gameHeader) gameHeader.style.display = '';
+        // UI restoration is handled by GameSessionManager.restoreGameUI()
     }
 
     /**

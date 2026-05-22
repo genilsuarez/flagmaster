@@ -44,7 +44,6 @@ export class WordDropController {
         this.view.onAnswerSubmitted = (answer) => this.handleAnswerSubmitted(answer);
         this.view.onNextPressed = () => this.advanceToNextRound();
         this.view.onAnswerTimeout = () => this.handleAnswerTimeout();
-        this.view.onEndGame = () => this.endGame();
 
         this.service.onLetterRevealed = (position, char) => {
             this.view.revealLetter(position, char);

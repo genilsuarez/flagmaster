@@ -8,19 +8,19 @@ import { StreakIndicatorView } from '../views/StreakIndicatorView.js';
 import { PowerUpInventoryView } from '../views/PowerUpInventoryView.js';
 
 /**
- * StreakBlitzController - Orchestrates the Streak Blitz individual game mode.
+ * StreakBlitzController - Unified controller for timed/survival mixed-question modes.
  *
- * A 90-second timed session mixing flag identification (flag → country name)
- * and capital identification (country name → capital) questions. No fixed round
- * count — the game continues until the session timer expires.
+ * Supports two end conditions via `modeOptions.endCondition`:
+ *   - "time" (default): 90s session timer, game ends when time runs out.
+ *   - "lives": 3 lives, game ends when all lives are lost. Includes progressive difficulty.
  *
- * Key mechanics:
- *   - 90s session timer (configurable via modeOptions.sessionTime)
- *   - 10s per-question timer (configurable via modeOptions.timePerQuestion)
- *   - Random mix of flag/capital questions (max 3 consecutive of same type)
- *   - Immediate advance on answer (no feedback delay)
- *   - Full Streak/PowerUp integration
- *   - Tracks total questions answered, correct count, and highest streak
+ * Mixes flag identification (flag → country name) and capital identification
+ * (country name → capital) questions. Max 3 consecutive of same type.
+ *
+ * Progressive difficulty (lives mode only):
+ *   - Rounds 1–10: 15s timer
+ *   - Rounds 11–20: 10s timer
+ *   - Rounds 21+: 7s timer with same-continent distractors
  *
  * Implements IModeController-like interface:
  *   start(countryPool, modeOptions) - Begin a new session
@@ -29,14 +29,30 @@ import { PowerUpInventoryView } from '../views/PowerUpInventoryView.js';
  *   end() - End the session
  */
 export class StreakBlitzController {
-    /** @type {number} Default session time in seconds */
+    /** @type {number} Default session time in seconds (time mode) */
     static DEFAULT_SESSION_TIME = 90;
 
     /** @type {number} Default time per question in seconds */
     static DEFAULT_TIME_PER_QUESTION = 10;
 
+    /** @type {number} Default initial lives (lives mode) */
+    static DEFAULT_LIVES = 3;
+
     /** @type {number} Maximum consecutive questions of the same type */
     static MAX_CONSECUTIVE_SAME_TYPE = 3;
+
+    /** @type {number} Feedback display duration in milliseconds (lives mode) */
+    static FEEDBACK_DELAY_MS = 1500;
+
+    /**
+     * Difficulty tier definitions for lives mode (progressive difficulty).
+     * @type {Array<{maxRound: number, time: number, sameContinentDistractors: boolean}>}
+     */
+    static DIFFICULTY_TIERS = [
+        { maxRound: 10, time: 15, sameContinentDistractors: false },
+        { maxRound: 20, time: 10, sameContinentDistractors: false },
+        { maxRound: Infinity, time: 7, sameContinentDistractors: true },
+    ];
 
     /**
      * @param {Object} options
@@ -64,8 +80,10 @@ export class StreakBlitzController {
 
         // Game state
         this.pool = [];
+        this.endCondition = 'time'; // 'time' or 'lives'
         this.sessionTime = StreakBlitzController.DEFAULT_SESSION_TIME;
         this.timePerQuestion = StreakBlitzController.DEFAULT_TIME_PER_QUESTION;
+        this.lives = StreakBlitzController.DEFAULT_LIVES;
         this.currentRound = 0;
         this.totalScore = 0;
         this.correctCount = 0;
@@ -74,11 +92,9 @@ export class StreakBlitzController {
         this.currentQuestionType = null; // 'flag' or 'capital'
         this.consecutiveSameType = 0;
         this.lastQuestionType = null;
+        this.feedbackTimeout = null;
         this.roundHistory = [];
-
-        // Session timer state
-        this.sessionTimerInterval = null;
-        this.sessionStartTime = null;
+        this.poolIndex = 0;
 
         // DOM element references
         this.promptEl = null;
@@ -90,19 +106,24 @@ export class StreakBlitzController {
         this.powerUpContainer = null;
         this.scoreEl = null;
         this.questionCountEl = null;
+        this.livesEl = null;
     }
 
     /**
-     * Starts a new Streak Blitz session.
+     * Starts a new session.
      * @param {import('../models/Country.js').Country[]} countryPool - Filtered country pool
      * @param {Object} [modeOptions] - Mode-specific options
-     * @param {number} [modeOptions.sessionTime] - Session duration in seconds (default 90)
+     * @param {string} [modeOptions.endCondition] - 'time' or 'lives' (default 'time')
+     * @param {number} [modeOptions.sessionTime] - Session duration in seconds (time mode, default 90)
      * @param {number} [modeOptions.timePerQuestion] - Seconds per question (default 10)
      */
     start(countryPool, modeOptions = {}) {
-        this.pool = countryPool.slice();
+        // Filter out countries without a valid capital (needed for capital questions)
+        this.pool = countryPool.filter(c => c.capital && c.capital !== 'Sin capital' && c.capital !== 'Desconocida');
+        this.endCondition = modeOptions.endCondition || 'time';
         this.sessionTime = modeOptions.sessionTime || StreakBlitzController.DEFAULT_SESSION_TIME;
         this.timePerQuestion = modeOptions.timePerQuestion || StreakBlitzController.DEFAULT_TIME_PER_QUESTION;
+        this.lives = StreakBlitzController.DEFAULT_LIVES;
         this.currentRound = 0;
         this.totalScore = 0;
         this.correctCount = 0;
@@ -111,7 +132,9 @@ export class StreakBlitzController {
         this.currentQuestionType = null;
         this.consecutiveSameType = 0;
         this.lastQuestionType = null;
+        this.feedbackTimeout = null;
         this.roundHistory = [];
+        this.poolIndex = 0;
 
         // Reset services
         this.streakService.reset();
@@ -124,21 +147,20 @@ export class StreakBlitzController {
         // Build UI
         this.render();
 
-        // Start session timer
-        this.startSessionTimer();
+        // Start session timer (time mode only)
+        if (this.endCondition === 'time') {
+            this.startSessionTimer();
+        }
 
         // Start first question
         this.nextRound();
     }
 
     /**
-     * Starts the session countdown timer (90s by default).
-     * When it expires, the game ends immediately.
+     * Starts the session countdown timer (time mode only).
      * @private
      */
     startSessionTimer() {
-        this.sessionStartTime = Date.now();
-
         if (this.sessionTimerView) {
             this.sessionTimerView.start(this.sessionTime);
         }
@@ -154,40 +176,56 @@ export class StreakBlitzController {
     }
 
     /**
+     * Returns the difficulty tier configuration for the given round number.
+     * Used in lives mode for progressive difficulty.
+     * @param {number} round - Current round number (1-based)
+     * @returns {{time: number, sameContinentDistractors: boolean}}
+     */
+    getDifficultyForRound(round) {
+        if (this.endCondition !== 'lives') {
+            return { time: this.timePerQuestion, sameContinentDistractors: true };
+        }
+        for (const tier of StreakBlitzController.DIFFICULTY_TIERS) {
+            if (round <= tier.maxRound) {
+                return { time: tier.time, sameContinentDistractors: tier.sameContinentDistractors };
+            }
+        }
+        const lastTier = StreakBlitzController.DIFFICULTY_TIERS[StreakBlitzController.DIFFICULTY_TIERS.length - 1];
+        return { time: lastTier.time, sameContinentDistractors: lastTier.sameContinentDistractors };
+    }
+
+    /**
      * Determines the next question type (flag or capital), enforcing
      * the max 3 consecutive same-type constraint.
      * @returns {'flag' | 'capital'}
      * @private
      */
     pickQuestionType() {
-        // If we've hit the max consecutive limit, force the other type
         if (this.consecutiveSameType >= StreakBlitzController.MAX_CONSECUTIVE_SAME_TYPE) {
             return this.lastQuestionType === 'flag' ? 'capital' : 'flag';
         }
-
-        // Random pick
         return Math.random() < 0.5 ? 'flag' : 'capital';
     }
 
     /**
-     * Advances to the next question. Picks a country, determines question type,
-     * generates distractors, renders the question and options, and starts the
-     * per-question timer.
+     * Advances to the next question.
      */
     nextRound() {
         if (!this.isActive) return;
 
         this.currentRound++;
 
-        // Pick a country from the pool (cycle through shuffled pool)
-        const poolIndex = (this.currentRound - 1) % this.pool.length;
-
-        // Re-shuffle when we've cycled through the entire pool
-        if (poolIndex === 0 && this.currentRound > 1) {
+        // Pool recycling
+        if (this.poolIndex >= this.pool.length) {
+            this.poolIndex = 0;
             this.shufflePool();
         }
 
-        this.currentCountry = this.pool[poolIndex];
+        this.currentCountry = this.pool[this.poolIndex];
+        this.poolIndex++;
+
+        // Get difficulty settings
+        const difficulty = this.getDifficultyForRound(this.currentRound);
 
         // Determine question type
         this.currentQuestionType = this.pickQuestionType();
@@ -200,9 +238,9 @@ export class StreakBlitzController {
         }
         this.lastQuestionType = this.currentQuestionType;
 
-        // Generate 3 distractors (same continent preference)
+        // Generate 3 distractors
         const distractors = this.distractorService.generateDistractors(
-            this.currentCountry, this.pool, 3, true
+            this.currentCountry, this.pool, 3, difficulty.sameContinentDistractors
         );
 
         // Shuffle correct + distractors into 4 options
@@ -213,22 +251,19 @@ export class StreakBlitzController {
         // Build options array based on question type
         let options;
         if (this.currentQuestionType === 'flag') {
-            // Flag question: show flag, pick from country names
             options = shuffledOptions.map(country => ({
                 text: country.displayName,
                 correct: country === this.currentCountry,
             }));
         } else {
-            // Capital question: show country name, pick from capitals
             options = shuffledOptions.map(country => ({
                 text: country.capital,
                 correct: country === this.currentCountry,
             }));
         }
 
-        // Update prompt/flag display based on question type
+        // Update prompt/flag display
         if (this.currentQuestionType === 'flag') {
-            // Show flag, hide text prompt
             if (this.flagEl) {
                 this.flagEl.src = this.currentCountry.flagUrl;
                 this.flagEl.alt = 'Bandera del país a identificar';
@@ -238,7 +273,6 @@ export class StreakBlitzController {
                 this.promptEl.style.display = 'none';
             }
         } else {
-            // Show country name, hide flag
             if (this.promptEl) {
                 this.promptEl.textContent = this.currentCountry.displayName;
                 this.promptEl.setAttribute('aria-label', `País: ${this.currentCountry.displayName}`);
@@ -249,7 +283,7 @@ export class StreakBlitzController {
             }
         }
 
-        // Update question count display
+        // Update question count / round display
         this.updateQuestionCount();
 
         // Reset power-up per-question state
@@ -271,14 +305,12 @@ export class StreakBlitzController {
         // Start per-question timer
         if (this.questionTimerView) {
             this.questionTimerView.stop();
-            this.questionTimerView.start(this.timePerQuestion);
+            this.questionTimerView.start(difficulty.time);
         }
     }
 
     /**
-     * Handles the player's answer. Calculates score, updates streak,
-     * checks power-up grants, and immediately advances to the next question.
-     *
+     * Handles the player's answer.
      * @param {number} selectedIndex - Index of the selected option (-1 for timeout)
      * @param {boolean} isCorrect - Whether the answer was correct
      */
@@ -297,6 +329,7 @@ export class StreakBlitzController {
         }
 
         let roundPoints = 0;
+        const difficulty = this.getDifficultyForRound(this.currentRound);
 
         if (isCorrect) {
             this.correctCount++;
@@ -311,7 +344,7 @@ export class StreakBlitzController {
             // Calculate points
             roundPoints = this.scoringEngine.calculate(
                 timeRemaining,
-                this.timePerQuestion,
+                difficulty.time,
                 streakResult.multiplier,
                 doubleActive
             );
@@ -342,6 +375,12 @@ export class StreakBlitzController {
                     streakResult.tier, streakResult.count, streakResult.multiplier
                 );
             }
+
+            // Deduct a life (lives mode only)
+            if (this.endCondition === 'lives') {
+                this.lives--;
+                this.updateLives();
+            }
         }
 
         // Update score display
@@ -366,21 +405,36 @@ export class StreakBlitzController {
                 streak: this.streakService.count,
                 timeRemaining,
                 questionType: this.currentQuestionType,
+                livesRemaining: this.endCondition === 'lives' ? this.lives : undefined,
             });
         }
 
-        // Immediate advance — no feedback delay in Streak Blitz
-        this.nextRound();
+        // Check if game is over (lives mode: no lives remaining)
+        if (this.endCondition === 'lives' && this.lives <= 0) {
+            this.feedbackTimeout = setTimeout(() => {
+                this.feedbackTimeout = null;
+                this.end();
+            }, StreakBlitzController.FEEDBACK_DELAY_MS);
+            return;
+        }
+
+        // Advance: immediate in time mode, delayed in lives mode
+        if (this.endCondition === 'time') {
+            this.nextRound();
+        } else {
+            this.feedbackTimeout = setTimeout(() => {
+                this.feedbackTimeout = null;
+                this.nextRound();
+            }, StreakBlitzController.FEEDBACK_DELAY_MS);
+        }
     }
 
     /**
      * Handles per-question timer expiration (timeout).
-     * Marks the question as incorrect and immediately advances.
      */
     handleTimeout() {
         if (!this.isActive) return;
 
-        // Disable options
         if (this.multipleChoiceView) {
             this.multipleChoiceView.disable();
         }
@@ -399,7 +453,6 @@ export class StreakBlitzController {
 
         this.lastActivatedPowerUp = powerUpId;
 
-        // Apply power-up effect
         switch (powerUpId) {
             case 'timeExtra':
                 if (this.questionTimerView) {
@@ -418,11 +471,9 @@ export class StreakBlitzController {
                 break;
 
             case 'doublePoints':
-                // Effect applied during score calculation
                 break;
         }
 
-        // Update inventory display
         if (this.powerUpInventoryView) {
             this.powerUpInventoryView.update(this.powerUpService.inventory);
         }
@@ -438,7 +489,6 @@ export class StreakBlitzController {
         const buttons = this.mcContainer.querySelectorAll('.mc-option');
         const incorrectIndices = [];
 
-        // Determine the correct text based on question type
         const correctText = this.currentQuestionType === 'flag'
             ? this.currentCountry.displayName
             : this.currentCountry.capital;
@@ -449,7 +499,6 @@ export class StreakBlitzController {
             }
         });
 
-        // Pick 2 random incorrect indices to disable
         const toDisable = this.distractorService.pickRandom(incorrectIndices, 2);
 
         if (this.multipleChoiceView) {
@@ -458,26 +507,29 @@ export class StreakBlitzController {
     }
 
     /**
-     * Ends the Streak Blitz session. Cleans up timers and invokes onGameEnd.
+     * Ends the session. Cleans up timers and invokes onGameEnd.
      */
     end() {
         this.isActive = false;
 
-        // Stop per-question timer
+        if (this.feedbackTimeout) {
+            clearTimeout(this.feedbackTimeout);
+            this.feedbackTimeout = null;
+        }
+
         if (this.questionTimerView) {
             this.questionTimerView.stop();
         }
 
-        // Stop session timer
         if (this.sessionTimerView) {
             this.sessionTimerView.stop();
         }
 
-        // Invoke onGameEnd callback
         if (this.onGameEnd) {
             this.onGameEnd({
                 totalScore: this.totalScore,
                 totalQuestions: this.currentRound - 1,
+                roundsReached: this.currentRound - 1,
                 correctCount: this.correctCount,
                 roundHistory: this.roundHistory,
                 highestStreak: this.getHighestStreak(),
@@ -490,6 +542,11 @@ export class StreakBlitzController {
      */
     stop() {
         this.isActive = false;
+
+        if (this.feedbackTimeout) {
+            clearTimeout(this.feedbackTimeout);
+            this.feedbackTimeout = null;
+        }
 
         if (this.questionTimerView) {
             this.questionTimerView.stop();
@@ -532,7 +589,7 @@ export class StreakBlitzController {
 
         this.container.innerHTML = '';
 
-        // Score + question count header
+        // Header: score + lives/question count
         const header = document.createElement('div');
         header.className = 'streak-blitz-header';
 
@@ -542,22 +599,33 @@ export class StreakBlitzController {
         this.scoreEl.textContent = '0';
         header.appendChild(this.scoreEl);
 
+        if (this.endCondition === 'lives') {
+            this.livesEl = document.createElement('div');
+            this.livesEl.className = 'streak-blitz-lives';
+            this.livesEl.setAttribute('aria-label', 'Vidas restantes');
+            this.livesEl.setAttribute('aria-live', 'polite');
+            this.livesEl.textContent = '❤️'.repeat(this.lives);
+            header.appendChild(this.livesEl);
+        }
+
         this.questionCountEl = document.createElement('div');
         this.questionCountEl.className = 'streak-blitz-question-count';
         this.questionCountEl.setAttribute('aria-label', 'Preguntas respondidas');
-        this.questionCountEl.textContent = 'Pregunta 1';
+        this.questionCountEl.textContent = this.endCondition === 'lives' ? 'Ronda 1' : 'Pregunta 1';
         header.appendChild(this.questionCountEl);
 
         this.container.appendChild(header);
 
-        // Session timer (the 90s countdown)
-        this.sessionTimerContainer = document.createElement('div');
-        this.sessionTimerContainer.className = 'streak-blitz-session-timer';
-        this.container.appendChild(this.sessionTimerContainer);
-        this.sessionTimerView = new TimerView({
-            container: this.sessionTimerContainer,
-            onExpired: () => this.handleSessionExpired(),
-        });
+        // Session timer (time mode only)
+        if (this.endCondition === 'time') {
+            this.sessionTimerContainer = document.createElement('div');
+            this.sessionTimerContainer.className = 'streak-blitz-session-timer';
+            this.container.appendChild(this.sessionTimerContainer);
+            this.sessionTimerView = new TimerView({
+                container: this.sessionTimerContainer,
+                onExpired: () => this.handleSessionExpired(),
+            });
+        }
 
         // Streak indicator
         this.streakContainer = document.createElement('div');
@@ -605,23 +673,25 @@ export class StreakBlitzController {
         });
     }
 
-    /**
-     * Updates the score display element.
-     * @private
-     */
+    /** @private */
     updateScore() {
         if (this.scoreEl) {
             this.scoreEl.textContent = this.totalScore.toString();
         }
     }
 
-    /**
-     * Updates the question count display element.
-     * @private
-     */
+    /** @private */
     updateQuestionCount() {
         if (this.questionCountEl) {
-            this.questionCountEl.textContent = `Pregunta ${this.currentRound}`;
+            const label = this.endCondition === 'lives' ? 'Ronda' : 'Pregunta';
+            this.questionCountEl.textContent = `${label} ${this.currentRound}`;
+        }
+    }
+
+    /** @private */
+    updateLives() {
+        if (this.livesEl) {
+            this.livesEl.textContent = '❤️'.repeat(Math.max(0, this.lives));
         }
     }
 
@@ -646,10 +716,7 @@ export class StreakBlitzController {
         return highest;
     }
 
-    /**
-     * Shuffles the country pool using Fisher-Yates algorithm.
-     * @private
-     */
+    /** @private */
     shufflePool() {
         for (let i = this.pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));

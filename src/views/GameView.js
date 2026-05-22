@@ -447,18 +447,15 @@ export class GameView {
     }
 
     showCapitalInfo() {
-        this.elements.capitalInfo.style.opacity = '1';
-        this.elements.capitalInfo.style.visibility = 'visible';
+        this.elements.capitalInfo.classList.add('revealed');
     }
 
     hideCapitalInfo() {
-        this.elements.capitalInfo.style.opacity = '0';
-        this.elements.capitalInfo.style.visibility = 'hidden';
+        this.elements.capitalInfo.classList.remove('revealed');
     }
 
     clearCapitalInfo() {
-        this.elements.capitalInfo.textContent = 'Capital Name';
-        this.elements.capitalInfo.style.opacity = '0';
-        this.elements.capitalInfo.style.visibility = 'hidden';
+        this.elements.capitalInfo.textContent = '';
+        this.elements.capitalInfo.classList.remove('revealed');
     }
 }

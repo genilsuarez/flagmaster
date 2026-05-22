@@ -444,8 +444,12 @@ export class BottomSheetView {
         this.playButton.addEventListener('click', () => {
             if (!this.playButton.disabled && this.onPlay) {
                 this._saveConfig(this.modeId, this._buildConfig());
-                this.onPlay(this._buildConfig());
-                this._cleanupWithoutDismiss();
+                const config = this._buildConfig();
+                try {
+                    this.onPlay(config);
+                } finally {
+                    this._cleanupWithoutDismiss();
+                }
             }
         });
 

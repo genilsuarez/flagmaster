@@ -67,6 +67,7 @@ describe('GeoPuzzleController', () => {
             expect(controller.totalScore).toBe(0);
             expect(controller.currentRound).toBe(0);
             expect(controller.hintsRevealed).toBe(0);
+            expect(controller.phase).toBe('revealing');
         });
 
         it('accepts onRoundEnd and onGameEnd callbacks', () => {
@@ -110,17 +111,17 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool);
             expect(container.querySelector('.geo-puzzle-hints')).not.toBeNull();
-            expect(container.querySelector('.geo-puzzle-input')).not.toBeNull();
-            expect(container.querySelector('.geo-puzzle-submit')).not.toBeNull();
+            expect(container.querySelector('.geo-puzzle-guess-btn')).not.toBeNull();
+            expect(container.querySelector('.geo-puzzle-skip-btn')).not.toBeNull();
         });
 
-        it('reveals the first hint (continent)', () => {
+        it('reveals the first hint (population) immediately', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool);
             expect(controller.hintsRevealed).toBe(1);
             const hints = container.querySelectorAll('.geo-puzzle-hint');
             expect(hints.length).toBe(1);
-            expect(hints[0].textContent).toContain('Continente:');
+            expect(hints[0].textContent).toContain('Población:');
         });
 
         it('does not mutate the original pool', () => {
@@ -129,46 +130,63 @@ describe('GeoPuzzleController', () => {
             controller.start(pool);
             expect(pool).toEqual(originalPool);
         });
+
+        it('starts in revealing phase with guess button visible', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool);
+            expect(controller.phase).toBe('revealing');
+            expect(container.querySelector('.geo-puzzle-guess-btn').hidden).toBe(false);
+        });
     });
 
-    describe('progressive hints', () => {
-        it('reveals hints one at a time in correct order', () => {
+    describe('automatic hint reveal (timer-based)', () => {
+        it('reveals hints automatically every HINT_INTERVAL_SECONDS', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            expect(controller.hintsRevealed).toBe(1); // first hint immediate
+
+            // Advance timer to reveal hint 2
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
+            expect(controller.hintsRevealed).toBe(2);
+
+            // Advance timer to reveal hint 3
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
+            expect(controller.hintsRevealed).toBe(3);
+        });
+
+        it('reveals hints in correct order: population, area, capital letter, capital, continent, flag', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
             const country = controller.currentCountry;
 
-            // Hint 1: Continent (already revealed)
-            expect(controller.hintsRevealed).toBe(1);
+            // Hint 1: Population (already revealed)
             let hints = container.querySelectorAll('.geo-puzzle-hint');
-            expect(hints[0].textContent).toContain('Continente:');
+            expect(hints[0].textContent).toContain('Población:');
 
-            // Hint 2: Population
-            controller.revealNextHint();
-            expect(controller.hintsRevealed).toBe(2);
+            // Hint 2: Area
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             hints = container.querySelectorAll('.geo-puzzle-hint');
-            expect(hints[1].textContent).toContain('Población:');
+            expect(hints[1].textContent).toContain('Área:');
 
-            // Hint 3: Area
-            controller.revealNextHint();
-            expect(controller.hintsRevealed).toBe(3);
+            // Hint 3: First letter of capital
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             hints = container.querySelectorAll('.geo-puzzle-hint');
-            expect(hints[2].textContent).toContain('Área:');
+            expect(hints[2].textContent).toContain('La capital empieza con');
 
-            // Hint 4: First letter of capital
-            controller.revealNextHint();
-            expect(controller.hintsRevealed).toBe(4);
+            // Hint 4: Capital name
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             hints = container.querySelectorAll('.geo-puzzle-hint');
-            expect(hints[3].textContent).toContain('La capital empieza con');
+            expect(hints[3].textContent).toContain('Capital:');
 
-            // Hint 5: Capital name
-            controller.revealNextHint();
-            expect(controller.hintsRevealed).toBe(5);
+            // Hint 5: Continent
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             hints = container.querySelectorAll('.geo-puzzle-hint');
-            expect(hints[4].textContent).toContain('Capital:');
+            expect(hints[4].textContent).toContain('Continente:');
 
             // Hint 6: Flag image
-            controller.revealNextHint();
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             expect(controller.hintsRevealed).toBe(6);
             const flagEl = container.querySelector('.geo-puzzle-flag');
             expect(flagEl.style.display).toBe('block');
@@ -179,26 +197,70 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
-            // Reveal all 6 hints
-            for (let i = 0; i < 5; i++) {
-                controller.revealNextHint();
+            // Advance past all 6 hints
+            for (let i = 0; i < 7; i++) {
+                vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             }
-            expect(controller.hintsRevealed).toBe(6);
-
-            // Try to reveal one more
-            controller.revealNextHint();
             expect(controller.hintsRevealed).toBe(6);
         });
 
-        it('keeps all previously revealed hints visible', () => {
+        it('switches to input phase after all hints are revealed', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
-            controller.revealNextHint(); // hint 2
-            controller.revealNextHint(); // hint 3
+            // Advance past all hints (5 ticks to reveal hints 2-6, then 1 more tick to trigger input)
+            for (let i = 0; i < 6; i++) {
+                vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
+            }
 
-            const hints = container.querySelectorAll('.geo-puzzle-hint');
-            expect(hints.length).toBe(3); // hints 1, 2, 3 all visible
+            // After all hints revealed, should switch to input phase
+            expect(controller.phase).toBe('input');
+        });
+    });
+
+    describe('triggerGuess ("¡Ya sé!" button)', () => {
+        it('stops the hint timer and switches to input phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            expect(controller.phase).toBe('revealing');
+            controller.triggerGuess();
+            expect(controller.phase).toBe('input');
+            expect(controller.hintTimer).toBeNull();
+        });
+
+        it('shows the input field and hides the guess button', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.triggerGuess();
+            expect(container.querySelector('.geo-puzzle-guess-btn').hidden).toBe(true);
+            expect(container.querySelector('.geo-puzzle-input-area').hidden).toBe(false);
+        });
+
+        it('does nothing if not in revealing phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.triggerGuess(); // switch to input
+            controller.triggerGuess(); // should do nothing
+            expect(controller.phase).toBe('input');
+        });
+
+        it('freezes hints at current count', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            // Reveal 2 more hints
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
+            expect(controller.hintsRevealed).toBe(3);
+
+            controller.triggerGuess();
+
+            // No more hints should reveal
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 5000);
+            expect(controller.hintsRevealed).toBe(3);
         });
     });
 
@@ -207,6 +269,7 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
@@ -217,6 +280,7 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName.toUpperCase());
 
@@ -229,71 +293,76 @@ describe('GeoPuzzleController', () => {
 
             // Force a specific country with accents
             controller.currentCountry = makeCountry('Japón', { capital: 'Tokio' });
-            controller.hintsRevealed = 1;
-            controller.guessesThisRound = 0;
+            controller.triggerGuess();
 
             controller.submitGuess('japon'); // without accent
             expect(controller.roundHistory[0].correct).toBe(true);
         });
 
-        it('rejects incorrect guess', () => {
+        it('rejects incorrect guess and fails the round', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             controller.submitGuess('PaísInventado');
 
-            // Should not record as correct
-            expect(controller.roundHistory.length).toBe(0); // round not ended yet
-            expect(controller.hintsRevealed).toBe(2); // next hint revealed
-        });
-
-        it('allows only 1 guess per hint level', () => {
-            controller = new GeoPuzzleController({ container });
-            controller.start(pool, { rounds: 5 });
-
-            // First guess at hint level 1
-            controller.submitGuess('Wrong');
-            expect(controller.hintsRevealed).toBe(2); // hint 2 revealed after wrong guess
-            expect(controller.guessesThisRound).toBe(1);
-
-            // Try second guess at same hint level (guessesThisRound = 1, hintsRevealed = 2)
-            // This should be allowed since hintsRevealed is now 2
-            controller.submitGuess('AlsoWrong');
-            expect(controller.guessesThisRound).toBe(2);
-            expect(controller.hintsRevealed).toBe(3);
-        });
-
-        it('blocks guess when guessesThisRound equals hintsRevealed', () => {
-            controller = new GeoPuzzleController({ container });
-            controller.start(pool, { rounds: 5 });
-
-            // Guess at hint 1
-            controller.submitGuess('Wrong');
-            // Now guessesThisRound = 1, hintsRevealed = 2
-
-            // Guess at hint 2
-            controller.submitGuess('Wrong2');
-            // Now guessesThisRound = 2, hintsRevealed = 3
-
-            // Try to guess again without new hint — guessesThisRound (2) < hintsRevealed (3) so it's allowed
-            controller.submitGuess('Wrong3');
-            expect(controller.guessesThisRound).toBe(3);
+            expect(controller.roundHistory[0].correct).toBe(false);
+            expect(controller.phase).toBe('review');
         });
 
         it('rejects empty guess', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             controller.submitGuess('');
-            expect(controller.guessesThisRound).toBe(0);
+            expect(controller.roundHistory.length).toBe(0);
         });
 
         it('rejects whitespace-only guess', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             controller.submitGuess('   ');
-            expect(controller.guessesThisRound).toBe(0);
+            expect(controller.roundHistory.length).toBe(0);
+        });
+
+        it('does nothing if not in input phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            // Still in revealing phase
+            const country = controller.currentCountry;
+            controller.submitGuess(country.spanishName);
+            expect(controller.roundHistory.length).toBe(0);
+        });
+    });
+
+    describe('answer timeout', () => {
+        it('fails the round when answer time runs out', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.triggerGuess();
+
+            // Advance past the answer time
+            vi.advanceTimersByTime(GeoPuzzleController.ANSWER_TIME_SECONDS * 1000);
+
+            expect(controller.roundHistory[0].correct).toBe(false);
+            expect(controller.phase).toBe('review');
+        });
+
+        it('shows the correct answer on timeout', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            const country = controller.currentCountry;
+            controller.triggerGuess();
+            vi.advanceTimersByTime(GeoPuzzleController.ANSWER_TIME_SECONDS * 1000);
+
+            const feedback = container.querySelector('.geo-puzzle-feedback');
+            expect(feedback.textContent).toContain(country.displayName);
         });
     });
 
@@ -302,6 +371,7 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
@@ -313,12 +383,12 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
-            // Reveal hints 2 and 3
-            controller.revealNextHint(); // hint 2
-            controller.revealNextHint(); // hint 3
+            // Wait for 2 more hints to reveal
+            vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 2000);
+            expect(controller.hintsRevealed).toBe(3);
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
-            // guessesThisRound is 0, hintsRevealed is 3
             controller.submitGuess(country.spanishName);
 
             // Formula: 100 * ((6 - 3 + 1) / 6) * 1.0 = 67
@@ -329,10 +399,12 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
-            // Reveal all hints
-            for (let i = 0; i < 5; i++) {
-                controller.revealNextHint();
+            // Wait for all hints to reveal + 1 extra tick to trigger input phase
+            for (let i = 0; i < 6; i++) {
+                vi.advanceTimersByTime(GeoPuzzleController.HINT_INTERVAL_SECONDS * 1000);
             }
+            expect(controller.hintsRevealed).toBe(6);
+            expect(controller.phase).toBe('input');
 
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
@@ -341,16 +413,12 @@ describe('GeoPuzzleController', () => {
             expect(controller.totalScore).toBe(17);
         });
 
-        it('awards zero points when all hints used and guess is wrong', () => {
+        it('awards zero points when answer times out', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
-            // Use all guesses incorrectly
-            for (let i = 0; i < 5; i++) {
-                controller.submitGuess('Wrong');
-            }
-            // Now at hint 6, one more wrong guess
-            controller.submitGuess('StillWrong');
+            controller.triggerGuess();
+            vi.advanceTimersByTime(GeoPuzzleController.ANSWER_TIME_SECONDS * 1000);
 
             expect(controller.roundHistory[0].correct).toBe(false);
             expect(controller.roundHistory[0].points).toBe(0);
@@ -360,10 +428,11 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
-            // Manually set streak to 3 (gold tier, 1.5x)
+            // Manually set streak to 2 (next correct will be 3 → gold tier, 1.5x)
             controller.streakService.count = 2;
             controller.streakService.multiplier = 1.0;
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
@@ -378,13 +447,14 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
             expect(controller.streakService.count).toBe(1);
         });
 
-        it('resets streak when all 6 hints used without correct guess', () => {
+        it('resets streak on failed round', () => {
             controller = new GeoPuzzleController({ container });
             controller.start(pool, { rounds: 5 });
 
@@ -392,11 +462,8 @@ describe('GeoPuzzleController', () => {
             controller.streakService.count = 3;
             controller.streakService.multiplier = 1.5;
 
-            // Use all hints incorrectly
-            for (let i = 0; i < 5; i++) {
-                controller.submitGuess('Wrong');
-            }
-            controller.submitGuess('StillWrong');
+            controller.triggerGuess();
+            controller.submitGuess('Wrong');
 
             expect(controller.streakService.count).toBe(0);
             expect(controller.streakService.multiplier).toBe(1.0);
@@ -409,6 +476,7 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container, onRoundEnd });
             controller.start(pool, { rounds: 5 });
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
@@ -427,17 +495,14 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container, onRoundEnd });
             controller.start(pool, { rounds: 5 });
 
-            // Use all hints incorrectly
-            for (let i = 0; i < 5; i++) {
-                controller.submitGuess('Wrong');
-            }
-            controller.submitGuess('StillWrong');
+            controller.triggerGuess();
+            controller.submitGuess('Wrong');
 
             expect(onRoundEnd).toHaveBeenCalledWith(expect.objectContaining({
                 round: 1,
                 correct: false,
                 points: 0,
-                hintsRevealed: 6,
+                hintsRevealed: 1,
             }));
         });
 
@@ -446,10 +511,11 @@ describe('GeoPuzzleController', () => {
             controller = new GeoPuzzleController({ container, onGameEnd });
             controller.start(pool, { rounds: 1 });
 
+            controller.triggerGuess();
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
-            // Advance past the delay
+            // Advance past the transition delay
             vi.advanceTimersByTime(1500);
 
             expect(onGameEnd).toHaveBeenCalledWith(expect.objectContaining({
@@ -458,6 +524,65 @@ describe('GeoPuzzleController', () => {
                 roundHistory: expect.any(Array),
                 highestStreak: 1,
             }));
+        });
+    });
+
+    describe('skipRound', () => {
+        it('skips the round and records it as failed', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.skipRound();
+
+            expect(controller.roundHistory[0].correct).toBe(false);
+            expect(controller.roundHistory[0].points).toBe(0);
+            expect(controller.phase).toBe('review');
+        });
+
+        it('shows the correct answer when skipping', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            const country = controller.currentCountry;
+            controller.skipRound();
+
+            const feedback = container.querySelector('.geo-puzzle-feedback');
+            expect(feedback.textContent).toContain(country.displayName);
+        });
+
+        it('does nothing in review phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.triggerGuess();
+            controller.submitGuess('Wrong');
+            expect(controller.phase).toBe('review');
+
+            const historyLength = controller.roundHistory.length;
+            controller.skipRound();
+            expect(controller.roundHistory.length).toBe(historyLength);
+        });
+
+        it('works during input phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.triggerGuess();
+            expect(controller.phase).toBe('input');
+
+            controller.skipRound();
+            expect(controller.roundHistory[0].correct).toBe(false);
+            expect(controller.phase).toBe('review');
+        });
+
+        it('disables skip button during review phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.skipRound();
+
+            const skipBtn = container.querySelector('.geo-puzzle-skip-btn');
+            expect(skipBtn.disabled).toBe(true);
         });
     });
 
@@ -494,6 +619,14 @@ describe('GeoPuzzleController', () => {
             controller.start(pool);
             controller.destroy();
             expect(controller.isActive).toBe(false);
+        });
+
+        it('clears all timers', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool);
+            controller.destroy();
+            expect(controller.hintTimer).toBeNull();
+            expect(controller.answerTimer).toBeNull();
         });
     });
 
@@ -584,6 +717,58 @@ describe('GeoPuzzleController', () => {
                 { correct: true },
             ];
             expect(controller.getHighestStreak()).toBe(3);
+        });
+    });
+
+    describe('keyboard shortcuts', () => {
+        it('Enter triggers guess in revealing phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            const event = new KeyboardEvent('keydown', { key: 'Enter' });
+            document.dispatchEvent(event);
+
+            expect(controller.phase).toBe('input');
+        });
+
+        it('Space triggers guess in revealing phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            const event = new KeyboardEvent('keydown', { code: 'Space', key: ' ' });
+            document.dispatchEvent(event);
+
+            expect(controller.phase).toBe('input');
+        });
+
+        it('Enter advances to next round in review phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            controller.triggerGuess();
+            const country = controller.currentCountry;
+            controller.submitGuess(country.spanishName);
+
+            expect(controller.phase).toBe('review');
+            expect(controller.currentRound).toBe(1);
+
+            const event = new KeyboardEvent('keydown', { key: 'Enter' });
+            document.dispatchEvent(event);
+
+            expect(controller.currentRound).toBe(2);
+        });
+
+        it('S key skips the round in revealing phase', () => {
+            controller = new GeoPuzzleController({ container });
+            controller.start(pool, { rounds: 5 });
+
+            expect(controller.phase).toBe('revealing');
+
+            const event = new KeyboardEvent('keydown', { key: 's' });
+            document.dispatchEvent(event);
+
+            expect(controller.roundHistory[0].correct).toBe(false);
+            expect(controller.phase).toBe('review');
         });
     });
 });

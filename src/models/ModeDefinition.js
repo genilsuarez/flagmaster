@@ -7,7 +7,6 @@ export const GAME_MODES = {
     letrasEnCaida: { id: 'letrasEnCaida', name: 'Letras en Caída', icon: '✏️', category: 'individual', description: 'Adivina antes de que caigan todas' },
     flagRush:      { id: 'flagRush',      name: 'Flag Rush',       icon: '🚩', category: 'individual', description: 'Elige el país correcto a contrarreloj' },
     capitalClash:  { id: 'capitalClash',  name: 'Capital Clash',   icon: '⚔️', category: 'individual', description: 'Elige la capital correcta' },
-    streakBlitz:   { id: 'streakBlitz',   name: 'Streak Blitz',    icon: '⚡', category: 'individual', description: 'Mezcla todo y encadena rachas' },
+    streakBlitz:   { id: 'streakBlitz',   name: 'Streak Blitz',    icon: '⚡', category: 'individual', description: 'Mezcla banderas y capitales, elige tu desafío' },
     geoPuzzle:     { id: 'geoPuzzle',     name: 'Geo Puzzle',      icon: '🧩', category: 'individual', description: 'Pistas progresivas, menos = más puntos' },
-    supervivencia: { id: 'supervivencia', name: 'Supervivencia',   icon: '💀', category: 'individual', description: '3 vidas, dificultad creciente' },
 };

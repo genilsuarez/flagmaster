@@ -10,7 +10,7 @@ export class Country {
         this.flagUrl = data.Flag_URL;
         this.isSovereign = data.Sovereign_State === 'Yes';
         this.population = data.Population;
-        this.area = data.Total_Area_Km2;
+        this.area = data['Total Area Km2'];
     }
 
     get displayName() {
