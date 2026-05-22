@@ -305,8 +305,8 @@ describe('GeoPuzzleController', () => {
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
-            // Formula: 1000 * ((6 - 1 + 1) / 6) * 1.0 = 1000
-            expect(controller.totalScore).toBe(1000);
+            // Formula: 100 * ((6 - 1 + 1) / 6) * 1.0 = 100
+            expect(controller.totalScore).toBe(100);
         });
 
         it('awards fewer points with more hints revealed', () => {
@@ -321,8 +321,8 @@ describe('GeoPuzzleController', () => {
             // guessesThisRound is 0, hintsRevealed is 3
             controller.submitGuess(country.spanishName);
 
-            // Formula: 1000 * ((6 - 3 + 1) / 6) * 1.0 = 667
-            expect(controller.totalScore).toBe(667);
+            // Formula: 100 * ((6 - 3 + 1) / 6) * 1.0 = 67
+            expect(controller.totalScore).toBe(67);
         });
 
         it('awards minimum points when guessing with all 6 hints', () => {
@@ -337,8 +337,8 @@ describe('GeoPuzzleController', () => {
             const country = controller.currentCountry;
             controller.submitGuess(country.spanishName);
 
-            // Formula: 1000 * ((6 - 6 + 1) / 6) * 1.0 = 167
-            expect(controller.totalScore).toBe(167);
+            // Formula: 100 * ((6 - 6 + 1) / 6) * 1.0 = 17
+            expect(controller.totalScore).toBe(17);
         });
 
         it('awards zero points when all hints used and guess is wrong', () => {
@@ -368,8 +368,8 @@ describe('GeoPuzzleController', () => {
             controller.submitGuess(country.spanishName);
 
             // After recordCorrect: count becomes 3, multiplier becomes 1.5
-            // Formula: 1000 * ((6 - 1 + 1) / 6) * 1.5 = 1500
-            expect(controller.totalScore).toBe(1500);
+            // Formula: 100 * ((6 - 1 + 1) / 6) * 1.5 = 150
+            expect(controller.totalScore).toBe(150);
         });
     });
 

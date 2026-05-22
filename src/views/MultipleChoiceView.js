@@ -87,12 +87,15 @@ export class MultipleChoiceView {
         // Show feedback on the selected button
         if (isCorrect) {
             this.#buttons[selectedIndex].classList.add('mc-option--correct');
+            this.#addFeedbackIcon(this.#buttons[selectedIndex], '✓');
         } else {
             this.#buttons[selectedIndex].classList.add('mc-option--incorrect');
+            this.#addFeedbackIcon(this.#buttons[selectedIndex], '✗');
             // Also highlight the correct answer
             const correctIndex = options.findIndex(o => o.correct);
             if (correctIndex !== -1) {
                 this.#buttons[correctIndex].classList.add('mc-option--correct');
+                this.#addFeedbackIcon(this.#buttons[correctIndex], '✓');
             }
         }
 
@@ -102,6 +105,20 @@ export class MultipleChoiceView {
                 onSelect(selectedIndex, isCorrect);
             }
         }, MultipleChoiceView.FEEDBACK_DELAY_MS);
+    }
+
+    /**
+     * Appends a feedback icon (✓ or ✗) to a button element.
+     * @param {HTMLButtonElement} button
+     * @param {string} icon
+     * @private
+     */
+    #addFeedbackIcon(button, icon) {
+        const span = document.createElement('span');
+        span.className = 'mc-option__icon';
+        span.textContent = ` ${icon}`;
+        span.setAttribute('aria-hidden', 'true');
+        button.appendChild(span);
     }
 
     /**

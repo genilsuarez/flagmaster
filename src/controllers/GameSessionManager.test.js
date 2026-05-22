@@ -251,11 +251,11 @@ describe('GameSessionManager', () => {
             manager.startSession('flagRush', { modeOptions: { rounds: 10 } }, pool);
 
             // Answer 3 correct to reach 1.5x multiplier
-            manager.handleAnswer(true, 10, 10); // 1000 * 1.0 = 1000
-            manager.handleAnswer(true, 10, 10); // 1000 * 1.0 = 1000
-            manager.handleAnswer(true, 10, 10); // 1000 * 1.5 = 1500
+            manager.handleAnswer(true, 10, 10); // 100 * 1.0 = 100
+            manager.handleAnswer(true, 10, 10); // 100 * 1.0 = 100
+            manager.handleAnswer(true, 10, 10); // 100 * 1.5 = 150
 
-            expect(manager.session.totalScore).toBe(1000 + 1000 + 1500);
+            expect(manager.session.totalScore).toBe(100 + 100 + 150);
         });
 
         it('grants power-up at streak milestone', () => {
@@ -297,8 +297,8 @@ describe('GameSessionManager', () => {
             manager.session.activePowerUp = 'doublePoints';
             manager.handleAnswer(true, 10, 10);
 
-            // 1000 * 1.0 * 2 = 2000
-            expect(manager.session.totalScore).toBe(2000);
+            // 100 * 1.0 * 2 = 200
+            expect(manager.session.totalScore).toBe(200);
         });
 
         it('clears active power-up after answer', () => {

@@ -428,8 +428,8 @@ describe('StreakBlitzController', () => {
             controller.start(pool, { timePerQuestion: 10 });
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(10);
             controller.handleAnswer(0, true);
-            // BASE_POINTS * (10/10) * 1.0 = 1000
-            expect(controller.totalScore).toBe(1000);
+            // BASE_POINTS * (10/10) * 1.0 = 100
+            expect(controller.totalScore).toBe(100);
         });
 
         it('calculates score with streak multiplier', () => {
@@ -438,11 +438,11 @@ describe('StreakBlitzController', () => {
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(10);
 
             // Answer 3 correct to reach 1.5x multiplier
-            controller.handleAnswer(0, true); // streak 1, mult 1.0 → 1000
-            controller.handleAnswer(0, true); // streak 2, mult 1.0 → 1000
-            controller.handleAnswer(0, true); // streak 3, mult 1.5 → 1500
+            controller.handleAnswer(0, true); // streak 1, mult 1.0 → 100
+            controller.handleAnswer(0, true); // streak 2, mult 1.0 → 100
+            controller.handleAnswer(0, true); // streak 3, mult 1.5 → 150
 
-            expect(controller.totalScore).toBe(1000 + 1000 + 1500);
+            expect(controller.totalScore).toBe(100 + 100 + 150);
         });
     });
 

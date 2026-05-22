@@ -416,6 +416,69 @@ body {
     transition-duration: 0.15s;
 }
 
+/* Game mode flag images — constrained size */
+.flag-rush-flag,
+.streak-blitz-flag,
+.geo-puzzle-flag,
+.supervivencia-flag {
+    width: 100%;
+    max-width: 240px;
+    max-height: 150px;
+    object-fit: contain;
+    margin: 0 auto var(--space-sm);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 0 0 4px var(--warm-white),
+                0 0 0 6px var(--terracotta),
+                0 12px 36px rgba(28, 25, 23, 0.15);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, var(--warm-white) 100%);
+    padding: var(--space-sm);
+    display: block;
+    animation: flagReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation-fill-mode: both;
+}
+
+/* FLAG RUSH — Layout */
+.flag-rush-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-xs);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, rgba(122, 155, 127, 0.08) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(122, 155, 127, 0.2);
+}
+
+.flag-rush-score {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.flag-rush-progress {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-weight: 500;
+}
+
+.flag-rush-timer {
+    margin: var(--space-xs) 0;
+}
+
+.flag-rush-streak {
+    min-height: 0;
+}
+
+.flag-rush-options {
+    margin-top: var(--space-sm);
+}
+
+.flag-rush-powerups {
+    margin-top: var(--space-sm);
+}
+
 /* COUNTRY INFO — Big Bold Reveal */
 #countryInfo {
     margin: 0 0 var(--space-md);
@@ -1098,7 +1161,7 @@ body.screen-game .game-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: var(--space-md) var(--space-xl);
+    padding: var(--space-sm) var(--space-xl);
     width: 100%;
     gap: var(--space-2xl);
 }
@@ -1190,9 +1253,9 @@ body.screen-game .game-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 0 var(--space-xl);
+    padding: var(--space-md) var(--space-xl) 0;
     max-width: 900px;
     margin: 0 auto;
     width: 100%;
@@ -1215,7 +1278,7 @@ body.screen-game .game-wrapper {
     font-weight: 400;
     line-height: 1.1;
     letter-spacing: -0.02em;
-    margin: 0 0 var(--space-sm);
+    margin: 0 0 var(--space-xs);
     color: var(--ink);
     display: flex;
     flex-direction: column;
@@ -1406,7 +1469,7 @@ body.screen-game .game-wrapper {
 
 /* LANDING PROGRESS */
 .landing-progress {
-    margin: 0 auto var(--space-md);
+    margin: 0 auto var(--space-xs);
     font-family: var(--font-body);
     font-size: 0.8rem;
     color: var(--charcoal);
@@ -1451,37 +1514,34 @@ body.screen-game .game-wrapper {
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    opacity: 0.4;
+    opacity: 0.35;
 }
 
 .landing-flags-grid img {
     position: absolute;
-    width: 68px;
+    width: 54px;
     height: auto;
     border-radius: var(--radius-sm);
-    filter: saturate(0.65) contrast(0.85);
-    animation: flagDrift 22s ease-in-out infinite;
+    filter: saturate(0.55) contrast(0.8);
+    animation: flagDrift 26s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Flags in arcs on left and right sides only */
-/* Left arc (6 flags curving along left edge) */
-.landing-flags-grid img:nth-child(1)  { top: 8%;  left: 3%;   transform: rotate(-5deg); animation-delay: 0s; }
-.landing-flags-grid img:nth-child(2)  { top: 24%; left: 1%;   transform: rotate(3deg); animation-delay: -4s; }
-.landing-flags-grid img:nth-child(3)  { top: 40%; left: 2%;   transform: rotate(-3deg); animation-delay: -8s; }
-.landing-flags-grid img:nth-child(4)  { top: 56%; left: 1%;   transform: rotate(4deg); animation-delay: -12s; }
-.landing-flags-grid img:nth-child(5)  { top: 72%; left: 3%;   transform: rotate(-6deg); animation-delay: -2s; }
-.landing-flags-grid img:nth-child(6)  { top: 88%; left: 5%;   transform: rotate(5deg); animation-delay: -6s; }
-/* Right arc (6 flags curving along right edge) */
-.landing-flags-grid img:nth-child(7)  { top: 8%;  right: 3%;  left: auto; transform: rotate(5deg); animation-delay: -1s; }
-.landing-flags-grid img:nth-child(8)  { top: 24%; right: 1%;  left: auto; transform: rotate(-4deg); animation-delay: -5s; }
-.landing-flags-grid img:nth-child(9)  { top: 40%; right: 2%;  left: auto; transform: rotate(6deg); animation-delay: -9s; }
-.landing-flags-grid img:nth-child(10) { top: 56%; right: 1%;  left: auto; transform: rotate(-5deg); animation-delay: -13s; }
-.landing-flags-grid img:nth-child(11) { top: 72%; right: 3%;  left: auto; transform: rotate(3deg); animation-delay: -3s; }
-.landing-flags-grid img:nth-child(12) { top: 88%; right: 5%;  left: auto; transform: rotate(-4deg); animation-delay: -7s; }
+/* 8 flags in smooth semicircular arcs — 4 left, 4 right */
+/* Left arc (curving inward like a parenthesis) */
+.landing-flags-grid img:nth-child(1)  { top: 12%;  left: 5%;   transform: rotate(-4deg); animation-delay: 0s; }
+.landing-flags-grid img:nth-child(2)  { top: 32%;  left: 2%;   transform: rotate(2deg);  animation-delay: -6s; }
+.landing-flags-grid img:nth-child(3)  { top: 55%;  left: 2%;   transform: rotate(-3deg); animation-delay: -13s; }
+.landing-flags-grid img:nth-child(4)  { top: 78%;  left: 5%;   transform: rotate(4deg);  animation-delay: -19s; }
+/* Right arc (mirrored) */
+.landing-flags-grid img:nth-child(5)  { top: 12%;  right: 5%;  left: auto; transform: rotate(4deg);  animation-delay: -3s; }
+.landing-flags-grid img:nth-child(6)  { top: 32%;  right: 2%;  left: auto; transform: rotate(-2deg); animation-delay: -9s; }
+.landing-flags-grid img:nth-child(7)  { top: 55%;  right: 2%;  left: auto; transform: rotate(3deg);  animation-delay: -16s; }
+.landing-flags-grid img:nth-child(8)  { top: 78%;  right: 5%;  left: auto; transform: rotate(-4deg); animation-delay: -22s; }
 
 @keyframes flagDrift {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.02); }
 }
 
 /* DRAWER */
@@ -2358,6 +2418,27 @@ body.screen-game .game-wrapper {
                     0 12px 32px rgba(28, 25, 23, 0.18);
     }
 
+    .flag-rush-flag,
+    .streak-blitz-flag,
+    .geo-puzzle-flag,
+    .supervivencia-flag {
+        max-width: 200px;
+        max-height: 120px;
+        padding: var(--space-xs);
+    }
+
+    .flag-rush-header {
+        padding: var(--space-xs) var(--space-sm);
+    }
+
+    .flag-rush-score {
+        font-size: 1.2rem;
+    }
+
+    .flag-rush-progress {
+        font-size: 0.8rem;
+    }
+
     #countryInfo {
         font-size: 1.5rem;
         margin: 0 0 var(--space-sm);
@@ -3062,20 +3143,54 @@ body.screen-game .game-wrapper {
 }
 
 .mc-option--correct {
-    border-color: var(--sage);
-    background: rgba(107, 154, 112, 0.12);
-    color: var(--deep-sage);
+    border-color: #2e7d32;
+    background: rgba(46, 125, 50, 0.18);
+    color: #1b5e20;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.25);
+    font-weight: 700;
+    animation: mc-pulse-correct 0.35s ease-out;
 }
 
 .mc-option--incorrect {
-    border-color: var(--rust);
-    background: rgba(160, 75, 56, 0.1);
-    color: var(--rust);
+    border-color: #c62828;
+    background: rgba(198, 40, 40, 0.15);
+    color: #b71c1c;
+    box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.2);
+    font-weight: 700;
+    animation: mc-shake 0.4s ease-out;
+}
+
+@keyframes mc-pulse-correct {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+@keyframes mc-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
 }
 
 .mc-option--disabled {
     opacity: 0.35;
     pointer-events: none;
+}
+
+.mc-option__icon {
+    font-weight: 800;
+    font-size: 1.1em;
+    margin-left: 0.3em;
+}
+
+.mc-option--correct .mc-option__icon {
+    color: #2e7d32;
+}
+
+.mc-option--incorrect .mc-option__icon {
+    color: #c62828;
 }
 
 /* TIMER BAR — Linear countdown progress */
@@ -3655,28 +3770,28 @@ body.screen-game .game-wrapper {
 .landing-modes {
     width: 100%;
     max-width: 520px;
-    margin: var(--space-md) auto 0;
+    margin: var(--space-xs) auto 0;
     padding: 0 var(--space-md);
 }
 
 .landing-modes__label {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--stone);
-    margin: 0 0 var(--space-sm);
+    margin: 0 0 4px;
 }
 
 .landing-modes__label:not(:first-child) {
-    margin-top: var(--space-sm);
+    margin-top: var(--space-xs);
 }
 
 .landing-modes__grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-xs);
+    gap: 6px;
 }
 
 .landing-mode-card {
@@ -3684,14 +3799,14 @@ body.screen-game .game-wrapper {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: var(--space-md) var(--space-sm);
+    gap: 3px;
+    padding: 10px var(--space-sm);
     border: 1.5px solid var(--soft-sand);
     border-radius: var(--radius-lg);
     background: var(--warm-white);
     cursor: pointer;
     transition: all 200ms var(--ease-gentle);
-    min-height: 72px;
+    min-height: 56px;
 }
 
 .landing-mode-card:hover {
@@ -3705,13 +3820,13 @@ body.screen-game .game-wrapper {
 }
 
 .landing-mode-card__icon {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     line-height: 1;
 }
 
 .landing-mode-card__name {
     font-family: var(--font-body);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--charcoal);
     text-align: center;

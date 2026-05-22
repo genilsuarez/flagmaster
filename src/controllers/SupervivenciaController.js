@@ -127,6 +127,7 @@ export class SupervivenciaController {
         // Reset services
         this.streakService.reset();
         this.powerUpService.reset();
+        this.distractorService.resetPositionHistory();
 
         // Shuffle pool
         this.shufflePool();
