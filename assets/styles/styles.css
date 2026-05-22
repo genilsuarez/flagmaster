@@ -1451,31 +1451,33 @@ body.screen-game .game-wrapper {
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    opacity: 0.12;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, transparent 25%, black 75%);
+    opacity: 0.4;
 }
 
 .landing-flags-grid img {
     position: absolute;
-    width: 90px;
+    width: 68px;
     height: auto;
     border-radius: var(--radius-sm);
-    filter: saturate(0.7) contrast(0.9);
+    filter: saturate(0.65) contrast(0.85);
     animation: flagDrift 22s ease-in-out infinite;
 }
 
-.landing-flags-grid img:nth-child(1)  { top: 6%;  left: 5%;   transform: rotate(-6deg); animation-delay: 0s; }
-.landing-flags-grid img:nth-child(2)  { top: 15%; left: 84%;  transform: rotate(5deg); animation-delay: -2s; }
-.landing-flags-grid img:nth-child(3)  { top: 3%;  left: 40%;  transform: rotate(3deg); animation-delay: -4s; }
-.landing-flags-grid img:nth-child(4)  { top: 60%; left: 2%;   transform: rotate(-4deg); animation-delay: -6s; }
-.landing-flags-grid img:nth-child(5)  { top: 70%; left: 20%;  transform: rotate(8deg); animation-delay: -8s; }
-.landing-flags-grid img:nth-child(6)  { top: 10%; left: 70%;  transform: rotate(-8deg); animation-delay: -10s; }
-.landing-flags-grid img:nth-child(7)  { top: 35%; left: 90%;  transform: rotate(6deg); animation-delay: -12s; }
-.landing-flags-grid img:nth-child(8)  { top: 52%; left: 93%;  transform: rotate(-5deg); animation-delay: -14s; }
-.landing-flags-grid img:nth-child(9)  { top: 78%; left: 70%;  transform: rotate(4deg); animation-delay: -1s; }
-.landing-flags-grid img:nth-child(10) { top: 42%; left: 1%;   transform: rotate(6deg); animation-delay: -3s; }
-.landing-flags-grid img:nth-child(11) { top: 28%; left: 14%;  transform: rotate(-3deg); animation-delay: -5s; }
-.landing-flags-grid img:nth-child(12) { top: 68%; left: 50%;  transform: rotate(-7deg); animation-delay: -7s; }
+/* Flags in arcs on left and right sides only */
+/* Left arc (6 flags curving along left edge) */
+.landing-flags-grid img:nth-child(1)  { top: 8%;  left: 3%;   transform: rotate(-5deg); animation-delay: 0s; }
+.landing-flags-grid img:nth-child(2)  { top: 24%; left: 1%;   transform: rotate(3deg); animation-delay: -4s; }
+.landing-flags-grid img:nth-child(3)  { top: 40%; left: 2%;   transform: rotate(-3deg); animation-delay: -8s; }
+.landing-flags-grid img:nth-child(4)  { top: 56%; left: 1%;   transform: rotate(4deg); animation-delay: -12s; }
+.landing-flags-grid img:nth-child(5)  { top: 72%; left: 3%;   transform: rotate(-6deg); animation-delay: -2s; }
+.landing-flags-grid img:nth-child(6)  { top: 88%; left: 5%;   transform: rotate(5deg); animation-delay: -6s; }
+/* Right arc (6 flags curving along right edge) */
+.landing-flags-grid img:nth-child(7)  { top: 8%;  right: 3%;  left: auto; transform: rotate(5deg); animation-delay: -1s; }
+.landing-flags-grid img:nth-child(8)  { top: 24%; right: 1%;  left: auto; transform: rotate(-4deg); animation-delay: -5s; }
+.landing-flags-grid img:nth-child(9)  { top: 40%; right: 2%;  left: auto; transform: rotate(6deg); animation-delay: -9s; }
+.landing-flags-grid img:nth-child(10) { top: 56%; right: 1%;  left: auto; transform: rotate(-5deg); animation-delay: -13s; }
+.landing-flags-grid img:nth-child(11) { top: 72%; right: 3%;  left: auto; transform: rotate(3deg); animation-delay: -3s; }
+.landing-flags-grid img:nth-child(12) { top: 88%; right: 5%;  left: auto; transform: rotate(-4deg); animation-delay: -7s; }
 
 @keyframes flagDrift {
     0%, 100% { transform: translateY(0); }
