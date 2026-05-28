@@ -556,10 +556,11 @@ body {
 .mode-skip-btn {
     display: block;
     margin: var(--space-sm) auto 0;
-    padding: 6px var(--space-md);
+    height: 36px;
+    padding: 0 var(--space-lg);
     background: transparent;
     color: var(--stone);
-    border: 1.5px solid rgba(107, 143, 163, 0.35);
+    border: 1.5px solid var(--warm-gray);
     border-radius: var(--radius-pill);
     font-family: var(--font-body);
     font-size: 0.75rem;
@@ -567,13 +568,15 @@ body {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    transition: color var(--duration-quick) var(--ease-gentle),
+                border-color var(--duration-quick) var(--ease-gentle),
+                background var(--duration-quick) var(--ease-gentle);
 }
 
 .mode-skip-btn:hover:not(:disabled) {
-    color: var(--ink);
-    border-color: rgba(107, 143, 163, 0.7);
-    background: rgba(107, 143, 163, 0.08);
+    color: var(--charcoal);
+    border-color: var(--stone);
+    background: var(--soft-sand);
 }
 
 .mode-skip-btn:disabled {
@@ -598,6 +601,12 @@ body {
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--ink);
+}
+
+.streak-blitz-lives {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--rust);
 }
 
 .streak-blitz-question-count {
@@ -690,8 +699,12 @@ body {
     font-size: 1.6rem;
     font-weight: 400;
     color: var(--ink);
-    margin: var(--space-md) 0;
-    min-height: 3rem;
+    margin: var(--space-sm) 0;
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, rgba(160, 75, 56, 0.05) 0%, rgba(160, 75, 56, 0.1) 100%);
+    border-radius: var(--radius-md);
+    border: 2px dashed rgba(160, 75, 56, 0.3);
+    height: 3rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -797,20 +810,25 @@ body {
 
 /* Skip button (in header) */
 .geo-puzzle-skip-btn {
-    padding: var(--space-xs) var(--space-md);
-    border: 1px solid var(--warm-gray);
-    border-radius: var(--radius-md);
+    height: 36px;
+    padding: 0 var(--space-md);
+    border: 1.5px solid var(--warm-gray);
+    border-radius: var(--radius-pill);
     font-family: var(--font-body);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     cursor: pointer;
-    background: var(--soft-sand);
-    color: var(--charcoal);
-    transition: all 0.2s;
+    background: transparent;
+    color: var(--stone);
+    transition: all var(--duration-quick) var(--ease-gentle);
 }
 
 .geo-puzzle-skip-btn:hover:not(:disabled) {
-    background: var(--warm-gray);
+    background: var(--soft-sand);
+    border-color: var(--stone);
+    color: var(--charcoal);
 }
 
 .geo-puzzle-skip-btn:disabled {
@@ -822,27 +840,31 @@ body {
 .geo-puzzle-guess-btn {
     display: block;
     width: 100%;
-    padding: var(--space-md) var(--space-lg);
+    height: 48px;
+    padding: 0 var(--space-lg);
     margin-top: var(--space-md);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     font-family: var(--font-body);
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    cursor: pointer;
-    background: var(--sage);
-    color: var(--warm-white);
-    transition: all 0.2s;
     letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--deep-sage) 0%, var(--sage) 100%);
+    color: var(--warm-white);
+    transition: all var(--duration-moderate) var(--ease-spring);
+    box-shadow: 0 4px 12px rgba(74, 122, 80, 0.25);
 }
 
 .geo-puzzle-guess-btn:hover {
-    background: var(--deep-sage);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(74, 122, 80, 0.35);
 }
 
 .geo-puzzle-guess-btn:active {
     transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(74, 122, 80, 0.2);
 }
 
 /* Input area */
@@ -872,20 +894,23 @@ body {
 }
 
 .geo-puzzle-submit {
-    padding: var(--space-sm) var(--space-lg);
+    height: 48px;
+    padding: 0 var(--space-lg);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     font-family: var(--font-body);
     font-size: 0.9rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
     cursor: pointer;
-    transition: all 0.2s;
-    background: var(--sage);
+    transition: all var(--duration-quick) var(--ease-gentle);
+    background: var(--deep-sage);
     color: var(--warm-white);
 }
 
 .geo-puzzle-submit:hover {
-    background: var(--deep-sage);
+    background: var(--sage);
+    transform: translateY(-1px);
 }
 
 /* Countdown */
@@ -2503,14 +2528,17 @@ body.screen-game .game-wrapper {
 }
 
 .word-drop-end-btn {
-    padding: var(--space-xs) var(--space-md);
-    border-radius: var(--radius-md);
+    height: 36px;
+    padding: 0 var(--space-md);
+    border-radius: var(--radius-pill);
     background: transparent;
     color: var(--rust);
     border: 1.5px solid var(--rust);
     font-family: var(--font-body);
     font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     cursor: pointer;
     transition: all var(--duration-quick) var(--ease-gentle);
 }
@@ -2537,7 +2565,7 @@ body.screen-game .game-wrapper {
 
 .wd-score-value {
     font-family: var(--font-display);
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 400;
     color: var(--terracotta);
     min-width: 40px;
@@ -2685,22 +2713,25 @@ body.screen-game .game-wrapper {
 }
 
 .word-drop-guess-btn {
-    padding: var(--space-sm) var(--space-xl);
+    height: 48px;
+    padding: 0 var(--space-xl);
     border-radius: var(--radius-pill);
     font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     color: var(--warm-white);
-    background: var(--ink);
+    background: linear-gradient(135deg, var(--deep-sage) 0%, var(--sage) 100%);
     border: none;
     cursor: pointer;
-    transition: all var(--duration-moderate) var(--ease-gentle);
+    transition: all var(--duration-moderate) var(--ease-spring);
+    box-shadow: 0 4px 12px rgba(74, 122, 80, 0.25);
 }
 
 .word-drop-guess-btn:hover {
-    background: var(--charcoal);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-medium);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(74, 122, 80, 0.35);
 }
 
 .word-drop-input-container {
@@ -2735,15 +2766,16 @@ body.screen-game .game-wrapper {
 }
 
 .word-drop-submit-btn {
-    height: 44px;
+    height: 48px;
     padding: 0 var(--space-lg);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     border: none;
     background: var(--deep-sage);
     color: var(--warm-white);
     font-family: var(--font-body);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
     cursor: pointer;
     transition: all var(--duration-quick) var(--ease-gentle);
 }
@@ -2774,14 +2806,17 @@ body.screen-game .game-wrapper {
 }
 
 .word-drop-next-btn {
-    padding: var(--space-md) var(--space-2xl);
+    height: 48px;
+    padding: 0 var(--space-2xl);
     border-radius: var(--radius-pill);
     background: var(--deep-sage);
     color: var(--warm-white);
     border: none;
     font-family: var(--font-body);
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     cursor: pointer;
     transition: all var(--duration-quick) var(--ease-gentle);
     margin-top: var(--space-md);
@@ -3640,18 +3675,22 @@ body.screen-game .game-wrapper {
 }
 
 .mc-option {
-    padding: var(--space-lg) var(--space-md);
+    height: 52px;
+    padding: 0 var(--space-md);
     border-radius: var(--radius-md);
     border: 2px solid var(--warm-gray);
     background: var(--warm-white);
     color: var(--charcoal);
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 500;
     cursor: pointer;
     transition: all var(--duration-quick) var(--ease-gentle);
     text-align: center;
     line-height: 1.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mc-option:hover:not(:disabled) {
@@ -3671,19 +3710,19 @@ body.screen-game .game-wrapper {
 }
 
 .mc-option--correct {
-    border-color: #2e7d32;
-    background: rgba(46, 125, 50, 0.18);
-    color: #1b5e20;
-    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.25);
+    border-color: var(--deep-sage);
+    background: rgba(74, 122, 80, 0.12);
+    color: var(--deep-sage);
+    box-shadow: 0 0 0 3px rgba(74, 122, 80, 0.2);
     font-weight: 700;
     animation: mc-pulse-correct 0.35s ease-out;
 }
 
 .mc-option--incorrect {
-    border-color: #c62828;
-    background: rgba(198, 40, 40, 0.15);
-    color: #b71c1c;
-    box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.2);
+    border-color: var(--rust);
+    background: rgba(160, 75, 56, 0.12);
+    color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(160, 75, 56, 0.15);
     font-weight: 700;
     animation: mc-shake 0.4s ease-out;
 }
@@ -3714,11 +3753,11 @@ body.screen-game .game-wrapper {
 }
 
 .mc-option--correct .mc-option__icon {
-    color: #2e7d32;
+    color: var(--deep-sage);
 }
 
 .mc-option--incorrect .mc-option__icon {
-    color: #c62828;
+    color: var(--rust);
 }
 
 /* TIMER BAR — Linear countdown progress */
@@ -4178,7 +4217,8 @@ body.screen-game .game-wrapper {
     }
 
     .mc-option {
-        padding: var(--space-md) var(--space-sm);
+        height: 52px;
+        padding: 0 var(--space-sm);
         font-size: 0.82rem;
     }
 
