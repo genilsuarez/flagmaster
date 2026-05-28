@@ -279,13 +279,18 @@ export class GameSessionManager {
 
             case 'letrasEnCaida': {
                 const difficulty = modeOptions.difficulty || 'easy';
+                const category = modeOptions.category || 'country';
                 // hard = no flag, easy/medium = flag shown
                 const showFlag = difficulty !== 'hard';
+                // When guessing capitals, only include countries that have a capital registered
+                const filteredPool = category === 'capital'
+                    ? pool.filter(c => c.capital && c.capital.trim() !== '' && c.capital !== 'Desconocida')
+                    : pool;
                 this.activeController.start({
-                    countries: pool,
+                    countries: filteredPool.length > 0 ? filteredPool : pool,
                     survival: modeOptions.survival !== false,
                     showFlag,
-                    category: modeOptions.category || 'country',
+                    category,
                     speed: modeOptions.speed || 'normal',
                     difficulty,
                 });

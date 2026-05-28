@@ -157,9 +157,10 @@ export class WordDropController {
         // Contextual hint for easy mode:
         // - guessing country name → show the capital as hint
         // - guessing capital → show the country name as hint
-        const hint = this.category === 'capital'
+        const hintValue = this.category === 'capital'
             ? country.spanishName
             : (country.capital || null);
+        const hint = hintValue || null;
 
         this.view.setupWord(round.word, this.showFlag, country.flagUrl, hint);
         

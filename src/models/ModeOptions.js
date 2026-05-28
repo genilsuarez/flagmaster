@@ -39,13 +39,13 @@ export const MODE_OPTIONS = {
     ],
     letrasEnCaida: [
         { id: 'difficulty', label: 'Dificultad', type: 'select', options: [
-            { value: 'easy',   label: '🟢 Fácil — Bandera + nombre' },
+            { value: 'easy',   label: '🟢 Fácil — Bandera + pista' },
             { value: 'medium', label: '🟡 Medio — Solo bandera' },
             { value: 'hard',   label: '🔴 Difícil — Sin pista' },
         ], default: 'easy' },
         { id: 'category', label: 'Categoría', type: 'select', options: [
-            { value: 'country', label: '🌍 Países' },
-            { value: 'capital', label: '🏛️ Capitales' },
+            { value: 'country', label: '🌍 Países (adivina el país)' },
+            { value: 'capital', label: '🏛️ Capitales (adivina la capital)' },
         ], default: 'country' },
         { id: 'speed', label: 'Velocidad', type: 'select', options: [
             { value: 'slow', label: '🐢 Lento' },
