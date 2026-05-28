@@ -438,6 +438,7 @@ export class StreakBlitzController {
 
         if (this.multipleChoiceView) {
             this.multipleChoiceView.disable();
+            this.multipleChoiceView.revealCorrectAnswer();
         }
 
         this.handleAnswer(-1, false);

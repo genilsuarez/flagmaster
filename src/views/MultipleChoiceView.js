@@ -58,6 +58,7 @@ export class MultipleChoiceView {
             button.textContent = option.text;
             button.setAttribute('aria-label', option.text);
 
+            button.dataset.correct = option.correct ? 'true' : 'false';
             button.addEventListener('click', () => {
                 if (this.#disabled) return;
                 this.#handleSelection(index, options, onSelect);
@@ -144,6 +145,19 @@ export class MultipleChoiceView {
         this.#disabled = true;
         this.#buttons.forEach(button => {
             button.disabled = true;
+        });
+    }
+
+    /**
+     * Highlights the correct answer button without requiring a selection.
+     * Used when the timer expires so the player can see which answer was correct.
+     */
+    revealCorrectAnswer() {
+        this.#buttons.forEach(button => {
+            if (button.dataset.correct === 'true') {
+                button.classList.add('mc-option--correct');
+                this.#addFeedbackIcon(button, '✓');
+            }
         });
     }
 
