@@ -66,10 +66,10 @@ export class WordDropView {
         this.flagHint.alt = 'Flag hint';
         this.flagHint.loading = 'eager';
 
-        // Country name hint (easy mode only)
-        this.countryNameHint = document.createElement('div');
-        this.countryNameHint.className = 'word-drop-country-name-hint';
-        this.countryNameHint.hidden = true;
+        // Contextual hint (easy mode only): shows capital when guessing country, or country name when guessing capital
+        this.hintEl = document.createElement('div');
+        this.hintEl.className = 'word-drop-country-name-hint';
+        this.hintEl.hidden = true;
 
         // Letter grid
         this.letterGrid = document.createElement('div');
@@ -141,7 +141,7 @@ export class WordDropView {
         this.container.appendChild(topBar);
         this.container.appendChild(this.progressBarContainer);
         this.container.appendChild(this.flagHint);
-        this.container.appendChild(this.countryNameHint);
+        this.container.appendChild(this.hintEl);
         this.container.appendChild(this.letterGrid);
         this.container.appendChild(this.feedbackEl);
         this.container.appendChild(this.guessButton);
@@ -176,9 +176,11 @@ export class WordDropView {
      * @param {string} word - The word to display as boxes
      * @param {boolean} showFlag - Whether to show the flag hint
      * @param {string} flagUrl - URL of the flag image
-     * @param {string} [countryName] - Country name for easy mode hint
+     * @param {string} [hint] - Contextual hint for easy mode:
+     *   - When guessing country name: the country's capital
+     *   - When guessing capital: the country's name
      */
-    setupWord(word, showFlag, flagUrl, countryName) {
+    setupWord(word, showFlag, flagUrl, hint) {
         this.letterGrid.innerHTML = '';
         this.letterBoxes = [];
         this.feedbackEl.textContent = '';
@@ -190,6 +192,7 @@ export class WordDropView {
         this.answerInput.value = '';
         this.answerInput.disabled = false;
 
+        // Country name hint removed — no longer shown
         // Flag hint
         this.flagHint.classList.remove('flag-hint-reveal');
         if (showFlag && flagUrl) {
@@ -199,13 +202,13 @@ export class WordDropView {
             this.flagHint.hidden = true;
         }
 
-        // Country name hint (easy mode only)
-        if (this.currentDifficulty === 'easy' && countryName) {
-            this.countryNameHint.textContent = countryName;
-            this.countryNameHint.hidden = false;
+        // Contextual hint: only shown in easy mode, and only if hint text is provided
+        if (this.currentDifficulty === 'easy' && hint) {
+            this.hintEl.textContent = hint;
+            this.hintEl.hidden = false;
         } else {
-            this.countryNameHint.textContent = '';
-            this.countryNameHint.hidden = true;
+            this.hintEl.textContent = '';
+            this.hintEl.hidden = true;
         }
 
         // Create letter boxes
@@ -471,6 +474,8 @@ export class WordDropView {
         this.nextButton.hidden = true;
         this.answerInput.value = '';
         this.flagHint.hidden = true;
+        this.hintEl.textContent = '';
+        this.hintEl.hidden = true;
         this.stopAnswerCountdown();
         this.updateScore(0);
         this.updateLives(3);

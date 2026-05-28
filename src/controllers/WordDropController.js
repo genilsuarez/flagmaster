@@ -154,7 +154,14 @@ export class WordDropController {
             speed: this.speed
         });
 
-        this.view.setupWord(round.word, this.showFlag, country.flagUrl, country.spanishName);
+        // Contextual hint for easy mode:
+        // - guessing country name → show the capital as hint
+        // - guessing capital → show the country name as hint
+        const hint = this.category === 'capital'
+            ? country.spanishName
+            : (country.capital || null);
+
+        this.view.setupWord(round.word, this.showFlag, country.flagUrl, hint);
         
         // Small delay before starting reveal for visual readiness
         this.revealStartTimeout = setTimeout(() => {
@@ -380,7 +387,9 @@ export class WordDropController {
             ? '🔴 Difícil (sin pista)'
             : this.difficulty === 'medium'
                 ? '🟡 Medio (solo bandera)'
-                : '🟢 Fácil (bandera + nombre)';
+                : this.category === 'capital'
+                    ? '🟢 Fácil (bandera + país)'
+                    : '🟢 Fácil (bandera + capital)';
 
         modal.innerHTML = `
             <div class="modal-content">

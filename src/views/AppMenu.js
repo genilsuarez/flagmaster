@@ -84,51 +84,80 @@ const MODAL_TEMPLATES = {
                 letrasEnCaida: { icon: '✏️', name: 'Letras en Caída' },
             };
 
-            const modeStatsHtml = Object.entries(modeNames)
-                .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0)
+            const playedModes = Object.entries(modeNames)
+                .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0);
+
+            const maxScore = playedModes.reduce((max, [id]) => Math.max(max, modeStats[id].bestScore), 1);
+
+            const modeStatsHtml = playedModes
                 .map(([id, { icon, name }]) => {
                     const m = modeStats[id];
+                    const barWidth = maxScore > 0 ? Math.round((m.bestScore / maxScore) * 100) : 0;
                     return `
                         <div class="mode-stat-row">
-                            <span style="font-size:1rem;flex-shrink:0" aria-hidden="true">${icon}</span>
-                            <span class="mode-stat-name">${name}</span>
-                            <span class="mode-stat-detail">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'} · Mejor: ${m.bestScore.toLocaleString()}</span>
+                            <span class="mode-stat-icon" aria-hidden="true">${icon}</span>
+                            <div class="mode-stat-body">
+                                <div class="mode-stat-top">
+                                    <span class="mode-stat-name">${name}</span>
+                                    <span class="mode-stat-score">${m.bestScore.toLocaleString()}</span>
+                                </div>
+                                <div class="mode-stat-bottom">
+                                    <div class="mode-stat-bar-track">
+                                        <div class="mode-stat-bar-fill" style="width:${barWidth}%"></div>
+                                    </div>
+                                    <span class="mode-stat-games">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'}</span>
+                                </div>
+                            </div>
                         </div>
                     `;
                 }).join('');
 
             const uniqueCount = Array.isArray(stats.uniqueCountriesCorrect) ? stats.uniqueCountriesCorrect.length : 0;
+            const totalCountries = 195;
+            const uniquePct = Math.round((uniqueCount / totalCountries) * 100);
 
             return `
                 <div class="stats-grid">
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">🎮</div>
                         <div class="stat-label">Partidas</div>
                         <div class="stat-value">${stats.gamesPlayed}</div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">✅</div>
                         <div class="stat-label">Aciertos</div>
                         <div class="stat-value">${stats.totalCorrect}</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-card--accent">
+                        <div class="stat-card-icon" aria-hidden="true">🎯</div>
                         <div class="stat-label">Precisión</div>
                         <div class="stat-value">${accuracy}<small>%</small></div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">⏱️</div>
                         <div class="stat-label">Mejor tiempo</div>
                         <div class="stat-value">${bestTime}</div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">🔥</div>
                         <div class="stat-label">Racha actual</div>
                         <div class="stat-value">${stats.currentStreak}<small>días</small></div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">🏆</div>
                         <div class="stat-label">Racha más larga</div>
                         <div class="stat-value">${stats.longestStreak}<small>días</small></div>
                     </div>
-                    <div class="stat-card" style="grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between;">
-                        <div class="stat-label" style="text-transform:uppercase;font-size:0.6rem;letter-spacing:0.07em;font-weight:600;color:var(--stone)">Banderas únicas acertadas</div>
-                        <div class="stat-value" style="color:var(--terracotta)">${uniqueCount}</div>
+                </div>
+                <div class="stats-unique-card">
+                    <div class="stats-unique-left">
+                        <span class="stats-unique-icon" aria-hidden="true">🌍</span>
+                        <div>
+                            <div class="stats-unique-label">Banderas únicas acertadas</div>
+                            <div class="stats-unique-sub">${uniquePct}% del mundo desbloqueado</div>
+                        </div>
                     </div>
+                    <div class="stats-unique-value">${uniqueCount}<span class="stats-unique-total">/${totalCountries}</span></div>
                 </div>
                 ${modeStatsHtml ? `
                     <div class="mode-stats-section">

@@ -279,7 +279,7 @@ export class GameSessionManager {
 
             case 'letrasEnCaida': {
                 const difficulty = modeOptions.difficulty || 'easy';
-                // hard = no flag, medium = flag only, easy = flag + country name
+                // hard = no flag, easy/medium = flag shown
                 const showFlag = difficulty !== 'hard';
                 this.activeController.start({
                     countries: pool,
