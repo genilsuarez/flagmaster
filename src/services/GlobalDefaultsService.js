@@ -1,5 +1,10 @@
 /**
- * GlobalDefaultsService — Single source of truth for shared game defaults.
+ * GlobalDefaultsService — Level 2 of the 3-level preference hierarchy.
+ *
+ * Preference resolution order (highest wins):
+ *   1. Factory defaults  — hardcoded in ModeOptions.js / FACTORY_DEFAULTS below
+ *   2. Global defaults   — this service, persisted under 'flagquiz_global_defaults'
+ *   3. Local per-mode    — BottomSheetView, persisted under 'flagquiz_mode_config_<modeId>'
  *
  * Governs the four fields that are common to every game mode and that the
  * user may want to set once rather than repeating per mode:
@@ -10,10 +15,11 @@
  *   randomOrder      — shuffle pool          (boolean, default true)
  *
  * These values are persisted under a single localStorage key and are read by
- * BottomSheetView as the starting point before per-mode overrides are applied.
+ * BottomSheetView as the starting point before per-mode local overrides are applied.
  *
- * Per-mode overrides (modeOptions: rounds, timePerQuestion, etc.) are NOT
- * managed here — they remain in `flagquiz_mode_config_<modeId>`.
+ * Per-mode overrides (modeOptions: rounds, timePerQuestion, etc. plus content
+ * filters set at mode level) are stored in `flagquiz_mode_config_<modeId>` and
+ * always take precedence over these global defaults.
  *
  * Usage:
  *   const svc = new GlobalDefaultsService();

@@ -90,7 +90,7 @@ export class BottomSheetView {
         this.practiceMode = false;
         this.randomOrder = true;
 
-        // Apply global defaults (overrides factory defaults)
+        // Apply global defaults (overrides factory defaults — level 2 of 3)
         if (this.globalDefaults) {
             const gd = this.globalDefaults.get();
             this.continent        = gd.continent;
@@ -99,7 +99,7 @@ export class BottomSheetView {
             this.randomOrder      = gd.randomOrder;
         }
 
-        // Load saved per-mode config (overrides global defaults)
+        // Apply local per-mode overrides (overrides global defaults — level 3 of 3)
         this._loadSavedConfig(modeId);
 
         // Update max country count
@@ -439,13 +439,25 @@ export class BottomSheetView {
     }
 
     /**
-     * Creates the footer with the play button.
+     * Creates the footer with the play button and local reset button.
      * @returns {HTMLElement}
      * @private
      */
     _createFooter() {
         const footer = document.createElement('footer');
         footer.className = 'bottom-sheet__footer';
+
+        // Reset local config button — only shown when local overrides exist
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'bottom-sheet__reset-btn';
+        resetBtn.type = 'button';
+        resetBtn.textContent = '↺ Restablecer';
+        resetBtn.title = 'Borrar configuración local y volver a los valores globales';
+        resetBtn.addEventListener('click', () => this._resetLocalConfig());
+
+        // Show only when local config exists for this mode
+        const hasLocal = !!localStorage.getItem(BottomSheetView.STORAGE_KEY + this.modeId);
+        resetBtn.hidden = !hasLocal;
 
         this.playButton = document.createElement('button');
         this.playButton.className = 'bottom-sheet__play-btn';
@@ -463,8 +475,48 @@ export class BottomSheetView {
             }
         });
 
+        footer.appendChild(resetBtn);
         footer.appendChild(this.playButton);
         return footer;
+    }
+
+    /**
+     * Clears the local per-mode config from localStorage and re-applies
+     * the global defaults (level 2) so the UI reflects the reset state.
+     * @private
+     */
+    _resetLocalConfig() {
+        // Remove local storage entry
+        localStorage.removeItem(BottomSheetView.STORAGE_KEY + this.modeId);
+
+        // Re-apply factory defaults then global defaults (levels 1 + 2)
+        this.continent         = 'All';
+        this.sovereigntyStatus = 'All';
+        this.countryCount      = null;
+        this.practiceMode      = false;
+        this.randomOrder       = true;
+
+        if (this.globalDefaults) {
+            const gd = this.globalDefaults.get();
+            this.continent         = gd.continent;
+            this.sovereigntyStatus = gd.sovereigntyStatus;
+            this.countryCount      = gd.maxCount;
+            this.randomOrder       = gd.randomOrder;
+        }
+
+        // Re-apply mode option defaults
+        const optionDefs = getOptionsForMode(this.modeId);
+        this.modeOptions = {};
+        for (const opt of optionDefs) {
+            this.modeOptions[opt.id] = opt.default;
+        }
+
+        // Re-render the full sheet — _renderConfig rebuilds everything from
+        // current state, and _createFooter will hide the reset button since
+        // local storage was just cleared.
+        this._updateMaxCountryCount();
+        this._renderConfig(this.modeId);
+        this._updatePlayButtonState();
     }
 
     /**
@@ -489,9 +541,17 @@ export class BottomSheetView {
 
     /**
      * Loads saved per-mode configuration from localStorage.
-     * Only restores mode-specific options (modeOptions, practiceMode, randomOrder).
-     * Shared filters (continent, sovereigntyStatus, maxCount) are governed by
-     * GlobalDefaultsService and must NOT be overridden here.
+     *
+     * Applies a 3-level hierarchy:
+     *   1. Factory defaults (hardcoded)
+     *   2. Global defaults (flagquiz_global_defaults) — already applied before this call
+     *   3. Local per-mode overrides (flagquiz_mode_config_<modeId>) — applied here
+     *
+     * Local overrides win over global defaults for ALL fields, including
+     * continent, sovereigntyStatus, countryCount, randomOrder, modeOptions,
+     * and practiceMode. A field is only restored if it was explicitly saved
+     * (i.e. the user changed it at the mode level).
+     *
      * @param {string} modeId
      * @private
      */
@@ -502,11 +562,20 @@ export class BottomSheetView {
             if (!saved) return;
 
             const config = JSON.parse(saved);
+
+            // Restore content filters — these override global defaults when present
+            if (config.continent !== undefined)         this.continent         = config.continent;
+            if (config.sovereigntyStatus !== undefined) this.sovereigntyStatus = config.sovereigntyStatus;
+            if (config.countryCount !== undefined)      this.countryCount      = config.countryCount;
+
+            // Restore mode-specific options
             if (config.modeOptions) {
                 Object.assign(this.modeOptions, config.modeOptions);
             }
+
+            // Restore modifiers
             if (config.practiceMode !== undefined) this.practiceMode = config.practiceMode;
-            if (config.randomOrder !== undefined) this.randomOrder = config.randomOrder;
+            if (config.randomOrder !== undefined)  this.randomOrder  = config.randomOrder;
         } catch {
             // Ignore invalid localStorage data
         }
@@ -514,7 +583,10 @@ export class BottomSheetView {
 
     /**
      * Saves per-mode configuration to localStorage.
-     * Only persists mode-specific options — shared filters are managed by GlobalDefaultsService.
+     *
+     * Persists ALL user-configurable fields so that local preferences fully
+     * override global defaults on the next open (3-level hierarchy).
+     *
      * @param {string} modeId
      * @param {Object} config - Full config from _buildConfig()
      * @private
@@ -522,10 +594,16 @@ export class BottomSheetView {
     _saveConfig(modeId, config) {
         try {
             const key = BottomSheetView.STORAGE_KEY + modeId;
-            // Only persist what is truly per-mode
-            const perMode = { modeOptions: config.modeOptions || {} };
+            const perMode = {
+                // Content filters — saved so local overrides global on next open
+                continent:         this.continent,
+                sovereigntyStatus: this.sovereigntyStatus,
+                countryCount:      this.countryCount,
+                // Mode-specific options
+                modeOptions:       config.modeOptions || {},
+            };
             if (config.practiceMode !== undefined) perMode.practiceMode = config.practiceMode;
-            if (config.randomOrder !== undefined) perMode.randomOrder = config.randomOrder;
+            if (config.randomOrder !== undefined)  perMode.randomOrder  = config.randomOrder;
             localStorage.setItem(key, JSON.stringify(perMode));
         } catch {
             // Ignore storage errors (quota exceeded, etc.)

@@ -305,8 +305,8 @@ function openSettingsModal(globalDefaults, countryService) {
             </div>
             <div class="settings-modal__body">
                 <p class="settings-modal__hint">
-                    Estos valores se usan como punto de partida en todos los modos.
-                    Puedes ajustarlos por modo desde la pantalla de configuración de cada juego.
+                    Preferencias globales: se aplican como base en todos los modos.
+                    Si ajustas los filtros dentro de un modo, esos valores locales tienen prioridad sobre los globales y se recuerdan por separado.
                 </p>
 
                 <div class="settings-field">
@@ -348,6 +348,7 @@ function openSettingsModal(globalDefaults, countryService) {
                 </label>
             </div>
             <div class="settings-modal__footer">
+                <button class="settings-modal__reset" type="button" title="Volver a los valores por defecto">↺ Restablecer</button>
                 <button class="settings-modal__cancel" type="button">Cancelar</button>
                 <button class="settings-modal__save" type="button">Guardar</button>
             </div>
@@ -357,11 +358,30 @@ function openSettingsModal(globalDefaults, countryService) {
     // Populate with current values
     const modal = overlay.querySelector('.settings-modal');
     const field = (name) => modal.querySelector(`[name="${name}"]`);
+    const resetBtn = modal.querySelector('.settings-modal__reset');
+    const fd = globalDefaults.constructor.FACTORY_DEFAULTS;
 
-    field('continent').value        = current.continent;
+    field('continent').value         = current.continent;
     field('sovereigntyStatus').value = current.sovereigntyStatus;
     if (current.maxCount) field('maxCount').value = String(current.maxCount);
-    field('randomOrder').checked    = current.randomOrder;
+    field('randomOrder').checked     = current.randomOrder;
+
+    // Helper: check if current values differ from factory defaults
+    const isModified = () =>
+        field('continent').value         !== fd.continent         ||
+        field('sovereigntyStatus').value !== fd.sovereigntyStatus ||
+        field('maxCount').value.trim()   !== ''                   ||
+        field('randomOrder').checked     !== fd.randomOrder;
+
+    // Show reset only when values differ from factory defaults
+    resetBtn.hidden = !isModified();
+
+    // Re-evaluate visibility on any change
+    const updateResetVisibility = () => { resetBtn.hidden = !isModified(); };
+    field('continent').addEventListener('change', updateResetVisibility);
+    field('sovereigntyStatus').addEventListener('change', updateResetVisibility);
+    field('maxCount').addEventListener('input', updateResetVisibility);
+    field('randomOrder').addEventListener('change', updateResetVisibility);
 
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-open'));
@@ -377,6 +397,14 @@ function openSettingsModal(globalDefaults, countryService) {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     document.addEventListener('keydown', function onEsc(e) {
         if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+    });
+
+    overlay.querySelector('.settings-modal__reset').addEventListener('click', () => {
+        field('continent').value         = fd.continent;
+        field('sovereigntyStatus').value = fd.sovereigntyStatus;
+        field('maxCount').value          = '';
+        field('randomOrder').checked     = fd.randomOrder;
+        updateResetVisibility();
     });
 
     overlay.querySelector('.settings-modal__save').addEventListener('click', () => {
