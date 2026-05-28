@@ -1,5 +1,6 @@
 import { GAME_MODES } from '../models/ModeDefinition.js';
 import { ACHIEVEMENTS } from '../services/AchievementService.js';
+import { MODE_OPTIONS } from '../models/ModeOptions.js';
 
 /**
  * GameEndModalView - Modal overlay displaying game results at session end.
@@ -33,6 +34,9 @@ export class GameEndModalView {
     /** @type {string|null} */
     #modeId = null;
 
+    /** @type {Object|null} */
+    #modeOptions = null;
+
     /** @type {function|null} */
     #boundKeyHandler = null;
 
@@ -54,8 +58,9 @@ export class GameEndModalView {
      * @param {Object} options.teamScores - Map of team color to score (e.g. { red: 5, blue: 3, green: 2 })
      * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showTeamResults({ modeId, teamScores, newAchievements = [] }) {
+    showTeamResults({ modeId, teamScores, newAchievements = [], modeOptions = {} }) {
         this.#modeId = modeId;
+        this.#modeOptions = modeOptions;
         this.#previousFocus = document.activeElement;
 
         const overlay = this.#createOverlay();
@@ -94,8 +99,9 @@ export class GameEndModalView {
      * @param {number} options.elapsedSeconds - Total time elapsed in seconds
      * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [] }) {
+    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [], modeOptions = {} }) {
         this.#modeId = modeId;
+        this.#modeOptions = modeOptions;
         this.#previousFocus = document.activeElement;
 
         const overlay = this.#createOverlay();
@@ -148,7 +154,7 @@ export class GameEndModalView {
     }
 
     /**
-     * Creates the modal header with game-over title.
+     * Creates the modal header with game-over title, game name and difficulty badge.
      * @returns {HTMLElement}
      * @private
      */
@@ -161,7 +167,62 @@ export class GameEndModalView {
         title.textContent = '🎉 ¡Juego Terminado! 🎉';
 
         header.appendChild(title);
+
+        // Game name
+        const mode = GAME_MODES[this.#modeId];
+        if (mode) {
+            const gameName = document.createElement('p');
+            gameName.className = 'game-end-modal__game-name';
+            gameName.textContent = `${mode.icon} ${mode.name}`;
+            header.appendChild(gameName);
+        }
+
+        // Difficulty / mode options summary
+        const difficultyText = this.#buildDifficultyText();
+        if (difficultyText) {
+            const badge = document.createElement('p');
+            badge.className = 'game-end-modal__difficulty-badge';
+            badge.textContent = difficultyText;
+            header.appendChild(badge);
+        }
+
         return header;
+    }
+
+    /**
+     * Builds a human-readable difficulty/options summary for the current mode.
+     * Returns null if there are no relevant options to display.
+     * @returns {string|null}
+     * @private
+     */
+    #buildDifficultyText() {
+        if (!this.#modeId) return null;
+
+        const optionDefs = MODE_OPTIONS[this.#modeId] || [];
+        if (optionDefs.length === 0) return null;
+
+        const opts = this.#modeOptions || {};
+        const parts = [];
+
+        for (const def of optionDefs) {
+            // Resolve value: use provided value or fall back to the defined default
+            const val = opts[def.id] !== undefined ? opts[def.id] : def.default;
+            if (val === undefined || val === null) continue;
+
+            if (def.type === 'select') {
+                // Select options are always shown — they describe the mode variant
+                const opt = def.options?.find(o => o.value === val);
+                if (opt) parts.push(opt.label);
+            } else if (def.type === 'number') {
+                // Only show rounds for number options (skip time-per-question — it's noise)
+                // Skip sessionTime for streakBlitz — it's already embedded in the endCondition label
+                if (def.id === 'rounds') {
+                    parts.push(`${val} rondas`);
+                }
+            }
+        }
+
+        return parts.length > 0 ? parts.join(' · ') : null;
     }
 
     /**

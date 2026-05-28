@@ -582,6 +582,7 @@ export class GameSessionManager {
 
         return {
             modeId: this.session.modeId,
+            modeOptions: this.session.config?.modeOptions || {},
             totalScore: this.session.totalScore,
             correct,
             wrong,

@@ -3966,6 +3966,24 @@ body.screen-game .game-wrapper {
     font-size: 1.6rem;
     font-weight: 400;
     color: var(--ink);
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.game-end-modal__game-name {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--terracotta);
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.game-end-modal__difficulty-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    background: var(--soft-sand);
+    border-radius: var(--radius-pill);
+    padding: 2px var(--space-sm);
     margin: 0;
 }
 

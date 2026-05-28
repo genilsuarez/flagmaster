@@ -217,7 +217,7 @@ function startGame(config, router, sessionManager, countryService) {
  * Handles session end: shows the game end modal with results.
  */
 function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
-    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements } = results;
+    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements, modeOptions } = results;
 
     // Navigate back to home
     router.reset('home');
@@ -236,6 +236,7 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
             modeId,
             teamScores,
             newAchievements: newAchievements || [],
+            modeOptions: modeOptions || {},
         });
     } else {
         // Individual mode: show individual stats
@@ -247,6 +248,7 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
             maxStreak: maxStreak || 0,
             elapsedSeconds: elapsedSeconds || 0,
             newAchievements: newAchievements || [],
+            modeOptions: modeOptions || {},
         });
     }
 }
