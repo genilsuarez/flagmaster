@@ -13,7 +13,9 @@ export class WordDropView {
         this.livesDisplay = null;
         this.feedbackEl = null;
         this.flagHint = null;
+        this.countryNameHint = null;
         this.letterBoxes = [];
+        this.currentDifficulty = 'easy';
 
         this.onGuessPressed = null;
         this.onAnswerSubmitted = null;
@@ -56,6 +58,11 @@ export class WordDropView {
         this.flagHint.className = 'word-drop-flag-hint';
         this.flagHint.alt = 'Flag hint';
         this.flagHint.loading = 'eager';
+
+        // Country name hint (easy mode only)
+        this.countryNameHint = document.createElement('div');
+        this.countryNameHint.className = 'word-drop-country-name-hint';
+        this.countryNameHint.hidden = true;
 
         // Letter grid
         this.letterGrid = document.createElement('div');
@@ -119,6 +126,7 @@ export class WordDropView {
         // Assemble
         this.container.appendChild(topBar);
         this.container.appendChild(this.flagHint);
+        this.container.appendChild(this.countryNameHint);
         this.container.appendChild(this.letterGrid);
         this.container.appendChild(this.feedbackEl);
         this.container.appendChild(this.guessButton);
@@ -153,8 +161,9 @@ export class WordDropView {
      * @param {string} word - The word to display as boxes
      * @param {boolean} showFlag - Whether to show the flag hint
      * @param {string} flagUrl - URL of the flag image
+     * @param {string} [countryName] - Country name for easy mode hint
      */
-    setupWord(word, showFlag, flagUrl) {
+    setupWord(word, showFlag, flagUrl, countryName) {
         this.letterGrid.innerHTML = '';
         this.letterBoxes = [];
         this.feedbackEl.textContent = '';
@@ -173,6 +182,15 @@ export class WordDropView {
             this.flagHint.hidden = false;
         } else {
             this.flagHint.hidden = true;
+        }
+
+        // Country name hint (easy mode only)
+        if (this.currentDifficulty === 'easy' && countryName) {
+            this.countryNameHint.textContent = countryName;
+            this.countryNameHint.hidden = false;
+        } else {
+            this.countryNameHint.textContent = '';
+            this.countryNameHint.hidden = true;
         }
 
         // Create letter boxes

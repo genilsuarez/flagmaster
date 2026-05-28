@@ -41,8 +41,8 @@ export class StreakBlitzController {
     /** @type {number} Maximum consecutive questions of the same type */
     static MAX_CONSECUTIVE_SAME_TYPE = 3;
 
-    /** @type {number} Feedback display duration in milliseconds (lives mode) */
-    static FEEDBACK_DELAY_MS = 1500;
+    /** @type {number} Feedback display duration in milliseconds (both modes) */
+    static FEEDBACK_DELAY_MS = 700;
 
     /**
      * Difficulty tier definitions for lives mode (progressive difficulty).
@@ -107,6 +107,7 @@ export class StreakBlitzController {
         this.scoreEl = null;
         this.questionCountEl = null;
         this.livesEl = null;
+        this.skipBtn = null;
     }
 
     /**
@@ -267,19 +268,20 @@ export class StreakBlitzController {
             if (this.flagEl) {
                 this.flagEl.src = this.currentCountry.flagUrl;
                 this.flagEl.alt = 'Bandera del país a identificar';
-                this.flagEl.style.display = '';
+                this.flagEl.style.visibility = '';
             }
             if (this.promptEl) {
-                this.promptEl.style.display = 'none';
+                this.promptEl.style.visibility = 'hidden';
+                this.promptEl.textContent = '';
             }
         } else {
             if (this.promptEl) {
                 this.promptEl.textContent = this.currentCountry.displayName;
                 this.promptEl.setAttribute('aria-label', `País: ${this.currentCountry.displayName}`);
-                this.promptEl.style.display = '';
+                this.promptEl.style.visibility = '';
             }
             if (this.flagEl) {
-                this.flagEl.style.display = 'none';
+                this.flagEl.style.visibility = 'hidden';
             }
         }
 
@@ -292,6 +294,9 @@ export class StreakBlitzController {
             this.powerUpInventoryView.resetRound();
             this.powerUpInventoryView.update(this.powerUpService.inventory);
         }
+
+        // Re-enable skip button for new round
+        if (this.skipBtn) this.skipBtn.disabled = false;
 
         // Render multiple choice options
         if (this.multipleChoiceView) {
@@ -418,15 +423,11 @@ export class StreakBlitzController {
             return;
         }
 
-        // Advance: immediate in time mode, delayed in lives mode
-        if (this.endCondition === 'time') {
+        // Advance after feedback delay (both modes)
+        this.feedbackTimeout = setTimeout(() => {
+            this.feedbackTimeout = null;
             this.nextRound();
-        } else {
-            this.feedbackTimeout = setTimeout(() => {
-                this.feedbackTimeout = null;
-                this.nextRound();
-            }, StreakBlitzController.FEEDBACK_DELAY_MS);
-        }
+        }, StreakBlitzController.FEEDBACK_DELAY_MS);
     }
 
     /**
@@ -438,6 +439,19 @@ export class StreakBlitzController {
         if (this.multipleChoiceView) {
             this.multipleChoiceView.disable();
         }
+
+        this.handleAnswer(-1, false);
+    }
+
+    /**
+     * Handles the skip button. Counts as incorrect, advances immediately.
+     */
+    handleSkip() {
+        if (!this.isActive || this.feedbackTimeout) return;
+
+        if (this.questionTimerView) this.questionTimerView.stop();
+        if (this.multipleChoiceView) this.multipleChoiceView.disable();
+        if (this.skipBtn) this.skipBtn.disabled = true;
 
         this.handleAnswer(-1, false);
     }
@@ -643,25 +657,36 @@ export class StreakBlitzController {
         });
 
         // Flag image (shown for flag questions)
+        const questionArea = document.createElement('div');
+        questionArea.className = 'streak-blitz-question-area';
+        this.container.appendChild(questionArea);
+
         this.flagEl = document.createElement('img');
         this.flagEl.className = 'streak-blitz-flag';
         this.flagEl.alt = 'Bandera del país a identificar';
         this.flagEl.src = '';
-        this.flagEl.style.display = 'none';
-        this.container.appendChild(this.flagEl);
+        questionArea.appendChild(this.flagEl);
 
         // Text prompt (shown for capital questions)
         this.promptEl = document.createElement('h2');
         this.promptEl.className = 'streak-blitz-prompt';
         this.promptEl.setAttribute('aria-live', 'polite');
-        this.promptEl.style.display = 'none';
-        this.container.appendChild(this.promptEl);
+        questionArea.appendChild(this.promptEl);
 
         // Multiple choice container
         this.mcContainer = document.createElement('div');
         this.mcContainer.className = 'streak-blitz-options';
         this.container.appendChild(this.mcContainer);
         this.multipleChoiceView = new MultipleChoiceView({ container: this.mcContainer });
+
+        // Skip button
+        this.skipBtn = document.createElement('button');
+        this.skipBtn.className = 'mode-skip-btn';
+        this.skipBtn.type = 'button';
+        this.skipBtn.textContent = 'Saltar';
+        this.skipBtn.setAttribute('aria-label', 'Saltar esta pregunta');
+        this.skipBtn.addEventListener('click', () => this.handleSkip());
+        this.container.appendChild(this.skipBtn);
 
         // Power-up inventory
         this.powerUpContainer = document.createElement('div');

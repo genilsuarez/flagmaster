@@ -58,7 +58,7 @@ describe('BottomSheetView', () => {
         it('sets aria-label with mode name', () => {
             view.open('flagRush');
             const sheet = document.querySelector('.bottom-sheet[role="dialog"]');
-            expect(sheet.getAttribute('aria-label')).toBe('Configuración: Flag Rush');
+            expect(sheet.getAttribute('aria-label')).toBe('Configuración: Carrera de Banderas');
         });
 
         it('sets isOpen to true', () => {
@@ -71,7 +71,7 @@ describe('BottomSheetView', () => {
             const icon = document.querySelector('.bottom-sheet__mode-icon');
             const title = document.querySelector('.bottom-sheet__title');
             expect(icon.textContent).toBe('⚔️');
-            expect(title.textContent).toBe('Capital Clash');
+            expect(title.textContent).toBe('Duelo de Capitales');
         });
 
         it('renders content filter controls', () => {
@@ -157,7 +157,25 @@ describe('BottomSheetView', () => {
     });
 
     describe('_loadSavedConfig()', () => {
-        it('loads saved config from localStorage', () => {
+        it('loads saved modeOptions from localStorage (filters are not per-mode)', () => {
+            const config = {
+                modeOptions: { timePerQuestion: 15, rounds: 20 },
+            };
+            localStorage.setItem('flagquiz_mode_config_flagRush', JSON.stringify(config));
+
+            view.open('flagRush');
+
+            // Filters come from globalDefaults, not per-mode storage
+            expect(view.continent).toBe('All');
+            expect(view.sovereigntyStatus).toBe('All');
+            expect(view.countryCount).toBeNull();
+            // modeOptions are per-mode
+            expect(view.modeOptions.timePerQuestion).toBe(15);
+            expect(view.modeOptions.rounds).toBe(20);
+        });
+
+        it('ignores continent/sovereigntyStatus stored in old per-mode format', () => {
+            // Old format had filters stored per-mode — they should be ignored now
             const config = {
                 continent: 'Europe',
                 sovereigntyStatus: 'Yes',
@@ -168,11 +186,10 @@ describe('BottomSheetView', () => {
 
             view.open('flagRush');
 
-            expect(view.continent).toBe('Europe');
-            expect(view.sovereigntyStatus).toBe('Yes');
-            expect(view.countryCount).toBe(20);
-            expect(view.modeOptions.timePerQuestion).toBe(15);
-            expect(view.modeOptions.rounds).toBe(20);
+            expect(view.continent).toBe('All');       // from globalDefaults, not per-mode
+            expect(view.sovereigntyStatus).toBe('All');
+            expect(view.countryCount).toBeNull();
+            expect(view.modeOptions.timePerQuestion).toBe(15); // modeOptions still loaded
         });
 
         it('uses defaults when no saved config exists', () => {
@@ -204,14 +221,15 @@ describe('BottomSheetView', () => {
     });
 
     describe('_saveConfig()', () => {
-        it('saves config to localStorage on close', () => {
+        it('saves only modeOptions to localStorage (not filters)', () => {
             view.open('flagRush');
-            view.continent = 'Asia';
+            view.continent = 'Asia'; // this should NOT be saved per-mode
             view.close();
 
             const saved = JSON.parse(localStorage.getItem('flagquiz_mode_config_flagRush'));
-            expect(saved.continent).toBe('Asia');
-            expect(saved.modeId).toBe('flagRush');
+            expect(saved.continent).toBeUndefined();
+            expect(saved.modeId).toBeUndefined();
+            expect(saved.modeOptions).toBeDefined();
         });
     });
 

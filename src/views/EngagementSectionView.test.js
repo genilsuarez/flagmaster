@@ -103,43 +103,6 @@ describe('EngagementSectionView', () => {
         });
     });
 
-    describe('global progress', () => {
-        it('displays "{uniqueCorrect} de {total} banderas acertadas"', () => {
-            const view = new EngagementSectionView({
-                statsService: createMockStatsService({
-                    gamesPlayed: 3,
-                    uniqueCountriesCorrect: ['AR', 'BR', 'CL'],
-                }),
-                countryService: createMockCountryService(195),
-            });
-            const el = view.render();
-            const progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('3 de 195 banderas acertadas');
-        });
-
-        it('shows "0 de {total}" when no sessions exist', () => {
-            const view = new EngagementSectionView({
-                statsService: createMockStatsService({ gamesPlayed: 0 }),
-                countryService: createMockCountryService(200),
-            });
-            const el = view.render();
-            const progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('0 de 200 banderas acertadas');
-        });
-
-        it('has aria-label with progress info', () => {
-            const view = new EngagementSectionView({
-                statsService: createMockStatsService({
-                    uniqueCountriesCorrect: ['AR'],
-                }),
-                countryService: createMockCountryService(50),
-            });
-            const el = view.render();
-            const progressWrapper = el.querySelector('.engagement-section__progress');
-            expect(progressWrapper.getAttribute('aria-label')).toBe('Progreso: 1 de 50 banderas acertadas');
-        });
-    });
-
     describe('last played quick-replay button', () => {
         it('shows quick-play button when user has previous sessions with a valid mode', () => {
             const view = new EngagementSectionView({
@@ -154,7 +117,7 @@ describe('EngagementSectionView', () => {
             expect(lastPlayedEl.hidden).toBe(false);
             const button = lastPlayedEl.querySelector('.engagement-section__quick-play');
             expect(button).not.toBeNull();
-            expect(button.textContent).toBe('▶ Flag Rush');
+            expect(button.textContent).toBe('▶ Carrera de Banderas');
         });
 
         it('hides last-played when no sessions exist', () => {
@@ -203,7 +166,7 @@ describe('EngagementSectionView', () => {
             });
             const el = view.render();
             const button = el.querySelector('.engagement-section__quick-play');
-            expect(button.getAttribute('aria-label')).toBe('Jugar de nuevo: Capital Clash');
+            expect(button.getAttribute('aria-label')).toBe('Jugar de nuevo: Duelo de Capitales');
         });
 
         it('picks the mode with most games played as last played', () => {
@@ -220,41 +183,11 @@ describe('EngagementSectionView', () => {
             });
             const el = view.render();
             const button = el.querySelector('.engagement-section__quick-play');
-            expect(button.textContent).toBe('▶ Geo Puzzle');
+            expect(button.textContent).toBe('▶ Geo Pistas');
         });
     });
 
     describe('empty/invalid state handling', () => {
-        it('handles null uniqueCountriesCorrect gracefully', () => {
-            const view = new EngagementSectionView({
-                statsService: createMockStatsService({ uniqueCountriesCorrect: null }),
-                countryService: createMockCountryService(100),
-            });
-            const el = view.render();
-            const progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('0 de 100 banderas acertadas');
-        });
-
-        it('handles statsService throwing an error gracefully', () => {
-            const view = new EngagementSectionView({
-                statsService: { getStats: () => { throw new Error('corrupted'); } },
-                countryService: createMockCountryService(50),
-            });
-            const el = view.render();
-            const progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('0 de 50 banderas acertadas');
-        });
-
-        it('handles countryService with empty countries array', () => {
-            const view = new EngagementSectionView({
-                statsService: createMockStatsService(),
-                countryService: { countries: [] },
-            });
-            const el = view.render();
-            const progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('0 de 0 banderas acertadas');
-        });
-
         it('handles invalid modeStats entries gracefully', () => {
             const view = new EngagementSectionView({
                 statsService: createMockStatsService({
@@ -313,12 +246,13 @@ describe('EngagementSectionView', () => {
             expect(streakEl.querySelector('.engagement-section__streak-count').textContent).toBe('1');
         });
 
-        it('updates progress text on update()', () => {
+        it('updates streak on update()', () => {
+            let gamesPlayed = 0;
             let uniqueCountries = [];
             const statsService = {
                 getStats: () => ({
-                    gamesPlayed: 1,
-                    currentStreak: 1,
+                    gamesPlayed,
+                    currentStreak: gamesPlayed,
                     uniqueCountriesCorrect: uniqueCountries,
                     modeStats: {},
                 }),
@@ -329,14 +263,13 @@ describe('EngagementSectionView', () => {
             });
             const el = view.render();
 
-            let progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('0 de 50 banderas acertadas');
-
             uniqueCountries = ['AR', 'BR'];
+            gamesPlayed = 1;
             view.update();
 
-            progressEl = el.querySelector('.engagement-section__progress-text');
-            expect(progressEl.textContent).toBe('2 de 50 banderas acertadas');
+            const streakEl = el.querySelector('.engagement-section__streak');
+            expect(streakEl.hidden).toBe(false);
+            expect(streakEl.querySelector('.engagement-section__streak-count').textContent).toBe('1');
         });
     });
 });

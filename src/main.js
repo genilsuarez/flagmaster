@@ -3,6 +3,7 @@ import { GameSessionManager } from './controllers/GameSessionManager.js';
 import { CountryService } from './services/CountryService.js';
 import { StatsService } from './services/StatsService.js';
 import { AchievementService } from './services/AchievementService.js';
+import { GlobalDefaultsService } from './services/GlobalDefaultsService.js';
 import { BottomSheetView } from './views/BottomSheetView.js';
 import { GameEndModalView } from './views/GameEndModalView.js';
 import { AchievementToast } from './views/AchievementToast.js';
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const countryService = new CountryService();
     const statsService = new StatsService();
     const achievementService = new AchievementService();
+    const globalDefaults = new GlobalDefaultsService();
 
     const router = new AppRouter();
 
@@ -28,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bottom sheet for game configuration
     const bottomSheet = new BottomSheetView({
         countryService,
+        globalDefaults,
         onPlay: (config) => startGame(config, router, sessionManager, countryService),
         onDismiss: () => {
             // Sheet closed without playing — no action needed
@@ -61,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // App menu (drawer)
     const appMenu = new AppMenu({
         statsService,
-        onPlay: () => bottomSheet.open(null), // open sheet without pre-selected mode (fallback)
-        onOpenSettings: () => openSettingsModal(),
+        onPlay: () => bottomSheet.open(null),
+        onOpenSettings: () => openSettingsModal(globalDefaults, countryService),
         onHome: () => {
             router.reset('home');
             appMenu.updateMotivationUI();
@@ -76,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (screen) {
             case 'home':
                 appMenu.updateMotivationUI();
-                updateLandingProgress(statsService, countryService);
                 break;
 
             case 'game':
@@ -85,17 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Preserve settings persistence (legacy filter elements)
-    wireSettingsPersistence();
-
-    // Wait for country data to load, then initialize and restore settings
+    // Wait for country data to load, then render mode cards
     const waitForInit = setInterval(() => {
         if (countryService.countries && countryService.countries.length > 0) {
             clearInterval(waitForInit);
-            wireSettingsPersistence(true);
-
-            // Update landing progress text
-            updateLandingProgress(statsService, countryService);
 
             // Render mode cards directly into the landing
             renderModeCards(bottomSheet);
@@ -103,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Wire settings button to open settings modal
             const settingsBtn = document.getElementById('landingSettingsBtn');
             if (settingsBtn) {
-                settingsBtn.addEventListener('click', () => openSettingsModal());
+                settingsBtn.addEventListener('click', () => openSettingsModal(globalDefaults, countryService));
             }
         }
     }, 50);
@@ -113,30 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Failed to load countries:', err);
     });
 });
-
-/**
- * Updates the landing progress text with current stats.
- */
-function updateLandingProgress(statsService, countryService) {
-    const progressEl = document.getElementById('landingProgress');
-    if (!progressEl) return;
-
-    try {
-        const stats = statsService.getStats();
-        const uniqueCorrect = Array.isArray(stats.uniqueCountriesCorrect) ? stats.uniqueCountriesCorrect.length : 0;
-        const total = countryService.countries.length;
-
-        const currentEl = progressEl.querySelector('.progress-current');
-        const totalEl = progressEl.querySelector('.progress-total');
-
-        if (currentEl) currentEl.textContent = uniqueCorrect;
-        if (totalEl) totalEl.textContent = total;
-
-        progressEl.hidden = false;
-    } catch {
-        // Ignore errors
-    }
-}
 
 /**
  * Renders mode cards directly into the landing hero.
@@ -224,6 +195,13 @@ function startGame(config, router, sessionManager, countryService) {
     // Navigate to game screen
     router.navigate('game');
 
+    // Update game header title to reflect the active mode
+    const gameTitleEl = document.querySelector('.game-header h1');
+    if (gameTitleEl) {
+        const mode = GAME_MODES[modeId];
+        gameTitleEl.textContent = mode ? `${mode.icon} ${mode.name}` : 'Quiz de Banderas';
+    }
+
     // Start the session through GameSessionManager
     sessionManager.startSession(modeId, {
         modeOptions: modeOptions || {},
@@ -287,14 +265,27 @@ function handlePlayAgain(modeId, router, bottomSheet) {
 
 // ─── Settings Modal ─────────────────────────────────────────────────────────
 
-function openSettingsModal() {
-    if (document.querySelector('.settings-modal-overlay')) return; // already open
+/**
+ * Opens the global preferences modal.
+ *
+ * Governs the four shared defaults that apply to every game mode:
+ *   - Continente        (continent filter)
+ *   - Países incluidos  (sovereignty filter)
+ *   - Cantidad máxima   (maxCount — null means "use all")
+ *   - Orden aleatorio   (randomOrder)
+ *
+ * On save, writes to GlobalDefaultsService which persists to localStorage
+ * under 'flagquiz_global_defaults'. The BottomSheetView reads these as the
+ * starting point before applying per-mode overrides.
+ *
+ * @param {import('./services/GlobalDefaultsService.js').GlobalDefaultsService} globalDefaults
+ * @param {import('./services/CountryService.js').CountryService} countryService
+ */
+function openSettingsModal(globalDefaults, countryService) {
+    if (document.querySelector('.settings-modal-overlay')) return;
 
-    let saved = {};
-    try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (raw) saved = JSON.parse(raw);
-    } catch (e) { /* ignore */ }
+    const current = globalDefaults.get();
+    const totalCountries = countryService.countries.length;
 
     const overlay = document.createElement('div');
     overlay.className = 'settings-modal-overlay';
@@ -313,9 +304,14 @@ function openSettingsModal() {
                 </button>
             </div>
             <div class="settings-modal__body">
+                <p class="settings-modal__hint">
+                    Estos valores se usan como punto de partida en todos los modos.
+                    Puedes ajustarlos por modo desde la pantalla de configuración de cada juego.
+                </p>
+
                 <div class="settings-field">
                     <label class="settings-field__label" for="sm-continent">Continente</label>
-                    <select id="sm-continent" name="continentFilter" class="settings-field__control">
+                    <select id="sm-continent" name="continent" class="settings-field__control">
                         <option value="All">🌍 Todos</option>
                         <option value="Africa">🌍 África</option>
                         <option value="America">🌎 América</option>
@@ -324,23 +320,29 @@ function openSettingsModal() {
                         <option value="Oceania">🏝️ Oceanía</option>
                     </select>
                 </div>
+
                 <div class="settings-field">
-                    <label class="settings-field__label" for="sm-sovereign">Países incluidos</label>
-                    <select id="sm-sovereign" name="sovereignFilter" class="settings-field__control">
+                    <label class="settings-field__label" for="sm-sovereignty">Países incluidos</label>
+                    <select id="sm-sovereignty" name="sovereigntyStatus" class="settings-field__control">
                         <option value="All">🌐 Todos</option>
-                        <option value="Yes">🏳️ Estados soberanos</option>
-                        <option value="No">🏢 Territorios</option>
+                        <option value="Yes">🏳️ Solo soberanos</option>
+                        <option value="No">🏢 Solo territorios</option>
                     </select>
                 </div>
+
                 <div class="settings-field">
-                    <label class="settings-field__label" for="sm-max">Cantidad de países</label>
-                    <input id="sm-max" name="maxCountries" type="number" min="5" max="250"
-                           placeholder="Ej: 50" class="settings-field__control">
+                    <label class="settings-field__label" for="sm-max">
+                        Cantidad de países
+                        <span class="settings-field__hint">Máximo disponible: ${totalCountries}</span>
+                    </label>
+                    <input id="sm-max" name="maxCount" type="number" min="5" max="${totalCountries}"
+                           placeholder="Todos (${totalCountries})" class="settings-field__control">
                 </div>
+
                 <label class="settings-toggle">
                     <span class="settings-toggle__label">Orden aleatorio</span>
                     <span class="settings-toggle__track">
-                        <input id="sm-random" name="randomMode" type="checkbox" class="settings-toggle__input">
+                        <input id="sm-random" name="randomOrder" type="checkbox" class="settings-toggle__input">
                         <span class="settings-toggle__thumb" aria-hidden="true"></span>
                     </span>
                 </label>
@@ -352,16 +354,16 @@ function openSettingsModal() {
         </div>
     `;
 
-    // Populate with saved values
+    // Populate with current values
     const modal = overlay.querySelector('.settings-modal');
-    const sel = (name) => modal.querySelector(`[name="${name}"]`);
-    if (saved.continentFilter) sel('continentFilter').value = saved.continentFilter;
-    if (saved.sovereignFilter) sel('sovereignFilter').value = saved.sovereignFilter;
-    if (saved.maxCountries)    sel('maxCountries').value    = saved.maxCountries;
-    sel('randomMode').checked = saved.randomMode !== false;
+    const field = (name) => modal.querySelector(`[name="${name}"]`);
+
+    field('continent').value        = current.continent;
+    field('sovereigntyStatus').value = current.sovereigntyStatus;
+    if (current.maxCount) field('maxCount').value = String(current.maxCount);
+    field('randomOrder').checked    = current.randomOrder;
 
     document.body.appendChild(overlay);
-    // Animate in
     requestAnimationFrame(() => overlay.classList.add('is-open'));
     modal.querySelector('.settings-modal__close').focus();
 
@@ -378,117 +380,16 @@ function openSettingsModal() {
     });
 
     overlay.querySelector('.settings-modal__save').addEventListener('click', () => {
-        const next = {
-            continentFilter: sel('continentFilter').value,
-            sovereignFilter: sel('sovereignFilter').value,
-            maxCountries:    sel('maxCountries').value,
-            randomMode:      sel('randomMode').checked,
-        };
-        // Merge preserving other keys (gameMode, practiceMode, etc.)
-        try {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...saved, ...next }));
-        } catch (e) { /* quota exceeded */ }
+        const rawMax = field('maxCount').value.trim();
+        const parsedMax = rawMax ? parseInt(rawMax, 10) : null;
 
-        // Sync legacy hidden inputs for settings persistence
-        const sync = {
-            continentFilter: document.getElementById('continentFilter'),
-            sovereignFilter: document.getElementById('sovereignFilter'),
-            maxCountries:    document.getElementById('maxCountries'),
-            randomMode:      document.getElementById('randomMode'),
-        };
-        if (sync.continentFilter) sync.continentFilter.value    = next.continentFilter;
-        if (sync.sovereignFilter) sync.sovereignFilter.value    = next.sovereignFilter;
-        if (sync.maxCountries)    sync.maxCountries.value       = next.maxCountries;
-        if (sync.randomMode)      sync.randomMode.checked       = next.randomMode;
+        globalDefaults.set({
+            continent:        field('continent').value,
+            sovereigntyStatus: field('sovereigntyStatus').value,
+            maxCount:         (parsedMax && parsedMax >= 5) ? parsedMax : null,
+            randomOrder:      field('randomOrder').checked,
+        });
 
         close();
     });
-}
-
-// ─── Settings Persistence (Legacy) ─────────────────────────────────────────
-
-const SETTINGS_KEY = 'flagsQuiz_settings';
-
-/**
- * Persists filter/settings values to localStorage on change,
- * and restores them on page load.
- * @param {boolean} restoreOnly - If true, only restore without re-wiring listeners
- */
-function wireSettingsPersistence(restoreOnly = false) {
-    const controls = {
-        gameModeFilter: document.getElementById('gameModeFilter'),
-        continentFilter: document.getElementById('continentFilter'),
-        sovereignFilter: document.getElementById('sovereignFilter'),
-        maxCountries: document.getElementById('maxCountries'),
-        practiceMode: document.getElementById('practiceMode'),
-        randomMode: document.getElementById('randomMode'),
-        capitalsHintMode: document.getElementById('capitalsHintMode'),
-    };
-
-    // Restore saved settings
-    restoreSettings(controls);
-
-    if (restoreOnly) return;
-
-    // Save on any change
-    Object.entries(controls).forEach(([key, el]) => {
-        if (!el) return;
-        el.addEventListener('change', () => saveSettings(controls));
-        if (el.type === 'number') {
-            el.addEventListener('input', () => saveSettings(controls));
-        }
-    });
-}
-
-function saveSettings(controls) {
-    const settings = {};
-    Object.entries(controls).forEach(([key, el]) => {
-        if (!el) return;
-        if (el.type === 'checkbox') {
-            settings[key] = el.checked;
-        } else {
-            settings[key] = el.value;
-        }
-    });
-    try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch (e) { /* quota exceeded or private mode */ }
-}
-
-function restoreSettings(controls) {
-    let settings;
-    try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return;
-        settings = JSON.parse(raw);
-    } catch (e) { return; }
-
-    Object.entries(settings).forEach(([key, value]) => {
-        const el = controls[key];
-        if (!el) return;
-        if (el.type === 'checkbox') {
-            el.checked = value;
-        } else if (el.type === 'number') {
-            const max = parseInt(el.max, 10);
-            const numVal = parseInt(value, 10);
-            if (!isNaN(numVal) && (!max || numVal <= max) && numVal >= 1) {
-                el.value = value;
-            }
-        } else {
-            if (el.tagName === 'SELECT') {
-                const options = Array.from(el.options).map(o => o.value);
-                if (options.includes(value)) {
-                    el.value = value;
-                }
-            } else {
-                el.value = value;
-            }
-        }
-    });
-
-    // Trigger change on gameModeFilter to update UI visibility
-    const gameModeFilter = controls.gameModeFilter;
-    if (gameModeFilter) {
-        gameModeFilter.dispatchEvent(new Event('change'));
-    }
 }

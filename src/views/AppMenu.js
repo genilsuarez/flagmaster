@@ -24,7 +24,7 @@ const MODAL_TEMPLATES = {
             <ol class="howto-steps">
                 <li>
                     <span class="howto-num">1</span>
-                    <div><h4>Elige tu modo</h4><p>Bandera Flash, Capital Quest, Letras en Caída y más desde el selector de modos.</p></div>
+                    <div><h4>Elige tu modo</h4><p>Bandera Flash, Búsqueda de Capitales, Letras en Caída y más desde el selector de modos.</p></div>
                 </li>
                 <li>
                     <span class="howto-num">2</span>
@@ -75,35 +75,38 @@ const MODAL_TEMPLATES = {
             // Per-mode stats section
             const modeStats = stats.modeStats || {};
             const modeNames = {
-                flagRush: '🚩 Flag Rush',
-                capitalClash: '⚔️ Capital Clash',
-                streakBlitz: '⚡ Streak Blitz',
-                geoPuzzle: '🧩 Geo Puzzle',
-                banderaFlash: '🏴 Bandera Flash',
-                capitalQuest: '🏛️ Capital Quest',
-                letrasEnCaida: '✏️ Letras en Caída',
+                flagRush: { icon: '🚩', name: 'Carrera de Banderas' },
+                capitalClash: { icon: '⚔️', name: 'Duelo de Capitales' },
+                streakBlitz: { icon: '⚡', name: 'Racha Relámpago' },
+                geoPuzzle: { icon: '🧩', name: 'Geo Pistas' },
+                banderaFlash: { icon: '🏴', name: 'Bandera Flash' },
+                capitalQuest: { icon: '🏛️', name: 'Búsqueda de Capitales' },
+                letrasEnCaida: { icon: '✏️', name: 'Letras en Caída' },
             };
 
             const modeStatsHtml = Object.entries(modeNames)
                 .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0)
-                .map(([id, name]) => {
+                .map(([id, { icon, name }]) => {
                     const m = modeStats[id];
                     return `
                         <div class="mode-stat-row">
+                            <span style="font-size:1rem;flex-shrink:0" aria-hidden="true">${icon}</span>
                             <span class="mode-stat-name">${name}</span>
                             <span class="mode-stat-detail">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'} · Mejor: ${m.bestScore.toLocaleString()}</span>
                         </div>
                     `;
                 }).join('');
 
+            const uniqueCount = Array.isArray(stats.uniqueCountriesCorrect) ? stats.uniqueCountriesCorrect.length : 0;
+
             return `
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">Partidas jugadas</div>
+                        <div class="stat-label">Partidas</div>
                         <div class="stat-value">${stats.gamesPlayed}</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Aciertos totales</div>
+                        <div class="stat-label">Aciertos</div>
                         <div class="stat-value">${stats.totalCorrect}</div>
                     </div>
                     <div class="stat-card">
@@ -116,19 +119,20 @@ const MODAL_TEMPLATES = {
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Racha actual</div>
-                        <div class="stat-value">${stats.currentStreak} <small>días</small></div>
+                        <div class="stat-value">${stats.currentStreak}<small>días</small></div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Racha más larga</div>
-                        <div class="stat-value">${stats.longestStreak} <small>días</small></div>
+                        <div class="stat-value">${stats.longestStreak}<small>días</small></div>
+                    </div>
+                    <div class="stat-card" style="grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between;">
+                        <div class="stat-label" style="text-transform:uppercase;font-size:0.6rem;letter-spacing:0.07em;font-weight:600;color:var(--stone)">Banderas únicas acertadas</div>
+                        <div class="stat-value" style="color:var(--terracotta)">${uniqueCount}</div>
                     </div>
                 </div>
-                <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);text-align:center;margin-top:8px">
-                    Banderas únicas acertadas: <strong style="color:#ec4899">${stats.uniqueCountriesCorrect.length}</strong>
-                </p>
                 ${modeStatsHtml ? `
                     <div class="mode-stats-section">
-                        <h3 class="mode-stats-title">Estadísticas por modo</h3>
+                        <p class="mode-stats-title">Estadísticas por modo</p>
                         ${modeStatsHtml}
                     </div>
                 ` : ''}

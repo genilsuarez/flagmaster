@@ -12,7 +12,7 @@ describe('Accessibility: ModeCardView', () => {
     let container;
     const testMode = {
         id: 'flagRush',
-        name: 'Flag Rush',
+        name: 'Carrera de Banderas',
         icon: '🚩',
         category: 'individual',
         description: 'Elige el país correcto a contrarreloj',
@@ -97,7 +97,7 @@ describe('Accessibility: ModeCardView', () => {
             const view = new ModeCardView({ mode: testMode, onSelect: vi.fn() });
             const el = view.render();
             expect(el.getAttribute('aria-label')).toBe(
-                'Flag Rush — Individual: Elige el país correcto a contrarreloj'
+                'Carrera de Banderas — Individual: Elige el país correcto a contrarreloj'
             );
         });
 

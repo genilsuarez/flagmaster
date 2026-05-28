@@ -29,11 +29,8 @@ export const MODE_OPTIONS = {
     geoPuzzle: [
         { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 3, max: 30 },
     ],
-    banderaFlash: [
-        { id: 'teams', label: 'Número de equipos', type: 'number', default: 2, min: 2, max: 4 },
-    ],
+    banderaFlash: [],
     capitalQuest: [
-        { id: 'teams', label: 'Número de equipos', type: 'number', default: 2, min: 2, max: 4 },
         { id: 'hintMode', label: 'Pista', type: 'select', options: [
             { value: 'flagAndName', label: 'Bandera + Nombre del país' },
             { value: 'flagOnly', label: 'Solo bandera' },
@@ -42,8 +39,9 @@ export const MODE_OPTIONS = {
     ],
     letrasEnCaida: [
         { id: 'difficulty', label: 'Dificultad', type: 'select', options: [
-            { value: 'easy', label: '🟢 Fácil — Con bandera' },
-            { value: 'hard', label: '🔴 Difícil — Sin bandera' },
+            { value: 'easy',   label: '🟢 Fácil — Bandera + nombre' },
+            { value: 'medium', label: '🟡 Medio — Solo bandera' },
+            { value: 'hard',   label: '🔴 Difícil — Sin pista' },
         ], default: 'easy' },
         { id: 'category', label: 'Categoría', type: 'select', options: [
             { value: 'country', label: '🌍 Países' },

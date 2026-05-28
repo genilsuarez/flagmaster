@@ -15,7 +15,7 @@ describe('ModeCardView', () => {
 
     const individualMode = {
         id: 'flagRush',
-        name: 'Flag Rush',
+        name: 'Carrera de Banderas',
         icon: '🚩',
         category: 'individual',
         description: 'Elige el país correcto a contrarreloj',
@@ -53,7 +53,7 @@ describe('ModeCardView', () => {
     it('uses "Individual" label for individual category modes', () => {
         const view = new ModeCardView({ mode: individualMode, onSelect });
         const el = view.render();
-        expect(el.getAttribute('aria-label')).toBe('Flag Rush — Individual: Elige el país correcto a contrarreloj');
+        expect(el.getAttribute('aria-label')).toBe('Carrera de Banderas — Individual: Elige el país correcto a contrarreloj');
     });
 
     it('renders emoji icon with aria-hidden="true"', () => {

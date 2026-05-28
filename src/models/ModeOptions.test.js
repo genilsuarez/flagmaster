@@ -88,12 +88,12 @@ describe('ModeOptions', () => {
         }
     });
 
-    it('team modes (banderaFlash, capitalQuest) have teams option', () => {
+    it('team modes (banderaFlash, capitalQuest) do not have a teams option (teams count is fixed at 3)', () => {
         const teamModes = ['banderaFlash', 'capitalQuest'];
         for (const modeId of teamModes) {
             const options = MODE_OPTIONS[modeId];
             const hasTeams = options.some(opt => opt.id === 'teams');
-            expect(hasTeams).toBe(true);
+            expect(hasTeams).toBe(false);
         }
     });
 

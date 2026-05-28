@@ -152,24 +152,22 @@ describe('StreakBlitzController', () => {
 
         it('shows flag image for flag questions', () => {
             controller = new StreakBlitzController({ container });
-            // Force flag type by mocking Math.random
             vi.spyOn(Math, 'random').mockReturnValue(0.1); // < 0.5 → flag
             controller.start(pool);
             const flagEl = container.querySelector('.streak-blitz-flag');
             const promptEl = container.querySelector('.streak-blitz-prompt');
-            expect(flagEl.style.display).not.toBe('none');
-            expect(promptEl.style.display).toBe('none');
+            expect(flagEl.style.visibility).not.toBe('hidden');
+            expect(promptEl.style.visibility).toBe('hidden');
         });
 
         it('shows country name for capital questions', () => {
             controller = new StreakBlitzController({ container });
-            // Force capital type by mocking Math.random
             vi.spyOn(Math, 'random').mockReturnValue(0.9); // >= 0.5 → capital
             controller.start(pool);
             const flagEl = container.querySelector('.streak-blitz-flag');
             const promptEl = container.querySelector('.streak-blitz-prompt');
-            expect(flagEl.style.display).toBe('none');
-            expect(promptEl.style.display).not.toBe('none');
+            expect(flagEl.style.visibility).toBe('hidden');
+            expect(promptEl.style.visibility).not.toBe('hidden');
         });
 
         it('enforces max 3 consecutive same type', () => {
@@ -246,13 +244,14 @@ describe('StreakBlitzController', () => {
             expect(controller.streakService.count).toBe(0);
         });
 
-        it('immediately advances to next question (no feedback delay)', () => {
+        it('advances to next question after feedback delay', () => {
             controller = new StreakBlitzController({ container });
             controller.start(pool);
             const initialRound = controller.currentRound;
             controller.handleAnswer(0, true);
-            // Should advance immediately without needing to wait
-            expect(controller.currentRound).toBe(initialRound + 1);
+            // Should NOT advance immediately — there's a feedback delay
+            expect(controller.currentRound).toBe(initialRound);
+            expect(controller.feedbackTimeout).not.toBeNull();
         });
 
         it('calls onRoundEnd callback with round data', () => {
@@ -305,12 +304,14 @@ describe('StreakBlitzController', () => {
             expect(controller.streakService.count).toBe(0);
         });
 
-        it('immediately advances to next question on timeout', () => {
+        it('advances to next question after feedback delay on timeout', () => {
             controller = new StreakBlitzController({ container });
             controller.start(pool);
             const roundBeforeTimeout = controller.currentRound;
             controller.handleTimeout();
-            expect(controller.currentRound).toBe(roundBeforeTimeout + 1);
+            // Should NOT advance immediately — there's a feedback delay
+            expect(controller.currentRound).toBe(roundBeforeTimeout);
+            expect(controller.feedbackTimeout).not.toBeNull();
         });
     });
 
@@ -452,13 +453,15 @@ describe('StreakBlitzController', () => {
             const smallPool = pool.slice(0, 5);
             controller.start(smallPool);
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(5);
+            vi.useFakeTimers();
 
-            // Answer more questions than pool size
+            // Answer more questions than pool size, advancing through the delay each time
             for (let i = 0; i < 6; i++) {
                 controller.handleAnswer(0, true);
+                vi.advanceTimersByTime(StreakBlitzController.FEEDBACK_DELAY_MS);
             }
 
-            // Should still be active (no crash from running out of pool)
+            vi.useRealTimers();
             expect(controller.isActive).toBe(true);
             expect(controller.currentRound).toBe(7);
         });

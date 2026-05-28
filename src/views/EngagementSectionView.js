@@ -28,9 +28,6 @@ export class EngagementSectionView {
     #streakEl;
 
     /** @type {HTMLElement|null} */
-    #progressEl;
-
-    /** @type {HTMLElement|null} */
     #lastPlayedEl;
 
     /**
@@ -45,7 +42,6 @@ export class EngagementSectionView {
         this.#onQuickPlay = onQuickPlay || null;
         this.#element = null;
         this.#streakEl = null;
-        this.#progressEl = null;
         this.#lastPlayedEl = null;
     }
 
@@ -63,12 +59,6 @@ export class EngagementSectionView {
         streakEl.className = 'engagement-section__streak';
         section.appendChild(streakEl);
         this.#streakEl = streakEl;
-
-        // Global progress
-        const progressEl = document.createElement('div');
-        progressEl.className = 'engagement-section__progress';
-        section.appendChild(progressEl);
-        this.#progressEl = progressEl;
 
         // Last played quick-replay
         const lastPlayedEl = document.createElement('div');
@@ -96,19 +86,14 @@ export class EngagementSectionView {
      */
     #populateStats() {
         const stats = this.#getSafeStats();
-        const totalCountries = this.#getTotalCountries();
-        const uniqueCorrect = this.#getUniqueCorrectCount(stats);
         const currentStreak = this.#getCurrentStreak(stats);
-        const lastPlayedMode = this.#getLastPlayedMode(stats);
         const hasSessions = stats.gamesPlayed > 0;
 
         // Streak badge
         this.#renderStreak(currentStreak, hasSessions);
 
-        // Global progress
-        this.#renderProgress(uniqueCorrect, totalCountries);
-
         // Last played
+        const lastPlayedMode = this.#getLastPlayedMode(stats);
         this.#renderLastPlayed(lastPlayedMode, hasSessions);
     }
 
@@ -123,36 +108,6 @@ export class EngagementSectionView {
             return stats || {};
         } catch {
             return {};
-        }
-    }
-
-    /**
-     * Gets total countries count from CountryService.
-     * @returns {number}
-     * @private
-     */
-    #getTotalCountries() {
-        try {
-            return this.#countryService.countries.length || 0;
-        } catch {
-            return 0;
-        }
-    }
-
-    /**
-     * Gets unique countries correct count safely.
-     * @param {Object} stats
-     * @returns {number}
-     * @private
-     */
-    #getUniqueCorrectCount(stats) {
-        try {
-            if (Array.isArray(stats.uniqueCountriesCorrect)) {
-                return stats.uniqueCountriesCorrect.length;
-            }
-            return 0;
-        } catch {
-            return 0;
         }
     }
 
@@ -233,25 +188,6 @@ export class EngagementSectionView {
         this.#streakEl.setAttribute('aria-label', `Racha: ${streak} días`);
         this.#streakEl.appendChild(icon);
         this.#streakEl.appendChild(count);
-    }
-
-    /**
-     * Renders the global progress indicator.
-     * @param {number} uniqueCorrect
-     * @param {number} total
-     * @private
-     */
-    #renderProgress(uniqueCorrect, total) {
-        if (!this.#progressEl) return;
-
-        this.#progressEl.innerHTML = '';
-
-        const text = document.createElement('span');
-        text.className = 'engagement-section__progress-text';
-        text.textContent = `${uniqueCorrect} de ${total} banderas acertadas`;
-
-        this.#progressEl.setAttribute('aria-label', `Progreso: ${uniqueCorrect} de ${total} banderas acertadas`);
-        this.#progressEl.appendChild(text);
     }
 
     /**

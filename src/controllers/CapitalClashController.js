@@ -77,6 +77,7 @@ export class CapitalClashController {
         this.powerUpContainer = null;
         this.scoreEl = null;
         this.progressEl = null;
+        this.skipBtn = null;
     }
 
     /**
@@ -176,6 +177,9 @@ export class CapitalClashController {
             this.powerUpInventoryView.resetRound();
             this.powerUpInventoryView.update(this.powerUpService.inventory);
         }
+
+        // Re-enable skip button for new round
+        if (this.skipBtn) this.skipBtn.disabled = false;
 
         // Render multiple choice options
         if (this.multipleChoiceView) {
@@ -301,6 +305,19 @@ export class CapitalClashController {
         if (this.multipleChoiceView) {
             this.multipleChoiceView.disable();
         }
+
+        this.handleAnswer(-1, false);
+    }
+
+    /**
+     * Handles the skip button. Counts as incorrect, advances immediately.
+     */
+    handleSkip() {
+        if (!this.isActive || this.feedbackTimeout) return;
+
+        if (this.timerView) this.timerView.stop();
+        if (this.multipleChoiceView) this.multipleChoiceView.disable();
+        if (this.skipBtn) this.skipBtn.disabled = true;
 
         this.handleAnswer(-1, false);
     }
@@ -492,6 +509,15 @@ export class CapitalClashController {
         this.mcContainer.className = 'capital-clash-options';
         this.container.appendChild(this.mcContainer);
         this.multipleChoiceView = new MultipleChoiceView({ container: this.mcContainer });
+
+        // Skip button
+        this.skipBtn = document.createElement('button');
+        this.skipBtn.className = 'mode-skip-btn';
+        this.skipBtn.type = 'button';
+        this.skipBtn.textContent = 'Saltar';
+        this.skipBtn.setAttribute('aria-label', 'Saltar esta pregunta');
+        this.skipBtn.addEventListener('click', () => this.handleSkip());
+        this.container.appendChild(this.skipBtn);
 
         // Power-up inventory
         this.powerUpContainer = document.createElement('div');

@@ -3,7 +3,6 @@ import { getOptionsForMode } from '../models/ModeOptions.js';
 
 /** Minimum pool size required to start a game */
 const MIN_POOL_SIZE = 5;
-
 /**
  * Modal bottom sheet for quick game configuration.
  * Implements focus trap, escape-to-close, swipe-to-dismiss.
@@ -15,11 +14,13 @@ export class BottomSheetView {
     /**
      * @param {Object} options
      * @param {import('../services/CountryService.js').CountryService} options.countryService
+     * @param {import('../services/GlobalDefaultsService.js').GlobalDefaultsService} [options.globalDefaults]
      * @param {function(Object): void} options.onPlay - Callback with config object
      * @param {function(): void} options.onDismiss - Callback when sheet is dismissed
      */
-    constructor({ countryService, onPlay, onDismiss }) {
+    constructor({ countryService, globalDefaults = null, onPlay, onDismiss }) {
         this.countryService = countryService;
+        this.globalDefaults = globalDefaults;
         this.onPlay = onPlay;
         this.onDismiss = onDismiss;
 
@@ -82,14 +83,23 @@ export class BottomSheetView {
             this.modeOptions[opt.id] = opt.default;
         }
 
-        // Reset filters
+        // Reset filters to factory defaults
         this.continent = 'All';
         this.sovereigntyStatus = 'All';
         this.countryCount = null;
         this.practiceMode = false;
         this.randomOrder = true;
 
-        // Load saved config if available
+        // Apply global defaults (overrides factory defaults)
+        if (this.globalDefaults) {
+            const gd = this.globalDefaults.get();
+            this.continent        = gd.continent;
+            this.sovereigntyStatus = gd.sovereigntyStatus;
+            this.countryCount     = gd.maxCount;
+            this.randomOrder      = gd.randomOrder;
+        }
+
+        // Load saved per-mode config (overrides global defaults)
         this._loadSavedConfig(modeId);
 
         // Update max country count
@@ -478,7 +488,10 @@ export class BottomSheetView {
     }
 
     /**
-     * Loads saved configuration from localStorage.
+     * Loads saved per-mode configuration from localStorage.
+     * Only restores mode-specific options (modeOptions, practiceMode, randomOrder).
+     * Shared filters (continent, sovereigntyStatus, maxCount) are governed by
+     * GlobalDefaultsService and must NOT be overridden here.
      * @param {string} modeId
      * @private
      */
@@ -489,9 +502,6 @@ export class BottomSheetView {
             if (!saved) return;
 
             const config = JSON.parse(saved);
-            if (config.continent) this.continent = config.continent;
-            if (config.sovereigntyStatus) this.sovereigntyStatus = config.sovereigntyStatus;
-            if (config.maxCount) this.countryCount = config.maxCount;
             if (config.modeOptions) {
                 Object.assign(this.modeOptions, config.modeOptions);
             }
@@ -503,15 +513,20 @@ export class BottomSheetView {
     }
 
     /**
-     * Saves configuration to localStorage.
+     * Saves per-mode configuration to localStorage.
+     * Only persists mode-specific options — shared filters are managed by GlobalDefaultsService.
      * @param {string} modeId
-     * @param {Object} config
+     * @param {Object} config - Full config from _buildConfig()
      * @private
      */
     _saveConfig(modeId, config) {
         try {
             const key = BottomSheetView.STORAGE_KEY + modeId;
-            localStorage.setItem(key, JSON.stringify(config));
+            // Only persist what is truly per-mode
+            const perMode = { modeOptions: config.modeOptions || {} };
+            if (config.practiceMode !== undefined) perMode.practiceMode = config.practiceMode;
+            if (config.randomOrder !== undefined) perMode.randomOrder = config.randomOrder;
+            localStorage.setItem(key, JSON.stringify(perMode));
         } catch {
             // Ignore storage errors (quota exceeded, etc.)
         }
@@ -681,6 +696,8 @@ export class BottomSheetView {
     _onFilterChange() {
         this.continent = this.continentSelect.value;
         this.sovereigntyStatus = this.sovereigntySelect.value;
+
+        const prevMax = this.maxCountryCount;
         this._updateMaxCountryCount();
 
         // Update country count input max and placeholder
@@ -688,8 +705,13 @@ export class BottomSheetView {
             this.countryCountInput.max = String(this.maxCountryCount);
             this.countryCountInput.placeholder = `Máx: ${this.maxCountryCount}`;
 
-            // Clamp current value if it exceeds new max
-            if (this.countryCount && this.countryCount > this.maxCountryCount) {
+            if (this.countryCount && this.countryCount >= prevMax) {
+                // Was at (or above) the previous max — treat as "use maximum",
+                // so reset to null and clear the input to reflect the new max.
+                this.countryCount = null;
+                this.countryCountInput.value = '';
+            } else if (this.countryCount && this.countryCount > this.maxCountryCount) {
+                // Clamp to new max if the custom value exceeds it
                 this.countryCount = this.maxCountryCount;
                 this.countryCountInput.value = String(this.maxCountryCount);
             }

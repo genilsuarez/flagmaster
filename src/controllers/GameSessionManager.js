@@ -395,6 +395,20 @@ export class GameSessionManager {
 
         this.session.isActive = false;
 
+        // Sync round history from the controller before stopping it,
+        // so that buildSessionResults() has accurate data even when the
+        // user ends the game manually (stop() does not fire onGameEnd).
+        if (this.activeController && this.activeController.roundHistory) {
+            const controllerHistory = this.activeController.roundHistory;
+            if (controllerHistory.length > 0) {
+                this.session.roundHistory = controllerHistory.map(r => ({
+                    correct: r.correct,
+                    points: r.points || 0,
+                    timeMs: r.timeRemaining != null ? r.timeRemaining * 1000 : (r.timeMs || 0),
+                }));
+            }
+        }
+
         // Stop the active controller
         if (this.activeController) {
             if (typeof this.activeController.stop === 'function') {
