@@ -1,5 +1,7 @@
 import { ScoringEngine } from '../services/ScoringEngine.js';
 import { StreakService } from '../services/StreakService.js';
+import { RoundProgressView } from '../views/RoundProgressView.js';
+import { TimerView } from '../views/TimerView.js';
 
 /**
  * GeoPuzzleController - Orchestrates the Geo Puzzle individual game mode.
@@ -79,6 +81,9 @@ export class GeoPuzzleController {
         this.progressEl = null;
         this.feedbackEl = null;
         this.flagEl = null;
+        this.roundProgressView = null;
+        this.timerView = null;
+        this.timerContainer = null;
     }
 
     /**
@@ -183,6 +188,14 @@ export class GeoPuzzleController {
         // Reset UI state
         this.showRevealingUI();
 
+        // Start hint-phase timer bar: total time = HINT_INTERVAL × TOTAL_HINTS
+        if (this.timerView) {
+            this.timerView.stop();
+            this.timerView.start(
+                GeoPuzzleController.HINT_INTERVAL_SECONDS * GeoPuzzleController.TOTAL_HINTS
+            );
+        }
+
         // Reveal first hint immediately, then auto-reveal on timer
         this.revealNextHint();
         this.startHintTimer();
@@ -273,6 +286,12 @@ export class GeoPuzzleController {
         this.updateCountdownDisplay();
         if (this.countdownEl) this.countdownEl.hidden = false;
 
+        // Switch timer bar to answer-phase countdown
+        if (this.timerView) {
+            this.timerView.stop();
+            this.timerView.start(GeoPuzzleController.ANSWER_TIME_SECONDS);
+        }
+
         this.answerTimer = setInterval(() => {
             this.answerTimeLeft--;
             this.updateCountdownDisplay();
@@ -294,6 +313,19 @@ export class GeoPuzzleController {
             this.answerTimer = null;
         }
         if (this.countdownEl) this.countdownEl.hidden = true;
+        if (this.timerView) this.timerView.stop();
+    }
+
+    /**
+     * Handles TimerView expiry — only relevant during answer phase
+     * (hint-phase expiry is handled by the setInterval in startHintTimer).
+     * @private
+     */
+    handleTimerExpired() {
+        if (this.phase === 'input') {
+            this.stopAnswerCountdown();
+            this.handleAnswerTimeout();
+        }
     }
 
     /**
@@ -372,6 +404,11 @@ export class GeoPuzzleController {
         this.phase = 'review';
         this.showReviewUI();
 
+        // Update round progress bar (round completed)
+        if (this.roundProgressView) {
+            this.roundProgressView.update(this.currentRound);
+        }
+
         // Record round history
         this.roundHistory.push({
             correct: true,
@@ -438,6 +475,11 @@ export class GeoPuzzleController {
         // Show review phase
         this.phase = 'review';
         this.showReviewUI();
+
+        // Update round progress bar (round completed)
+        if (this.roundProgressView) {
+            this.roundProgressView.update(this.currentRound);
+        }
 
         // Record round history
         this.roundHistory.push({
@@ -602,6 +644,7 @@ export class GeoPuzzleController {
         this.progressEl = null;
         this.feedbackEl = null;
         this.flagEl = null;
+        this.roundProgressView = null;
     }
 
     /**
@@ -621,6 +664,7 @@ export class GeoPuzzleController {
             clearTimeout(this.roundTransitionTimeout);
             this.roundTransitionTimeout = null;
         }
+        if (this.timerView) this.timerView.stop();
     }
 
     // ─── UI Methods ──────────────────────────────────────────────────────
@@ -659,6 +703,24 @@ export class GeoPuzzleController {
         header.appendChild(this.progressEl);
 
         this.container.appendChild(header);
+
+        // Round progress bar
+        const progressBarContainer = document.createElement('div');
+        progressBarContainer.className = 'geo-puzzle-round-progress';
+        this.container.appendChild(progressBarContainer);
+        this.roundProgressView = new RoundProgressView({
+            container: progressBarContainer,
+            total: this.totalRounds,
+        });
+
+        // Timer bar (shared visual with other modes)
+        this.timerContainer = document.createElement('div');
+        this.timerContainer.className = 'geo-puzzle-timer';
+        this.container.appendChild(this.timerContainer);
+        this.timerView = new TimerView({
+            container: this.timerContainer,
+            onExpired: () => this.handleTimerExpired(),
+        });
 
         // Hints container
         this.hintsContainer = document.createElement('div');
@@ -784,6 +846,9 @@ export class GeoPuzzleController {
     updateProgress() {
         if (this.progressEl) {
             this.progressEl.textContent = `${this.currentRound} / ${this.totalRounds}`;
+        }
+        if (this.roundProgressView) {
+            this.roundProgressView.update(this.currentRound - 1);
         }
     }
 

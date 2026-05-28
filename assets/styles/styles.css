@@ -2527,6 +2527,13 @@ body.screen-game .game-wrapper {
     width: 100%;
 }
 
+/* Round progress wrapper — needs explicit width to fill container */
+.word-drop-round-progress,
+.geo-puzzle-round-progress {
+    width: 100%;
+    padding: var(--space-xs) var(--space-xs) 0;
+}
+
 .word-drop-end-btn {
     height: 36px;
     padding: 0 var(--space-md);
@@ -2860,6 +2867,26 @@ body.screen-game .game-wrapper {
     background: #fdf6f4;
     border: 1.5px solid var(--team-coral);
     color: var(--team-coral);
+}
+
+.word-drop-difficulty-badge.difficulty-medium {
+    background: #fdf9ed;
+    border: 1.5px solid #c9a227;
+    color: #9a7a10;
+}
+
+.word-drop-country-name-hint {
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: #f4f7f1;
+    border: 1.5px solid var(--team-olive);
+    border-radius: 8px;
+    padding: 6px 16px;
+    margin: 4px auto 8px;
+    max-width: 280px;
 }
 
 /* LANDING AURORA — Subtle organic shape */
@@ -3787,6 +3814,25 @@ body.screen-game .game-wrapper {
 @keyframes timer-frozen-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
+}
+
+/* ROUND PROGRESS BAR — Round completion indicator */
+.round-progress {
+    width: 100%;
+    height: 6px;
+    background: var(--soft-sand);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin: var(--space-xs) 0 var(--space-sm);
+    position: relative;
+}
+
+.round-progress__fill {
+    height: 100%;
+    background: var(--terracotta);
+    border-radius: var(--radius-pill);
+    transition: width 0.4s var(--ease-gentle);
+    will-change: width;
 }
 
 /* POWER-UP INVENTORY — Circular action buttons */

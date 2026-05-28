@@ -277,16 +277,20 @@ export class GameSessionManager {
                 }
                 break;
 
-            case 'letrasEnCaida':
+            case 'letrasEnCaida': {
+                const difficulty = modeOptions.difficulty || 'easy';
+                // hard = no flag, medium = flag only, easy = flag + country name
+                const showFlag = difficulty !== 'hard';
                 this.activeController.start({
                     countries: pool,
                     survival: modeOptions.survival !== false,
-                    showFlag: modeOptions.showFlag !== false,
+                    showFlag,
                     category: modeOptions.category || 'country',
                     speed: modeOptions.speed || 'normal',
-                    difficulty: modeOptions.difficulty || 'easy',
+                    difficulty,
                 });
                 break;
+            }
         }
     }
 

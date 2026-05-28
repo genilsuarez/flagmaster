@@ -1,3 +1,5 @@
+import { RoundProgressView } from './RoundProgressView.js';
+
 /**
  * WordDropView: manages the DOM for the Word Drop game mode.
  * Creates letter boxes, input field, score display, and animations.
@@ -16,6 +18,7 @@ export class WordDropView {
         this.countryNameHint = null;
         this.letterBoxes = [];
         this.currentDifficulty = 'easy';
+        this.roundProgressView = null;
 
         this.onGuessPressed = null;
         this.onAnswerSubmitted = null;
@@ -52,6 +55,10 @@ export class WordDropView {
         topBar.appendChild(this.scoreDisplay);
         topBar.appendChild(this.difficultyBadge);
         topBar.appendChild(this.livesDisplay);
+
+        // Round progress bar container (initialized with total when game starts)
+        this.progressBarContainer = document.createElement('div');
+        this.progressBarContainer.className = 'word-drop-round-progress';
 
         // Flag hint (optional)
         this.flagHint = document.createElement('img');
@@ -122,9 +129,17 @@ export class WordDropView {
         this.nextButton.addEventListener('click', () => {
             if (this.onNextPressed) this.onNextPressed();
         });
+        // Prevent the Enter keydown from bubbling to the document listener
+        // (which would cause a double-advance: once from keydown, once from click)
+        this.nextButton.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+            }
+        });
 
         // Assemble
         this.container.appendChild(topBar);
+        this.container.appendChild(this.progressBarContainer);
         this.container.appendChild(this.flagHint);
         this.container.appendChild(this.countryNameHint);
         this.container.appendChild(this.letterGrid);
@@ -333,7 +348,7 @@ export class WordDropView {
         }
 
         // In hard mode (no flag shown), reveal the flag after validation for learning
-        if (flagUrl && this.flagHint.hidden) {
+        if (this.currentDifficulty !== 'hard' && flagUrl && this.flagHint.hidden) {
             this.flagHint.src = flagUrl;
             this.flagHint.hidden = false;
             this.flagHint.classList.add('flag-hint-reveal');
@@ -358,7 +373,7 @@ export class WordDropView {
         this.feedbackEl.className = 'word-drop-feedback feedback-timeout';
 
         // In hard mode, reveal the flag for learning
-        if (flagUrl && this.flagHint.hidden) {
+        if (this.currentDifficulty !== 'hard' && flagUrl && this.flagHint.hidden) {
             this.flagHint.src = flagUrl;
             this.flagHint.hidden = false;
             this.flagHint.classList.add('flag-hint-reveal');
@@ -400,19 +415,45 @@ export class WordDropView {
 
     /**
      * Updates the difficulty badge display.
-     * @param {string} difficulty - 'easy' or 'hard'
+     * @param {string} difficulty - 'easy', 'medium', or 'hard'
      */
     setDifficulty(difficulty) {
+        this.currentDifficulty = difficulty;
         if (this.difficultyBadge) {
+            this.difficultyBadge.classList.remove('difficulty-easy', 'difficulty-medium', 'difficulty-hard');
             if (difficulty === 'hard') {
                 this.difficultyBadge.textContent = '🔴 Difícil';
                 this.difficultyBadge.classList.add('difficulty-hard');
-                this.difficultyBadge.classList.remove('difficulty-easy');
+            } else if (difficulty === 'medium') {
+                this.difficultyBadge.textContent = '🟡 Medio';
+                this.difficultyBadge.classList.add('difficulty-medium');
             } else {
                 this.difficultyBadge.textContent = '🟢 Fácil';
                 this.difficultyBadge.classList.add('difficulty-easy');
-                this.difficultyBadge.classList.remove('difficulty-hard');
             }
+        }
+    }
+
+    /**
+     * Initialises the round progress bar with the total number of rounds.
+     * Must be called once before the first round starts.
+     * @param {number} total
+     */
+    initProgress(total) {
+        if (!this.progressBarContainer) return;
+        this.roundProgressView = new RoundProgressView({
+            container: this.progressBarContainer,
+            total,
+        });
+    }
+
+    /**
+     * Advances the round progress bar.
+     * @param {number} completed - rounds completed so far
+     */
+    updateProgress(completed) {
+        if (this.roundProgressView) {
+            this.roundProgressView.update(completed);
         }
     }
 
@@ -433,5 +474,8 @@ export class WordDropView {
         this.stopAnswerCountdown();
         this.updateScore(0);
         this.updateLives(3);
+        if (this.roundProgressView) {
+            this.roundProgressView.update(0);
+        }
     }
 }

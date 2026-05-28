@@ -130,6 +130,7 @@ export class WordDropController {
         this.view.setLivesVisible(this.isSurvivalMode);
         this.view.updateLives(this.lives);
         this.view.setDifficulty(this.difficulty);
+        this.view.initProgress(this.countries.length);
 
         this.startRound();
     }
@@ -153,7 +154,7 @@ export class WordDropController {
             speed: this.speed
         });
 
-        this.view.setupWord(round.word, this.showFlag, country.flagUrl);
+        this.view.setupWord(round.word, this.showFlag, country.flagUrl, country.spanishName);
         
         // Small delay before starting reveal for visual readiness
         this.revealStartTimeout = setTimeout(() => {
@@ -232,6 +233,7 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
 
         // Delay phase change to prevent same-event bubbling from triggering advance
         setTimeout(() => { this.phase = 'review'; }, 0);
@@ -262,6 +264,7 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
         setTimeout(() => { this.phase = 'review'; }, 0);
     }
 
@@ -270,6 +273,8 @@ export class WordDropController {
      */
     advanceToNextRound() {
         if (!this.isActive) return;
+        if (this.phase !== 'review') return;
+        this.phase = 'advancing'; // prevent double-advance from keydown + button click
         this.startRound();
     }
 
@@ -298,6 +303,7 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
         this.phase = 'review';
     }
 
@@ -370,7 +376,11 @@ export class WordDropController {
 
         const wordsGuessed = this.currentIndex;
         const emoji = this.totalScore >= 200 ? '🏆' : this.totalScore >= 100 ? '⭐' : '🎮';
-        const diffLabel = this.difficulty === 'hard' ? '🔴 Difícil (sin bandera)' : '🟢 Fácil (con bandera)';
+        const diffLabel = this.difficulty === 'hard'
+            ? '🔴 Difícil (sin pista)'
+            : this.difficulty === 'medium'
+                ? '🟡 Medio (solo bandera)'
+                : '🟢 Fácil (bandera + nombre)';
 
         modal.innerHTML = `
             <div class="modal-content">
