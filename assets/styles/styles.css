@@ -2886,6 +2886,33 @@ body.screen-game .game-wrapper {
     box-shadow: 0 8px 24px rgba(74, 122, 80, 0.35);
 }
 
+/* "Me rindo" — ocupa el mismo slot que "¡Ya sé!" durante la fase de input */
+.word-drop-surrender-btn {
+    height: 48px;
+    padding: 0 var(--space-xl);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-size: var(--fs-body-sm);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--stone);
+    background: transparent;
+    border: 1.5px solid var(--warm-gray);
+    cursor: pointer;
+    transition: color var(--duration-quick) var(--ease-gentle),
+                border-color var(--duration-quick) var(--ease-gentle);
+}
+
+.word-drop-surrender-btn:hover {
+    color: var(--rust);
+    border-color: var(--rust);
+}
+
+.word-drop-surrender-btn[hidden] {
+    display: none;
+}
+
 .word-drop-answer-countdown {
     font-family: var(--font-display);
     font-size: 1.1rem;
@@ -4017,17 +4044,17 @@ body.screen-game .game-wrapper {
     align-items: center;
     justify-content: center;
     z-index: 2000;
-    padding: var(--space-lg);
+    padding: var(--space-md);
     animation: fadeIn var(--duration-moderate) var(--ease-gentle);
 }
 
 .game-end-modal__content {
     background: var(--warm-white);
     border-radius: var(--radius-xl);
-    padding: var(--space-2xl) var(--space-xl);
+    padding: var(--space-lg) var(--space-lg);
     max-width: 420px;
     width: 100%;
-    max-height: 85vh;
+    max-height: 92vh;
     overflow-y: auto;
     border: 1px solid var(--warm-gray);
     box-shadow: var(--shadow-lifted);
@@ -4036,20 +4063,20 @@ body.screen-game .game-wrapper {
 }
 
 .game-end-modal__header {
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-md);
 }
 
 .game-end-modal__title {
     font-family: var(--font-display);
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     font-weight: 400;
     color: var(--ink);
-    margin: 0 0 var(--space-xs) 0;
+    margin: 0 0 2px 0;
 }
 
 .game-end-modal__game-name {
     font-family: var(--font-display);
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 400;
     color: var(--terracotta);
     margin: 0 0 var(--space-xs) 0;
@@ -4065,8 +4092,27 @@ body.screen-game .game-wrapper {
     margin: 0;
 }
 
+.game-end-modal__option-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    justify-content: center;
+    margin: 0;
+}
+
+.game-end-modal__option-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    background: var(--soft-sand);
+    border-radius: var(--radius-pill);
+    padding: 3px var(--space-sm);
+    white-space: nowrap;
+}
+
 .game-end-modal__stats {
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-md);
 }
 
 .game-end-modal__winner {
@@ -4122,52 +4168,52 @@ body.screen-game .game-wrapper {
 .game-end-modal__individual-stats {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: 4px;
     text-align: left;
 }
 
 .game-end-modal__stat-row {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-sm);
+    padding: 6px var(--space-md);
     border-radius: var(--radius-md);
     background: var(--cream-bg);
 }
 
 .game-end-modal__stat-icon {
-    font-size: 1.2rem;
+    font-size: 1rem;
     flex-shrink: 0;
 }
 
 .game-end-modal__stat-label {
     flex: 1;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 500;
     color: var(--charcoal);
 }
 
 .game-end-modal__stat-value {
     font-family: var(--font-display);
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 400;
     color: var(--ink);
 }
 
 .game-end-modal__achievements {
-    margin-bottom: var(--space-xl);
-    padding-top: var(--space-lg);
+    margin-bottom: var(--space-md);
+    padding-top: var(--space-sm);
     border-top: 1px solid var(--soft-sand);
 }
 
 .game-end-modal__achievements-title {
     font-family: var(--font-body);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--stone);
-    margin: 0 0 var(--space-md);
+    margin: 0 0 var(--space-xs);
 }
 
 .game-end-modal__achievements-list {
@@ -4423,11 +4469,11 @@ body.screen-game .game-wrapper {
     }
 
     .game-end-modal__content {
-        padding: var(--space-xl) var(--space-lg);
+        padding: var(--space-md) var(--space-md);
     }
 
     .game-end-modal__title {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     .game-end-modal__footer {

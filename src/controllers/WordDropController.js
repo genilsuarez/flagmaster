@@ -44,6 +44,7 @@ export class WordDropController {
         this.view.onAnswerSubmitted = (answer) => this.handleAnswerSubmitted(answer);
         this.view.onNextPressed = () => this.advanceToNextRound();
         this.view.onAnswerTimeout = () => this.handleAnswerTimeout();
+        this.view.onSurrenderPressed = () => this.handleSurrender();
 
         this.service.onLetterRevealed = (position, char) => {
             this.view.revealLetter(position, char);
@@ -252,6 +253,37 @@ export class WordDropController {
      */
     handleAnswerTimeout() {
         if (!this.isActive || !this.service.currentRound) return;
+
+        this.view.revealAllLetters(this.service.currentRound.word);
+        this.view.showFeedback(false, -15, this.service.currentRound.word, this.service.currentRound.country?.flagUrl);
+
+        this.totalScore -= 15;
+        this.view.updateScore(Math.max(0, this.totalScore));
+
+        // Notify streak callback for GameSessionManager integration
+        if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+
+        if (this.isSurvivalMode) {
+            this.lives--;
+            this.view.updateLives(this.lives);
+            if (this.lives <= 0) {
+                this.roundTransitionTimeout = setTimeout(() => this.endGame(), 1500);
+                return;
+            }
+        }
+
+        this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
+        setTimeout(() => { this.phase = 'review'; }, 0);
+    }
+
+    /**
+     * Called when the player presses "Me rindo" during the input phase.
+     * Applies the -15 penalty immediately without waiting for the countdown.
+     */
+    handleSurrender() {
+        if (!this.isActive || !this.service.currentRound) return;
+        if (this.phase !== 'input') return;
 
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showFeedback(false, -15, this.service.currentRound.word, this.service.currentRound.country?.flagUrl);

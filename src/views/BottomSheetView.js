@@ -35,6 +35,13 @@ export class BottomSheetView {
         this.countryCount = null;
         this.maxCountryCount = 0;
 
+        // Tracks whether the user explicitly changed each filter in this session.
+        // Only fields marked dirty are persisted as local overrides; unmarked fields
+        // continue to inherit from the global defaults on every open.
+        this._dirtyContinent = false;
+        this._dirtySovereignty = false;
+        this._dirtyCountryCount = false;
+
         // Mode options state
         this.modeOptions = {};
 
@@ -90,6 +97,11 @@ export class BottomSheetView {
         this.practiceMode = false;
         this.randomOrder = true;
 
+        // Reset dirty flags — no local overrides until the user explicitly changes a filter
+        this._dirtyContinent = false;
+        this._dirtySovereignty = false;
+        this._dirtyCountryCount = false;
+
         // Apply global defaults (overrides factory defaults — level 2 of 3)
         if (this.globalDefaults) {
             const gd = this.globalDefaults.get();
@@ -129,13 +141,17 @@ export class BottomSheetView {
         this._initSwipeDismiss();
         this._updatePlayButtonState();
 
-        // Move focus to sheet after animation
+        // Move focus to play button after animation so Enter starts the game immediately
         setTimeout(() => {
             if (!this.sheet) return;
-            const firstFocusable = this.sheet.querySelector(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            if (firstFocusable) firstFocusable.focus();
+            if (this.playButton && !this.playButton.disabled) {
+                this.playButton.focus();
+            } else {
+                const firstFocusable = this.sheet.querySelector(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                if (firstFocusable) firstFocusable.focus();
+            }
         }, 300);
     }
 
@@ -496,6 +512,11 @@ export class BottomSheetView {
         this.practiceMode      = false;
         this.randomOrder       = true;
 
+        // Clear dirty flags — after reset, all filters inherit from global defaults
+        this._dirtyContinent    = false;
+        this._dirtySovereignty  = false;
+        this._dirtyCountryCount = false;
+
         if (this.globalDefaults) {
             const gd = this.globalDefaults.get();
             this.continent         = gd.continent;
@@ -563,10 +584,22 @@ export class BottomSheetView {
 
             const config = JSON.parse(saved);
 
-            // Restore content filters — these override global defaults when present
-            if (config.continent !== undefined)         this.continent         = config.continent;
-            if (config.sovereigntyStatus !== undefined) this.sovereigntyStatus = config.sovereigntyStatus;
-            if (config.countryCount !== undefined)      this.countryCount      = config.countryCount;
+            // Restore content filters — only apply if the user explicitly set them
+            // (indicated by the _dirty* flags persisted alongside the value).
+            // This ensures that changing the global default later is still reflected
+            // in modes where the user never touched that particular filter locally.
+            if (config._dirtyContinent && config.continent !== undefined) {
+                this.continent = config.continent;
+                this._dirtyContinent = true;
+            }
+            if (config._dirtySovereignty && config.sovereigntyStatus !== undefined) {
+                this.sovereigntyStatus = config.sovereigntyStatus;
+                this._dirtySovereignty = true;
+            }
+            if (config._dirtyCountryCount && config.countryCount !== undefined) {
+                this.countryCount = config.countryCount;
+                this._dirtyCountryCount = true;
+            }
 
             // Restore mode-specific options
             if (config.modeOptions) {
@@ -595,7 +628,12 @@ export class BottomSheetView {
         try {
             const key = BottomSheetView.STORAGE_KEY + modeId;
             const perMode = {
-                // Content filters — saved so local overrides global on next open
+                // Content filters — only saved when the user explicitly changed them
+                // in this mode's sheet (dirty flags). Non-dirty fields are left out so
+                // that the global default continues to apply on the next open.
+                _dirtyContinent:    this._dirtyContinent,
+                _dirtySovereignty:  this._dirtySovereignty,
+                _dirtyCountryCount: this._dirtyCountryCount,
                 continent:         this.continent,
                 sovereigntyStatus: this.sovereigntyStatus,
                 countryCount:      this.countryCount,
@@ -772,8 +810,15 @@ export class BottomSheetView {
      * @private
      */
     _onFilterChange() {
+        const prevContinent = this.continent;
+        const prevSovereignty = this.sovereigntyStatus;
+
         this.continent = this.continentSelect.value;
         this.sovereigntyStatus = this.sovereigntySelect.value;
+
+        // Mark as locally modified if the user changed the value
+        if (this.continent !== prevContinent) this._dirtyContinent = true;
+        if (this.sovereigntyStatus !== prevSovereignty) this._dirtySovereignty = true;
 
         const prevMax = this.maxCountryCount;
         this._updateMaxCountryCount();
@@ -806,8 +851,13 @@ export class BottomSheetView {
         const val = parseInt(this.countryCountInput.value, 10);
         if (!isNaN(val) && val > 0) {
             this.countryCount = Math.min(val, this.maxCountryCount);
+            this._dirtyCountryCount = true;
         } else {
             this.countryCount = null;
+            // Only clear the dirty flag if the field is explicitly emptied
+            if (this.countryCountInput.value.trim() === '') {
+                this._dirtyCountryCount = false;
+            }
         }
         this._updatePlayButtonState();
     }

@@ -177,51 +177,62 @@ export class GameEndModalView {
             header.appendChild(gameName);
         }
 
-        // Difficulty / mode options summary
-        const difficultyText = this.#buildDifficultyText();
-        if (difficultyText) {
-            const badge = document.createElement('p');
-            badge.className = 'game-end-modal__difficulty-badge';
-            badge.textContent = difficultyText;
-            header.appendChild(badge);
+        // Difficulty / mode options summary as individual chips
+        const difficultyParts = this.#buildDifficultyParts();
+        if (difficultyParts.length > 0) {
+            const chipsRow = document.createElement('div');
+            chipsRow.className = 'game-end-modal__option-chips';
+            difficultyParts.forEach(text => {
+                const chip = document.createElement('span');
+                chip.className = 'game-end-modal__option-chip';
+                chip.textContent = text;
+                chipsRow.appendChild(chip);
+            });
+            header.appendChild(chipsRow);
         }
 
         return header;
     }
 
     /**
-     * Builds a human-readable difficulty/options summary for the current mode.
-     * Returns null if there are no relevant options to display.
-     * @returns {string|null}
+     * Builds an array of human-readable option labels for the current mode.
+     * Returns empty array if there are no relevant options to display.
+     * @returns {string[]}
      * @private
      */
-    #buildDifficultyText() {
-        if (!this.#modeId) return null;
+    #buildDifficultyParts() {
+        if (!this.#modeId) return [];
 
         const optionDefs = MODE_OPTIONS[this.#modeId] || [];
-        if (optionDefs.length === 0) return null;
+        if (optionDefs.length === 0) return [];
 
         const opts = this.#modeOptions || {};
         const parts = [];
 
         for (const def of optionDefs) {
-            // Resolve value: use provided value or fall back to the defined default
             const val = opts[def.id] !== undefined ? opts[def.id] : def.default;
             if (val === undefined || val === null) continue;
 
             if (def.type === 'select') {
-                // Select options are always shown — they describe the mode variant
                 const opt = def.options?.find(o => o.value === val);
                 if (opt) parts.push(opt.label);
             } else if (def.type === 'number') {
-                // Only show rounds for number options (skip time-per-question — it's noise)
-                // Skip sessionTime for streakBlitz — it's already embedded in the endCondition label
                 if (def.id === 'rounds') {
                     parts.push(`${val} rondas`);
                 }
             }
         }
 
+        return parts;
+    }
+
+    /**
+     * @deprecated Use #buildDifficultyParts instead.
+     * @returns {string|null}
+     * @private
+     */
+    #buildDifficultyText() {
+        const parts = this.#buildDifficultyParts();
         return parts.length > 0 ? parts.join(' · ') : null;
     }
 

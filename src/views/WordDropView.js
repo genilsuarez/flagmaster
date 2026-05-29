@@ -24,6 +24,7 @@ export class WordDropView {
         this.onAnswerSubmitted = null;
         this.onNextPressed = null;
         this.onAnswerTimeout = null;
+        this.onSurrenderPressed = null;
         this.answerCountdownInterval = null;
         this.answerTimeLeft = 10;
 
@@ -137,6 +138,16 @@ export class WordDropView {
             }
         });
 
+        // Surrender button — shown during input phase so the player can give up
+        // immediately without waiting for the 10-second countdown
+        this.surrenderBtn = document.createElement('button');
+        this.surrenderBtn.className = 'word-drop-surrender-btn';
+        this.surrenderBtn.textContent = 'Me rindo';
+        this.surrenderBtn.hidden = true;
+        this.surrenderBtn.addEventListener('click', () => {
+            if (this.onSurrenderPressed) this.onSurrenderPressed();
+        });
+
         // Assemble
         this.container.appendChild(topBar);
         this.container.appendChild(this.progressBarContainer);
@@ -145,6 +156,7 @@ export class WordDropView {
         this.container.appendChild(this.letterGrid);
         this.container.appendChild(this.feedbackEl);
         this.container.appendChild(this.guessButton);
+        this.container.appendChild(this.surrenderBtn);
         this.container.appendChild(this.inputContainer);
         this.container.appendChild(this.nextButton);
 
@@ -264,6 +276,7 @@ export class WordDropView {
     showInput() {
         this.guessButton.hidden = true;
         this.inputContainer.hidden = false;
+        this.surrenderBtn.hidden = false;
         this.answerInput.focus();
         this.startAnswerCountdown();
     }
@@ -297,6 +310,7 @@ export class WordDropView {
             this.answerCountdownInterval = null;
         }
         this.countdownEl.hidden = true;
+        if (this.surrenderBtn) this.surrenderBtn.hidden = true;
     }
 
     /**
@@ -472,6 +486,7 @@ export class WordDropView {
         this.guessButton.disabled = false;
         this.inputContainer.hidden = true;
         this.nextButton.hidden = true;
+        if (this.surrenderBtn) this.surrenderBtn.hidden = true;
         this.answerInput.value = '';
         this.flagHint.hidden = true;
         this.hintEl.textContent = '';
