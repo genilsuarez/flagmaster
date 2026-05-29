@@ -634,12 +634,22 @@ export class BottomSheetView {
     _saveConfig(modeId, config) {
         try {
             const key = BottomSheetView.STORAGE_KEY + modeId;
-            // Only persist what is truly per-mode (modeOptions and team modifiers).
-            // Content filters (continent, sovereigntyStatus, countryCount) are not
-            // saved per-mode so that global defaults continue to apply on next open.
+            // Persist all user-configurable fields so local preferences fully
+            // override global defaults on the next open (3-level hierarchy).
+            // Content filters are saved alongside dirty flags so _loadSavedConfig
+            // can distinguish an explicit user choice from an inherited global default.
             const perMode = { modeOptions: config.modeOptions || {} };
             if (config.practiceMode !== undefined) perMode.practiceMode = config.practiceMode;
             if (config.randomOrder !== undefined)  perMode.randomOrder  = config.randomOrder;
+
+            // Persist content filters with their dirty flags
+            perMode._dirtyContinent    = this._dirtyContinent;
+            perMode._dirtySovereignty  = this._dirtySovereignty;
+            perMode._dirtyCountryCount = this._dirtyCountryCount;
+            if (this._dirtyContinent)    perMode.continent        = this.continent;
+            if (this._dirtySovereignty)  perMode.sovereigntyStatus = this.sovereigntyStatus;
+            if (this._dirtyCountryCount) perMode.countryCount      = this.countryCount;
+
             localStorage.setItem(key, JSON.stringify(perMode));
         } catch {
             // Ignore storage errors (quota exceeded, etc.)
@@ -656,7 +666,7 @@ export class BottomSheetView {
             modeId: this.modeId,
             continent: this.continent,
             sovereigntyStatus: this.sovereigntyStatus,
-            maxCount: this.countryCount || this.maxCountryCount,
+            maxCount: this.countryCount ?? null,
             modeOptions: { ...this.modeOptions },
         };
 
