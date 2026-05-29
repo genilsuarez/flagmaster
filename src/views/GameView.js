@@ -128,6 +128,9 @@ export class GameView {
         teamConfigurations.forEach(teamConfig => {
             const counterElement = document.createElement('div');
             counterElement.id = `${teamConfig.teamId}Counter`;
+            counterElement.setAttribute('aria-live', 'polite');
+            counterElement.setAttribute('aria-atomic', 'true');
+            counterElement.setAttribute('aria-label', `${teamConfig.teamDisplayName}: 0 puntos`);
             
             const nameSpan = document.createElement('span');
             nameSpan.textContent = teamConfig.teamDisplayName;
@@ -140,6 +143,7 @@ export class GameView {
             // Cache span references to avoid querySelectorAll on each score update
             counterElement._nameSpan = nameSpan;
             counterElement._scoreSpan = scoreSpan;
+            counterElement._teamDisplayName = teamConfig.teamDisplayName;
             
             teamCounters[teamConfig.teamId] = counterElement;
             elements.teamsContainer.appendChild(counterElement);
@@ -228,6 +232,8 @@ export class GameView {
         const counter = this.elements.teamCounters[teamColor];
         if (counter) {
             counter._scoreSpan.textContent = score;
+            const teamName = counter._teamDisplayName || counter._nameSpan?.textContent || teamColor;
+            counter.setAttribute('aria-label', `${teamName}: ${score} puntos`);
         }
     }
 

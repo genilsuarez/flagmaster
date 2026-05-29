@@ -39,6 +39,22 @@
     --fs-score:    1.5rem;    /* in-game scores (all modes) */
     --fs-prompt:   1.6rem;    /* question prompts */
 
+    /* BUTTON SYSTEM TOKENS */
+    --btn-h-xs: 28px;
+    --btn-h-sm: 32px;
+    --btn-h-md: 36px;
+    --btn-h-lg: 40px;
+    --btn-h-xl: 44px;
+
+    --btn-px-sm: 12px;
+    --btn-px-md: 16px;
+    --btn-px-lg: 24px;
+    --btn-px-xl: 32px;
+
+    --btn-fs-sm: 0.72rem;
+    --btn-fs-md: 0.82rem;
+    --btn-fs-lg: 0.9rem;
+
     /* SPACING & RHYTHM */
     --space-xs: 4px;
     --space-sm: 8px;
@@ -64,6 +80,162 @@
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --duration-quick: 120ms;
     --duration-moderate: 250ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTON SYSTEM — Base class + 5 semantic variants
+   ═══════════════════════════════════════════════════════════════ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    border: none;
+    transition: background-color var(--duration-quick) var(--ease-gentle),
+                color var(--duration-quick) var(--ease-gentle),
+                border-color var(--duration-quick) var(--ease-gentle),
+                transform var(--duration-quick) var(--ease-gentle),
+                box-shadow var(--duration-quick) var(--ease-gentle);
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--deep-sage);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn {
+        transition: background-color 120ms, color 120ms, border-color 120ms;
+    }
+    .btn:hover,
+    .btn:active {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* Variant: Primary */
+.btn--primary {
+    height: var(--btn-h-lg);
+    padding: 0 var(--btn-px-lg);
+    background: var(--deep-sage);
+    color: var(--warm-white);
+    font-size: var(--btn-fs-lg);
+}
+
+.btn--primary:hover:not(:disabled) {
+    background: #3d6843;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 122, 80, 0.3);
+}
+
+/* Variant: Secondary */
+.btn--secondary {
+    height: var(--btn-h-md);
+    padding: 0 var(--btn-px-md);
+    background: transparent;
+    color: var(--deep-sage);
+    border: 1.5px solid var(--deep-sage);
+    font-size: var(--btn-fs-md);
+}
+
+.btn--secondary:hover:not(:disabled) {
+    background: rgba(74, 122, 80, 0.08);
+    transform: translateY(-1px);
+}
+
+/* Variant: Ghost */
+.btn--ghost {
+    height: var(--btn-h-sm);
+    padding: 0 var(--btn-px-md);
+    background: transparent;
+    color: var(--stone);
+    border: 1px solid transparent;
+    font-size: var(--btn-fs-sm);
+}
+
+.btn--ghost:hover:not(:disabled) {
+    background: var(--soft-sand);
+    border-color: var(--warm-gray);
+}
+
+/* Variant: Destructive */
+.btn--destructive {
+    height: var(--btn-h-sm);
+    padding: 0 var(--btn-px-md);
+    background: transparent;
+    color: var(--rust);
+    border: 1px solid rgba(160, 75, 56, 0.4);
+    font-size: var(--btn-fs-sm);
+}
+
+.btn--destructive:focus-visible {
+    outline-color: var(--rust);
+}
+
+/* Variant: Icon */
+.btn--icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--soft-sand);
+    color: var(--charcoal);
+    border: 1px solid var(--warm-gray);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHIP COMPONENT — Selection chips and chip groups
+   ═══════════════════════════════════════════════════════════════ */
+
+.chip {
+    height: var(--btn-h-sm);
+    padding: 0 var(--btn-px-sm);
+    border-radius: var(--radius-pill);
+    font-size: var(--btn-fs-sm);
+    font-weight: 600;
+    border: 1.5px solid var(--warm-gray);
+    background: var(--warm-white);
+    color: var(--stone);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.chip--selected {
+    background: var(--soft-sand);
+    border-color: var(--deep-sage);
+    color: var(--deep-sage);
+}
+
+.chip:focus-visible {
+    outline: 2px solid var(--deep-sage);
+    outline-offset: 2px;
+}
+
+.chip--readonly {
+    pointer-events: none;
+    cursor: default;
+}
+
+.chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
 }
 
 * {
@@ -3942,11 +4114,11 @@ body.screen-game .game-wrapper {
 /* TIMER BAR — Linear countdown progress */
 .timer-bar {
     width: 100%;
-    height: 6px;
+    height: 4px;
     background: var(--soft-sand);
     border-radius: var(--radius-pill);
     overflow: hidden;
-    margin: var(--space-md) 0;
+    margin: var(--space-xs) 0;
     position: relative;
 }
 
@@ -3997,8 +4169,8 @@ body.screen-game .game-wrapper {
 }
 
 .powerup-btn {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: 2px solid var(--warm-gray);
     background: var(--warm-white);
@@ -4289,8 +4461,8 @@ body.screen-game .game-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 40px;
-    padding: var(--space-sm) var(--space-lg);
+    min-height: 32px;
+    padding: var(--space-xs) var(--space-md);
     border-radius: var(--radius-pill);
     font-family: var(--font-body);
     font-size: 0.95rem;
@@ -4463,8 +4635,8 @@ body.screen-game .game-wrapper {
     }
 
     .powerup-btn {
-        width: 38px;
-        height: 38px;
+        width: 32px;
+        height: 32px;
         font-size: 1rem;
     }
 
@@ -4747,7 +4919,7 @@ body.screen-game .game-wrapper {
     background: var(--warm-white);
     border-radius: 16px;
     box-shadow: 0 8px 40px rgba(29, 26, 22, 0.15);
-    max-height: 80vh;
+    max-height: 70vh;
     max-width: 400px;
     width: calc(100% - 32px);
     overflow-y: auto;
@@ -4932,14 +5104,15 @@ body.screen-game .game-wrapper {
 
 .bottom-sheet__play-btn {
     width: 100%;
-    height: 48px;
-    padding: 0 var(--space-xl);
+    height: var(--btn-h-lg);
+    min-height: var(--btn-h-xl);
+    padding: 0 var(--btn-px-lg);
     border-radius: var(--radius-pill);
     border: none;
-    background: linear-gradient(135deg, var(--deep-sage) 0%, var(--sage) 100%);
+    background: var(--deep-sage);
     color: var(--warm-white);
     font-family: var(--font-body);
-    font-size: 0.95rem;
+    font-size: var(--btn-fs-lg);
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;

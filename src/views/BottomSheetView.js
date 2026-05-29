@@ -370,20 +370,27 @@ export class BottomSheetView {
             const group = this._createFieldGroup(`bs-opt-${opt.id}`, opt.label);
 
             if (opt.type === 'select') {
-                const select = document.createElement('select');
-                select.id = `bs-opt-${opt.id}`;
-                select.className = 'bottom-sheet__control';
-                for (const o of opt.options) {
-                    const option = document.createElement('option');
-                    option.value = o.value;
-                    option.textContent = o.label;
-                    if (o.value === this.modeOptions[opt.id]) option.selected = true;
-                    select.appendChild(option);
+                const currentValue = this.modeOptions[opt.id];
+                const useChips = opt.type === 'select' && opt.options.length >= 2 && opt.options.length <= 4;
+
+                if (useChips) {
+                    group.appendChild(this._renderChipGroup(opt, currentValue));
+                } else {
+                    const select = document.createElement('select');
+                    select.id = `bs-opt-${opt.id}`;
+                    select.className = 'bottom-sheet__control';
+                    for (const o of opt.options) {
+                        const option = document.createElement('option');
+                        option.value = o.value;
+                        option.textContent = o.label;
+                        if (o.value === currentValue) option.selected = true;
+                        select.appendChild(option);
+                    }
+                    select.addEventListener('change', () => {
+                        this.modeOptions[opt.id] = select.value;
+                    });
+                    group.appendChild(select);
                 }
-                select.addEventListener('change', () => {
-                    this.modeOptions[opt.id] = select.value;
-                });
-                group.appendChild(select);
             } else if (opt.type === 'number') {
                 const input = document.createElement('input');
                 input.id = `bs-opt-${opt.id}`;
@@ -627,19 +634,10 @@ export class BottomSheetView {
     _saveConfig(modeId, config) {
         try {
             const key = BottomSheetView.STORAGE_KEY + modeId;
-            const perMode = {
-                // Content filters — only saved when the user explicitly changed them
-                // in this mode's sheet (dirty flags). Non-dirty fields are left out so
-                // that the global default continues to apply on the next open.
-                _dirtyContinent:    this._dirtyContinent,
-                _dirtySovereignty:  this._dirtySovereignty,
-                _dirtyCountryCount: this._dirtyCountryCount,
-                continent:         this.continent,
-                sovereigntyStatus: this.sovereigntyStatus,
-                countryCount:      this.countryCount,
-                // Mode-specific options
-                modeOptions:       config.modeOptions || {},
-            };
+            // Only persist what is truly per-mode (modeOptions and team modifiers).
+            // Content filters (continent, sovereigntyStatus, countryCount) are not
+            // saved per-mode so that global defaults continue to apply on next open.
+            const perMode = { modeOptions: config.modeOptions || {} };
             if (config.practiceMode !== undefined) perMode.practiceMode = config.practiceMode;
             if (config.randomOrder !== undefined)  perMode.randomOrder  = config.randomOrder;
             localStorage.setItem(key, JSON.stringify(perMode));
@@ -931,5 +929,42 @@ export class BottomSheetView {
         this.continentSelect = null;
         this.sovereigntySelect = null;
         this.countryCountInput = null;
+    }
+
+    /**
+     * Renders a chip group for a select option with 2–4 values.
+     * Chips are mutually exclusive (radio-like behavior).
+     * @param {Object} opt - The option definition
+     * @param {string|undefined} currentValue - The currently selected value
+     * @returns {HTMLElement} The chip-group container
+     * @private
+     */
+    _renderChipGroup(opt, currentValue) {
+        const defaultValue = currentValue ?? opt.default ?? opt.options[0]?.value;
+        const group = document.createElement('div');
+        group.className = 'chip-group';
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', opt.label);
+
+        for (const o of opt.options) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip' + (o.value === defaultValue ? ' chip--selected' : '');
+            chip.textContent = o.label;
+            chip.dataset.value = o.value;
+            chip.setAttribute('aria-pressed', String(o.value === defaultValue));
+            chip.addEventListener('click', () => {
+                this.modeOptions[opt.id] = o.value;
+                group.querySelectorAll('.chip').forEach(c => {
+                    c.classList.toggle('chip--selected', c.dataset.value === o.value);
+                    c.setAttribute('aria-pressed', String(c.dataset.value === o.value));
+                });
+            });
+            chip.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); }
+            });
+            group.appendChild(chip);
+        }
+        return group;
     }
 }

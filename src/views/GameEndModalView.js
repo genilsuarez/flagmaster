@@ -69,16 +69,22 @@ export class GameEndModalView {
         // Header
         content.appendChild(this.#createHeader());
 
+        // Body
+        const body = document.createElement('div');
+        body.className = 'app-modal__body';
+
         // Team scores
         const statsSection = document.createElement('div');
         statsSection.className = 'game-end-modal__stats';
         statsSection.appendChild(this.#createTeamScores(teamScores));
-        content.appendChild(statsSection);
+        body.appendChild(statsSection);
 
         // Achievements
         if (newAchievements.length > 0) {
-            content.appendChild(this.#createAchievementsSection(newAchievements));
+            body.appendChild(this.#createAchievementsSection(newAchievements));
         }
+
+        content.appendChild(body);
 
         // Buttons
         content.appendChild(this.#createButtons());
@@ -110,16 +116,22 @@ export class GameEndModalView {
         // Header
         content.appendChild(this.#createHeader());
 
+        // Body
+        const body = document.createElement('div');
+        body.className = 'app-modal__body';
+
         // Individual stats
         const statsSection = document.createElement('div');
         statsSection.className = 'game-end-modal__stats';
         statsSection.appendChild(this.#createIndividualStats({ totalScore, correct, wrong, maxStreak, elapsedSeconds }));
-        content.appendChild(statsSection);
+        body.appendChild(statsSection);
 
         // Achievements
         if (newAchievements.length > 0) {
-            content.appendChild(this.#createAchievementsSection(newAchievements));
+            body.appendChild(this.#createAchievementsSection(newAchievements));
         }
+
+        content.appendChild(body);
 
         // Buttons
         content.appendChild(this.#createButtons());
@@ -129,44 +141,65 @@ export class GameEndModalView {
     }
 
     /**
-     * Creates the modal overlay element.
+     * Creates the modal overlay/backdrop element.
      * @returns {HTMLElement}
      * @private
      */
     #createOverlay() {
         const overlay = document.createElement('div');
-        overlay.className = 'game-end-modal game-end-modal__overlay';
+        overlay.className = 'game-end-modal game-end-modal__overlay app-modal__backdrop';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', 'Resultados del juego');
+        overlay.setAttribute('data-close', 'true');
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) {
+                this.close();
+            }
+        });
         return overlay;
     }
 
     /**
-     * Creates the modal content container.
+     * Creates the modal content panel container.
      * @returns {HTMLElement}
      * @private
      */
     #createContent() {
         const content = document.createElement('div');
-        content.className = 'game-end-modal__content';
+        content.className = 'game-end-modal__content app-modal__panel';
+        content.style.maxWidth = '400px';
         return content;
     }
 
     /**
-     * Creates the modal header with game-over title, game name and difficulty badge.
+     * Creates the modal header with game-over title, game name, difficulty badge and close button.
      * @returns {HTMLElement}
      * @private
      */
     #createHeader() {
-        const header = document.createElement('div');
-        header.className = 'game-end-modal__header';
+        const header = document.createElement('header');
+        header.className = 'game-end-modal__header app-modal__header';
 
         const title = document.createElement('h2');
-        title.className = 'game-end-modal__title';
+        title.className = 'game-end-modal__title app-modal__title';
         title.textContent = '🎉 ¡Juego Terminado! 🎉';
 
         header.appendChild(title);
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn btn--icon app-modal__close';
+        closeBtn.setAttribute('aria-label', 'Cerrar');
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', () => {
+            if (this.#onHome) {
+                this.#onHome();
+            }
+            this.close();
+        });
+        header.appendChild(closeBtn);
 
         // Game name
         const mode = GAME_MODES[this.#modeId];
@@ -386,12 +419,12 @@ export class GameEndModalView {
      * @private
      */
     #createButtons() {
-        const footer = document.createElement('div');
-        footer.className = 'game-end-modal__footer';
+        const footer = document.createElement('footer');
+        footer.className = 'game-end-modal__footer app-modal__footer';
 
         const playAgainBtn = document.createElement('button');
         playAgainBtn.type = 'button';
-        playAgainBtn.className = 'game-end-modal__btn game-end-modal__btn--play-again';
+        playAgainBtn.className = 'btn btn--primary game-end-modal__btn game-end-modal__btn--play-again';
         playAgainBtn.textContent = 'Jugar de nuevo';
         playAgainBtn.setAttribute('aria-label', 'Jugar de nuevo con el mismo modo');
         playAgainBtn.addEventListener('click', () => {
@@ -403,7 +436,7 @@ export class GameEndModalView {
 
         const homeBtn = document.createElement('button');
         homeBtn.type = 'button';
-        homeBtn.className = 'game-end-modal__btn game-end-modal__btn--home';
+        homeBtn.className = 'btn btn--secondary game-end-modal__btn game-end-modal__btn--home';
         homeBtn.textContent = 'Inicio';
         homeBtn.setAttribute('aria-label', 'Volver al inicio');
         homeBtn.addEventListener('click', () => {
@@ -424,8 +457,14 @@ export class GameEndModalView {
      * @private
      */
     #mount(overlay) {
-        // Remove any existing modal
+        // Save the trigger element before close() can null it out
+        const triggerElement = this.#previousFocus;
+
+        // Remove any existing modal (resets #previousFocus to null)
         this.close();
+
+        // Restore the trigger element after close() cleared it
+        this.#previousFocus = triggerElement;
 
         this.#modalElement = overlay;
         document.body.appendChild(overlay);

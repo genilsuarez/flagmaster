@@ -87,11 +87,14 @@ describe('BottomSheetView', () => {
             expect(document.getElementById('bs-opt-rounds')).not.toBeNull();
         });
 
-        it('renders select options for capitalClash variant', () => {
+        it('renders chip group for capitalClash variant (2 options → chips)', () => {
             view.open('capitalClash');
+            // variant has 2 options → should render as chip-group, not select
             const variantSelect = document.getElementById('bs-opt-variant');
-            expect(variantSelect).not.toBeNull();
-            expect(variantSelect.tagName).toBe('SELECT');
+            expect(variantSelect).toBeNull(); // no select element
+            const chipGroup = document.querySelector('.chip-group[aria-label="Variante"]');
+            expect(chipGroup).not.toBeNull();
+            expect(chipGroup.querySelectorAll('.chip').length).toBe(2);
         });
 
         it('renders modifiers section for team modes', () => {

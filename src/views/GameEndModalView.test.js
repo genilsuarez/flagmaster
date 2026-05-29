@@ -272,7 +272,7 @@ describe('GameEndModalView', () => {
             expect(modal.getAttribute('aria-label')).toBe('Resultados del juego');
         });
 
-        it('focuses the first button on open', () => {
+        it('focuses the first interactive element on open', () => {
             view.showIndividualResults({
                 modeId: 'flagRush',
                 totalScore: 1000,
@@ -282,8 +282,10 @@ describe('GameEndModalView', () => {
                 elapsedSeconds: 60,
                 newAchievements: [],
             });
-            const firstBtn = document.querySelector('.game-end-modal__btn');
-            expect(document.activeElement).toBe(firstBtn);
+            // The first interactive element is the close button (app-modal__close),
+            // or the first game-end-modal__btn if no close button exists
+            const firstInteractive = document.querySelector('button');
+            expect(document.activeElement).toBe(firstInteractive);
         });
 
         it('closes modal on Escape key', () => {
@@ -327,14 +329,16 @@ describe('GameEndModalView', () => {
                 elapsedSeconds: 60,
                 newAchievements: [],
             });
-            const buttons = document.querySelectorAll('.game-end-modal__btn');
-            const lastBtn = buttons[buttons.length - 1];
+            // Get all focusable buttons in the modal
+            const modal = document.querySelector('.game-end-modal');
+            const allButtons = modal.querySelectorAll('button:not([disabled])');
+            const lastBtn = allButtons[allButtons.length - 1];
             lastBtn.focus();
 
             const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
             document.dispatchEvent(event);
             // Focus should wrap to first button
-            expect(document.activeElement).toBe(buttons[0]);
+            expect(document.activeElement).toBe(allButtons[0]);
         });
 
         it('traps focus within the modal on Shift+Tab', () => {
@@ -347,14 +351,16 @@ describe('GameEndModalView', () => {
                 elapsedSeconds: 60,
                 newAchievements: [],
             });
-            const buttons = document.querySelectorAll('.game-end-modal__btn');
-            const firstBtn = buttons[0];
+            // Get all focusable buttons in the modal
+            const modal = document.querySelector('.game-end-modal');
+            const allButtons = modal.querySelectorAll('button:not([disabled])');
+            const firstBtn = allButtons[0];
             firstBtn.focus();
 
             const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true });
             document.dispatchEvent(event);
             // Focus should wrap to last button
-            expect(document.activeElement).toBe(buttons[buttons.length - 1]);
+            expect(document.activeElement).toBe(allButtons[allButtons.length - 1]);
         });
     });
 

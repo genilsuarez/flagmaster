@@ -108,6 +108,11 @@ export class GameController {
                     const teamId = el.id.replace('Counter', '');
                     el._scoreSpan = el.querySelector('span:last-child') || el.lastElementChild;
                     el._nameSpan = el.querySelector('span:first-child') || el.firstElementChild;
+                    el._teamDisplayName = el._nameSpan?.textContent || teamId;
+                    el.setAttribute('aria-live', 'polite');
+                    el.setAttribute('aria-atomic', 'true');
+                    const score = el._scoreSpan?.textContent || '0';
+                    el.setAttribute('aria-label', `${el._teamDisplayName}: ${score} puntos`);
                     teamCounters[teamId] = el;
                 });
             } else {
@@ -120,6 +125,9 @@ export class GameController {
                 teams.forEach(t => {
                     const el = document.createElement('div');
                     el.id = `${t.teamId}Counter`;
+                    el.setAttribute('aria-live', 'polite');
+                    el.setAttribute('aria-atomic', 'true');
+                    el.setAttribute('aria-label', `${t.teamDisplayName}: 0 puntos`);
                     const nameSpan = document.createElement('span');
                     nameSpan.textContent = t.teamDisplayName;
                     const scoreSpan = document.createElement('span');
@@ -128,6 +136,7 @@ export class GameController {
                     el.appendChild(scoreSpan);
                     el._nameSpan = nameSpan;
                     el._scoreSpan = scoreSpan;
+                    el._teamDisplayName = t.teamDisplayName;
                     teamCounters[t.teamId] = el;
                     teamsContainer.appendChild(el);
                 });
@@ -229,7 +238,11 @@ export class GameController {
             },
             updateTeamScore(teamColor, score) {
                 const counter = teamCounters[teamColor];
-                if (counter && counter._scoreSpan) counter._scoreSpan.textContent = score;
+                if (counter && counter._scoreSpan) {
+                    counter._scoreSpan.textContent = score;
+                    const teamName = counter._teamDisplayName || counter._nameSpan?.textContent || teamColor;
+                    counter.setAttribute('aria-label', `${teamName}: ${score} puntos`);
+                }
             },
             showCountryInfo() {
                 if (countryInfo) countryInfo.classList.remove('hidden-keep-space');
