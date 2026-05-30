@@ -58,6 +58,8 @@ export class BottomSheetView {
         this.sovereigntySelect = null;
         this.countryCountInput = null;
         this._sessionTimeInput = null;
+        this._itemCountInput = null;
+        this._continentsWarning = null;
 
         // Focus management
         this._triggerElement = null;
@@ -88,7 +90,10 @@ export class BottomSheetView {
         this.modeOptions = {};
         const optionDefs = getOptionsForMode(modeId);
         for (const opt of optionDefs) {
-            this.modeOptions[opt.id] = opt.default;
+            // Clone array defaults to avoid mutating the original definition
+            this.modeOptions[opt.id] = Array.isArray(opt.default)
+                ? [...opt.default]
+                : opt.default;
         }
 
         // Reset filters to factory defaults
@@ -327,7 +332,7 @@ export class BottomSheetView {
         sovereigntyGroup.appendChild(this.sovereigntySelect);
         section.appendChild(sovereigntyGroup);
 
-        // Country count input
+        // Country count input (hidden for ordenaContinente — uses itemCount in mode options)
         const countGroup = this._createFieldGroup('bs-country-count', 'Cantidad de países');
         this.countryCountInput = document.createElement('input');
         this.countryCountInput.id = 'bs-country-count';
@@ -342,6 +347,9 @@ export class BottomSheetView {
         this.countryCountInput.addEventListener('input', () => this._onCountryCountChange());
         this.countryCountInput.addEventListener('blur', () => this._clampCountryCountInput());
         countGroup.appendChild(this.countryCountInput);
+        if (this.modeId === 'ordenaContinente') {
+            countGroup.hidden = true;
+        }
         section.appendChild(countGroup);
 
         // Pool warning message
@@ -450,7 +458,71 @@ export class BottomSheetView {
                 if (opt.id === 'sessionTime') {
                     this._sessionTimeInput = input;
                 }
+                // Store reference to itemCount input for dynamic max updates (ordenaContinente)
+                if (opt.id === 'itemCount' && this.modeId === 'ordenaContinente') {
+                    this._itemCountInput = input;
+                    // Apply dynamic max based on selected continents
+                    const dynamicMax = this._getMaxItemsForSelectedContinents();
+                    if (dynamicMax !== null) {
+                        input.max = String(dynamicMax);
+                        if (this.modeOptions[opt.id] > dynamicMax) {
+                            this.modeOptions[opt.id] = dynamicMax;
+                            input.value = String(dynamicMax);
+                        }
+                    }
+                }
                 group.appendChild(input);
+            } else if (opt.type === 'multiSelect') {
+                const currentValue = this.modeOptions[opt.id] || [];
+                const chipGroup = document.createElement('div');
+                chipGroup.className = 'chip-group chip-group--multi';
+                chipGroup.setAttribute('role', 'group');
+                chipGroup.setAttribute('aria-label', opt.label);
+
+                for (const o of opt.options) {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    const isSelected = currentValue.includes(o.value);
+                    chip.className = 'chip' + (isSelected ? ' chip--selected' : '');
+                    chip.textContent = o.label;
+                    chip.dataset.value = o.value;
+                    chip.setAttribute('aria-pressed', String(isSelected));
+                    chip.addEventListener('click', () => {
+                        const arr = this.modeOptions[opt.id] || [];
+                        const idx = arr.indexOf(o.value);
+                        if (idx >= 0) {
+                            arr.splice(idx, 1);
+                        } else {
+                            arr.push(o.value);
+                        }
+                        this.modeOptions[opt.id] = [...arr];
+                        // Update chip visual state
+                        chipGroup.querySelectorAll('.chip').forEach(c => {
+                            const selected = this.modeOptions[opt.id].includes(c.dataset.value);
+                            c.classList.toggle('chip--selected', selected);
+                            c.setAttribute('aria-pressed', String(selected));
+                        });
+                        // Handle ordenaContinente-specific validation
+                        if (opt.id === 'continents' && this.modeId === 'ordenaContinente') {
+                            this._onContinentsSelectionChange();
+                        }
+                    });
+                    chip.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); }
+                    });
+                    chipGroup.appendChild(chip);
+                }
+                group.appendChild(chipGroup);
+
+                // Add validation warning for multiSelect continents (ordenaContinente)
+                if (opt.id === 'continents' && this.modeId === 'ordenaContinente') {
+                    this._continentsWarning = document.createElement('p');
+                    this._continentsWarning.className = 'bottom-sheet__warning';
+                    this._continentsWarning.setAttribute('role', 'alert');
+                    this._continentsWarning.textContent = 'Se requieren al menos 2 continentes';
+                    this._continentsWarning.hidden = currentValue.length >= 2;
+                    group.appendChild(this._continentsWarning);
+                }
             }
 
             section.appendChild(group);
@@ -506,6 +578,57 @@ export class BottomSheetView {
         this.modeOptions.sessionTime = suggested;
         this._sessionTimeInput.max = String(suggested);
         this._sessionTimeInput.value = String(suggested);
+    }
+
+    /**
+     * Calculates the total number of sovereign countries available across
+     * the currently selected continents (for ordenaContinente mode).
+     * Returns null if not applicable.
+     * @returns {number|null}
+     * @private
+     */
+    _getMaxItemsForSelectedContinents() {
+        if (this.modeId !== 'ordenaContinente') return null;
+        const selectedContinents = this.modeOptions.continents || [];
+        if (selectedContinents.length === 0) return 0;
+
+        let total = 0;
+        for (const continent of selectedContinents) {
+            total += this.countryService.getMaxCountryCount({
+                continent,
+                sovereigntyStatus: 'Yes',
+            });
+        }
+        return total;
+    }
+
+    /**
+     * Handles changes to the continents multiSelect in ordenaContinente mode.
+     * Validates minimum 2 continents and adjusts itemCount max dynamically.
+     * @private
+     */
+    _onContinentsSelectionChange() {
+        const selected = this.modeOptions.continents || [];
+        const tooFew = selected.length < 2;
+
+        // Show/hide warning
+        if (this._continentsWarning) {
+            this._continentsWarning.hidden = !tooFew;
+        }
+
+        // Update itemCount max dynamically
+        const dynamicMax = this._getMaxItemsForSelectedContinents();
+        if (this._itemCountInput && dynamicMax !== null) {
+            this._itemCountInput.max = String(dynamicMax);
+            // Clamp current value if it exceeds new max
+            if (this.modeOptions.itemCount > dynamicMax) {
+                this.modeOptions.itemCount = dynamicMax;
+                this._itemCountInput.value = String(dynamicMax);
+            }
+        }
+
+        // Update play button state
+        this._updatePlayButtonState();
     }
 
     /**
@@ -630,7 +753,9 @@ export class BottomSheetView {
         const optionDefs = getOptionsForMode(this.modeId);
         this.modeOptions = {};
         for (const opt of optionDefs) {
-            this.modeOptions[opt.id] = opt.default;
+            this.modeOptions[opt.id] = Array.isArray(opt.default)
+                ? [...opt.default]
+                : opt.default;
         }
 
         // Re-render the full sheet — _renderConfig rebuilds everything from
@@ -763,7 +888,14 @@ export class BottomSheetView {
         for (const opt of optionDefs) {
             if (opt.type === 'number' && clampedOptions[opt.id] != null) {
                 const min = opt.min != null ? opt.min : -Infinity;
-                const max = opt.max != null ? opt.max : Infinity;
+                let max = opt.max != null ? opt.max : Infinity;
+                // For ordenaContinente itemCount, use dynamic max based on selected continents
+                if (opt.id === 'itemCount' && this.modeId === 'ordenaContinente') {
+                    const dynamicMax = this._getMaxItemsForSelectedContinents();
+                    if (dynamicMax !== null) {
+                        max = dynamicMax;
+                    }
+                }
                 clampedOptions[opt.id] = Math.max(min, Math.min(max, clampedOptions[opt.id]));
             }
         }
@@ -899,8 +1031,14 @@ export class BottomSheetView {
         const poolSize = this._getEffectivePoolSize();
         const tooSmall = poolSize < MIN_POOL_SIZE;
 
-        this.playButton.disabled = tooSmall;
-        this.playButton.setAttribute('aria-disabled', String(tooSmall));
+        // Check ordenaContinente-specific validation: minimum 2 continents
+        const tooFewContinents = this.modeId === 'ordenaContinente' &&
+            (this.modeOptions.continents || []).length < 2;
+
+        const shouldDisable = tooSmall || tooFewContinents;
+
+        this.playButton.disabled = shouldDisable;
+        this.playButton.setAttribute('aria-disabled', String(shouldDisable));
 
         if (this.poolWarning) {
             this.poolWarning.hidden = !tooSmall;
@@ -1043,6 +1181,8 @@ export class BottomSheetView {
         this.sovereigntySelect = null;
         this.countryCountInput = null;
         this._sessionTimeInput = null;
+        this._itemCountInput = null;
+        this._continentsWarning = null;
     }
 
     /**
@@ -1080,6 +1220,8 @@ export class BottomSheetView {
         this.sovereigntySelect = null;
         this.countryCountInput = null;
         this._sessionTimeInput = null;
+        this._itemCountInput = null;
+        this._continentsWarning = null;
     }
 
     /**

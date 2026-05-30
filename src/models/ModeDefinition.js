@@ -9,4 +9,5 @@ export const GAME_MODES = {
     letrasEnCaida: { id: 'letrasEnCaida', name: 'Letras en Caída',       icon: '✏️', category: 'individual', description: 'Adivina antes de que caigan todas' },
     streakBlitz:   { id: 'streakBlitz',   name: 'Racha Relámpago',       icon: '⚡', category: 'individual', description: 'Mezcla banderas y capitales, elige tu desafío' },
     geoPuzzle:     { id: 'geoPuzzle',     name: 'Geo Pistas',            icon: '🧩', category: 'individual', description: 'Pistas progresivas, menos = más puntos' },
+    ordenaContinente: { id: 'ordenaContinente', name: 'Ordena por Continente', icon: '🌍', category: 'individual', description: 'Clasifica banderas o capitales en su continente' },
 };

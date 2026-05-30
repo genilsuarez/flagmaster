@@ -193,7 +193,7 @@ export class GameEndModalView {
 
         const title = document.createElement('h2');
         title.className = 'game-end-modal__title app-modal__title';
-        title.textContent = '🎉 ¡Juego Terminado! 🎉';
+        title.textContent = '¡Juego Terminado!';
 
         header.appendChild(title);
 
@@ -206,12 +206,19 @@ export class GameEndModalView {
             header.appendChild(gameName);
         }
 
-        // Difficulty / mode options summary — single compact line
+        // Difficulty / mode options summary — chip grid
         const difficultyParts = this.#buildDifficultyParts();
         if (difficultyParts.length > 0) {
-            const summary = document.createElement('p');
+            const summary = document.createElement('div');
             summary.className = 'game-end-modal__options-summary';
-            summary.textContent = difficultyParts.join(' · ');
+            
+            difficultyParts.forEach(part => {
+                const chip = document.createElement('span');
+                chip.className = 'game-end-modal__option-chip';
+                chip.textContent = part;
+                summary.appendChild(chip);
+            });
+            
             header.appendChild(summary);
         }
 

@@ -379,4 +379,153 @@ describe('BottomSheetView', () => {
             expect(view.countryCount).toBe(10);
         });
     });
+
+    describe('ordenaContinente multiSelect and validation', () => {
+        beforeEach(() => {
+            // Mock getMaxCountryCount to return different values per continent
+            countryService.getMaxCountryCount.mockImplementation(({ continent, sovereigntyStatus }) => {
+                if (continent === 'All' || !continent) return 195;
+                if (sovereigntyStatus === 'Yes') {
+                    const counts = { Africa: 54, America: 35, Asia: 48, Europe: 44, Oceania: 14 };
+                    return counts[continent] || 0;
+                }
+                return 195;
+            });
+        });
+
+        it('renders multiSelect chip group for continents option', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+            expect(chipGroup).not.toBeNull();
+            expect(chipGroup.querySelectorAll('.chip').length).toBe(5);
+        });
+
+        it('all continents are selected by default', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+            const selectedChips = chipGroup.querySelectorAll('.chip--selected');
+            expect(selectedChips.length).toBe(5);
+        });
+
+        it('toggling a chip deselects it', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+            const africaChip = chipGroup.querySelector('[data-value="Africa"]');
+            africaChip.click();
+
+            expect(africaChip.classList.contains('chip--selected')).toBe(false);
+            expect(africaChip.getAttribute('aria-pressed')).toBe('false');
+            expect(view.modeOptions.continents).not.toContain('Africa');
+        });
+
+        it('toggling a deselected chip selects it', () => {
+            view.open('ordenaContinente');
+            // First deselect Africa
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+            const africaChip = chipGroup.querySelector('[data-value="Africa"]');
+            africaChip.click();
+            expect(view.modeOptions.continents).not.toContain('Africa');
+
+            // Then re-select it
+            africaChip.click();
+            expect(africaChip.classList.contains('chip--selected')).toBe(true);
+            expect(africaChip.getAttribute('aria-pressed')).toBe('true');
+            expect(view.modeOptions.continents).toContain('Africa');
+        });
+
+        it('disables play button when fewer than 2 continents selected', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+
+            // Deselect all but one
+            ['Africa', 'America', 'Asia', 'Europe'].forEach(val => {
+                chipGroup.querySelector(`[data-value="${val}"]`).click();
+            });
+
+            expect(view.modeOptions.continents).toEqual(['Oceania']);
+            expect(view.playButton.disabled).toBe(true);
+        });
+
+        it('shows warning message when fewer than 2 continents selected', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+
+            // Deselect all but one
+            ['Africa', 'America', 'Asia', 'Europe'].forEach(val => {
+                chipGroup.querySelector(`[data-value="${val}"]`).click();
+            });
+
+            const warning = document.querySelector('.bottom-sheet__warning[role="alert"]');
+            // Find the continents-specific warning
+            const continentsWarning = view._continentsWarning;
+            expect(continentsWarning).not.toBeNull();
+            expect(continentsWarning.hidden).toBe(false);
+            expect(continentsWarning.textContent).toContain('al menos 2 continentes');
+        });
+
+        it('hides warning and enables play when 2+ continents selected', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+
+            // Deselect all but one
+            ['Africa', 'America', 'Asia', 'Europe'].forEach(val => {
+                chipGroup.querySelector(`[data-value="${val}"]`).click();
+            });
+            expect(view.playButton.disabled).toBe(true);
+
+            // Re-select one more
+            chipGroup.querySelector('[data-value="Asia"]').click();
+            expect(view.modeOptions.continents.length).toBe(2);
+            expect(view.playButton.disabled).toBe(false);
+            expect(view._continentsWarning.hidden).toBe(true);
+        });
+
+        it('adjusts itemCount max dynamically based on selected continents', () => {
+            view.open('ordenaContinente');
+            const itemCountInput = document.getElementById('bs-opt-itemCount');
+            // All continents selected: 54 + 35 + 48 + 44 + 14 = 195
+            expect(itemCountInput.max).toBe('195');
+        });
+
+        it('reduces itemCount max when continents are deselected', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+            const itemCountInput = document.getElementById('bs-opt-itemCount');
+
+            // Deselect Africa (54) and America (35) → remaining: 48 + 44 + 14 = 106
+            chipGroup.querySelector('[data-value="Africa"]').click();
+            chipGroup.querySelector('[data-value="America"]').click();
+
+            expect(itemCountInput.max).toBe('106');
+        });
+
+        it('clamps itemCount value when it exceeds new dynamic max', () => {
+            view.open('ordenaContinente');
+            const chipGroup = document.querySelector('.chip-group--multi[aria-label="Continentes"]');
+            const itemCountInput = document.getElementById('bs-opt-itemCount');
+
+            // Set itemCount to a high value
+            view.modeOptions.itemCount = 60;
+            itemCountInput.value = '60';
+
+            // Deselect Africa (54), America (35), Asia (48) → remaining: Europe (44) + Oceania (14) = 58
+            chipGroup.querySelector('[data-value="Africa"]').click();
+            chipGroup.querySelector('[data-value="America"]').click();
+            chipGroup.querySelector('[data-value="Asia"]').click();
+
+            // max = 44 + 14 = 58, itemCount was 60 → should clamp to 58
+            expect(view.modeOptions.itemCount).toBe(58);
+            expect(itemCountInput.value).toBe('58');
+        });
+
+        it('_buildConfig clamps itemCount to dynamic max for ordenaContinente', () => {
+            view.open('ordenaContinente');
+            // Only select Oceania (14) and Europe (44) → max = 58
+            view.modeOptions.continents = ['Oceania', 'Europe'];
+            view.modeOptions.itemCount = 100; // exceeds dynamic max
+
+            const config = view._buildConfig();
+            expect(config.modeOptions.itemCount).toBe(58);
+        });
+    });
 });

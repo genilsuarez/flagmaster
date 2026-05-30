@@ -3,9 +3,9 @@ import { MODE_OPTIONS, getOptionsForMode } from './ModeOptions.js';
 import { GAME_MODES } from './ModeDefinition.js';
 
 describe('ModeOptions', () => {
-    it('defines options for all 7 game modes', () => {
+    it('defines options for all 8 game modes', () => {
         const modeIds = Object.keys(GAME_MODES);
-        expect(modeIds).toHaveLength(7);
+        expect(modeIds).toHaveLength(8);
 
         for (const modeId of modeIds) {
             expect(MODE_OPTIONS).toHaveProperty(modeId);
@@ -22,7 +22,7 @@ describe('ModeOptions', () => {
                 expect(opt).toHaveProperty('default');
                 expect(typeof opt.id).toBe('string');
                 expect(typeof opt.label).toBe('string');
-                expect(['number', 'select']).toContain(opt.type);
+                expect(['number', 'select', 'multiSelect']).toContain(opt.type);
             }
         }
     });

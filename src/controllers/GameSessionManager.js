@@ -8,6 +8,7 @@ import { StreakBlitzController } from './StreakBlitzController.js';
 import { GeoPuzzleController } from './GeoPuzzleController.js';
 import { GameController } from './GameController.js';
 import { WordDropController } from './WordDropController.js';
+import { OrdenaContinenteController } from './ordena-continente/OrdenaContinenteController.js';
 
 /**
  * GameSessionManager - Central orchestrator for all game modes.
@@ -120,7 +121,7 @@ export class GameSessionManager {
         const capitalInfo = document.getElementById('capitalInfo');
         const teamsContainer = document.getElementById('teamsContainer');
 
-        const individualModes = ['flagRush', 'capitalClash', 'streakBlitz', 'geoPuzzle', 'letrasEnCaida'];
+        const individualModes = ['flagRush', 'capitalClash', 'streakBlitz', 'geoPuzzle', 'letrasEnCaida', 'ordenaContinente'];
 
         if (individualModes.includes(modeId)) {
             // Hide legacy elements that individual modes don't use
@@ -252,6 +253,13 @@ export class GameSessionManager {
                     skipInit: true,
                 });
 
+            case 'ordenaContinente':
+                return new OrdenaContinenteController({
+                    container: this.gameContent,
+                    onRoundEnd: (data) => this.handleRoundEnd(data),
+                    onGameEnd: (data) => this.handleGameEnd(data),
+                });
+
             case 'letrasEnCaida':
                 return new WordDropController(this.countryService, this.statsService, {
                     onGameEnd: (data) => this.handleGameEnd(data),
@@ -290,6 +298,10 @@ export class GameSessionManager {
                         pool
                     );
                 }
+                break;
+
+            case 'ordenaContinente':
+                this.activeController.start(pool, modeOptions);
                 break;
 
             case 'letrasEnCaida': {

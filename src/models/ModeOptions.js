@@ -51,6 +51,26 @@ export const MODE_OPTIONS = {
             { value: 'fast', label: '🚀 Rápido' },
         ], default: 'normal' },
     ],
+    ordenaContinente: [
+        { id: 'itemCount', label: 'Cantidad de ítems', type: 'number', default: 10, min: 6, max: 24 },
+        { id: 'continents', label: 'Continentes', type: 'multiSelect', options: [
+            { value: 'Africa', label: 'África' },
+            { value: 'America', label: 'América' },
+            { value: 'Asia', label: 'Asia' },
+            { value: 'Europe', label: 'Europa' },
+            { value: 'Oceania', label: 'Oceanía' },
+        ], default: ['Africa', 'America', 'Asia', 'Europe', 'Oceania'] },
+        { id: 'itemType', label: 'Tipo de ítem', type: 'select', options: [
+            { value: 'flags', label: '🏳️ Banderas' },
+            { value: 'capitals', label: '🏛️ Capitales' },
+        ], default: 'flags' },
+        { id: 'timerMode', label: 'Temporizador', type: 'select', options: [
+            { value: 'off', label: '♾️ Sin tiempo' },
+            { value: 'on', label: '⏱️ Con tiempo' },
+        ], default: 'off' },
+        { id: 'timeLimit', label: 'Tiempo límite (s)', type: 'number', default: 120, min: 30, max: 300,
+          _conditionalOn: { id: 'timerMode', value: 'on' } },
+    ],
 };
 
 /**
