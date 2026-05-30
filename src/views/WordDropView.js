@@ -1,3 +1,5 @@
+import { RoundProgressView } from './RoundProgressView.js';
+
 /**
  * WordDropView: manages the DOM for the Word Drop game mode.
  * Creates letter boxes, input field, score display, and animations.
@@ -13,13 +15,16 @@ export class WordDropView {
         this.livesDisplay = null;
         this.feedbackEl = null;
         this.flagHint = null;
+        this.countryNameHint = null;
         this.letterBoxes = [];
+        this.currentDifficulty = 'easy';
+        this.roundProgressView = null;
 
         this.onGuessPressed = null;
         this.onAnswerSubmitted = null;
         this.onNextPressed = null;
         this.onAnswerTimeout = null;
-        this.onEndGame = null;
+        this.onSurrenderPressed = null;
         this.answerCountdownInterval = null;
         this.answerTimeLeft = 10;
 
@@ -52,20 +57,20 @@ export class WordDropView {
         topBar.appendChild(this.difficultyBadge);
         topBar.appendChild(this.livesDisplay);
 
-        // End game button
-        this.endGameButton = document.createElement('button');
-        this.endGameButton.className = 'word-drop-end-btn';
-        this.endGameButton.textContent = 'Terminar';
-        this.endGameButton.addEventListener('click', () => {
-            if (this.onEndGame) this.onEndGame();
-        });
-        topBar.appendChild(this.endGameButton);
+        // Round progress bar container (initialized with total when game starts)
+        this.progressBarContainer = document.createElement('div');
+        this.progressBarContainer.className = 'word-drop-round-progress';
 
         // Flag hint (optional)
         this.flagHint = document.createElement('img');
         this.flagHint.className = 'word-drop-flag-hint';
         this.flagHint.alt = 'Flag hint';
         this.flagHint.loading = 'eager';
+
+        // Contextual hint (easy mode only): shows capital when guessing country, or country name when guessing capital
+        this.hintEl = document.createElement('div');
+        this.hintEl.className = 'word-drop-country-name-hint';
+        this.hintEl.hidden = true;
 
         // Letter grid
         this.letterGrid = document.createElement('div');
@@ -125,13 +130,33 @@ export class WordDropView {
         this.nextButton.addEventListener('click', () => {
             if (this.onNextPressed) this.onNextPressed();
         });
+        // Prevent the Enter keydown from bubbling to the document listener
+        // (which would cause a double-advance: once from keydown, once from click)
+        this.nextButton.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+            }
+        });
+
+        // Surrender button — shown during input phase so the player can give up
+        // immediately without waiting for the 10-second countdown
+        this.surrenderBtn = document.createElement('button');
+        this.surrenderBtn.className = 'word-drop-surrender-btn';
+        this.surrenderBtn.textContent = 'Me rindo';
+        this.surrenderBtn.hidden = true;
+        this.surrenderBtn.addEventListener('click', () => {
+            if (this.onSurrenderPressed) this.onSurrenderPressed();
+        });
 
         // Assemble
         this.container.appendChild(topBar);
+        this.container.appendChild(this.progressBarContainer);
         this.container.appendChild(this.flagHint);
+        this.container.appendChild(this.hintEl);
         this.container.appendChild(this.letterGrid);
         this.container.appendChild(this.feedbackEl);
         this.container.appendChild(this.guessButton);
+        this.container.appendChild(this.surrenderBtn);
         this.container.appendChild(this.inputContainer);
         this.container.appendChild(this.nextButton);
 
@@ -147,20 +172,7 @@ export class WordDropView {
      */
     show() {
         this.container.hidden = false;
-        // Hide standard game elements
-        const flagImg = document.getElementById('flagImage');
-        const countryInfo = document.getElementById('countryInfo');
-        const capitalInfo = document.getElementById('capitalInfo');
-        const teamsContainer = document.getElementById('teamsContainer');
-        const startButton = document.getElementById('startButton');
-        const gameHeader = document.querySelector('.game-header');
-
-        if (flagImg) flagImg.style.display = 'none';
-        if (countryInfo) countryInfo.style.display = 'none';
-        if (capitalInfo) capitalInfo.style.display = 'none';
-        if (teamsContainer) teamsContainer.style.display = 'none';
-        if (startButton) startButton.style.display = 'none';
-        if (gameHeader) gameHeader.style.display = 'none';
+        // Legacy elements are already hidden by GameSessionManager.prepareGameUI()
     }
 
     /**
@@ -168,19 +180,7 @@ export class WordDropView {
      */
     hide() {
         this.container.hidden = true;
-        const flagImg = document.getElementById('flagImage');
-        const countryInfo = document.getElementById('countryInfo');
-        const capitalInfo = document.getElementById('capitalInfo');
-        const teamsContainer = document.getElementById('teamsContainer');
-        const startButton = document.getElementById('startButton');
-        const gameHeader = document.querySelector('.game-header');
-
-        if (flagImg) flagImg.style.display = '';
-        if (countryInfo) countryInfo.style.display = '';
-        if (capitalInfo) capitalInfo.style.display = '';
-        if (teamsContainer) teamsContainer.style.display = '';
-        if (startButton) startButton.style.display = '';
-        if (gameHeader) gameHeader.style.display = '';
+        // UI restoration is handled by GameSessionManager.restoreGameUI()
     }
 
     /**
@@ -188,8 +188,11 @@ export class WordDropView {
      * @param {string} word - The word to display as boxes
      * @param {boolean} showFlag - Whether to show the flag hint
      * @param {string} flagUrl - URL of the flag image
+     * @param {string} [hint] - Contextual hint for easy mode:
+     *   - When guessing country name: the country's capital
+     *   - When guessing capital: the country's name
      */
-    setupWord(word, showFlag, flagUrl) {
+    setupWord(word, showFlag, flagUrl, hint) {
         this.letterGrid.innerHTML = '';
         this.letterBoxes = [];
         this.feedbackEl.textContent = '';
@@ -201,6 +204,7 @@ export class WordDropView {
         this.answerInput.value = '';
         this.answerInput.disabled = false;
 
+        // Country name hint removed — no longer shown
         // Flag hint
         this.flagHint.classList.remove('flag-hint-reveal');
         if (showFlag && flagUrl) {
@@ -208,6 +212,15 @@ export class WordDropView {
             this.flagHint.hidden = false;
         } else {
             this.flagHint.hidden = true;
+        }
+
+        // Contextual hint: only shown in easy mode, and only if hint text is provided
+        if (this.currentDifficulty === 'easy' && hint) {
+            this.hintEl.textContent = hint;
+            this.hintEl.hidden = false;
+        } else {
+            this.hintEl.textContent = '';
+            this.hintEl.hidden = true;
         }
 
         // Create letter boxes
@@ -263,6 +276,7 @@ export class WordDropView {
     showInput() {
         this.guessButton.hidden = true;
         this.inputContainer.hidden = false;
+        this.surrenderBtn.hidden = false;
         this.answerInput.focus();
         this.startAnswerCountdown();
     }
@@ -296,6 +310,7 @@ export class WordDropView {
             this.answerCountdownInterval = null;
         }
         this.countdownEl.hidden = true;
+        if (this.surrenderBtn) this.surrenderBtn.hidden = true;
     }
 
     /**
@@ -350,7 +365,7 @@ export class WordDropView {
         }
 
         // In hard mode (no flag shown), reveal the flag after validation for learning
-        if (flagUrl && this.flagHint.hidden) {
+        if (this.currentDifficulty !== 'hard' && flagUrl && this.flagHint.hidden) {
             this.flagHint.src = flagUrl;
             this.flagHint.hidden = false;
             this.flagHint.classList.add('flag-hint-reveal');
@@ -375,7 +390,7 @@ export class WordDropView {
         this.feedbackEl.className = 'word-drop-feedback feedback-timeout';
 
         // In hard mode, reveal the flag for learning
-        if (flagUrl && this.flagHint.hidden) {
+        if (this.currentDifficulty !== 'hard' && flagUrl && this.flagHint.hidden) {
             this.flagHint.src = flagUrl;
             this.flagHint.hidden = false;
             this.flagHint.classList.add('flag-hint-reveal');
@@ -417,19 +432,45 @@ export class WordDropView {
 
     /**
      * Updates the difficulty badge display.
-     * @param {string} difficulty - 'easy' or 'hard'
+     * @param {string} difficulty - 'easy', 'medium', or 'hard'
      */
     setDifficulty(difficulty) {
+        this.currentDifficulty = difficulty;
         if (this.difficultyBadge) {
+            this.difficultyBadge.classList.remove('difficulty-easy', 'difficulty-medium', 'difficulty-hard');
             if (difficulty === 'hard') {
                 this.difficultyBadge.textContent = '🔴 Difícil';
                 this.difficultyBadge.classList.add('difficulty-hard');
-                this.difficultyBadge.classList.remove('difficulty-easy');
+            } else if (difficulty === 'medium') {
+                this.difficultyBadge.textContent = '🟡 Medio';
+                this.difficultyBadge.classList.add('difficulty-medium');
             } else {
                 this.difficultyBadge.textContent = '🟢 Fácil';
                 this.difficultyBadge.classList.add('difficulty-easy');
-                this.difficultyBadge.classList.remove('difficulty-hard');
             }
+        }
+    }
+
+    /**
+     * Initialises the round progress bar with the total number of rounds.
+     * Must be called once before the first round starts.
+     * @param {number} total
+     */
+    initProgress(total) {
+        if (!this.progressBarContainer) return;
+        this.roundProgressView = new RoundProgressView({
+            container: this.progressBarContainer,
+            total,
+        });
+    }
+
+    /**
+     * Advances the round progress bar.
+     * @param {number} completed - rounds completed so far
+     */
+    updateProgress(completed) {
+        if (this.roundProgressView) {
+            this.roundProgressView.update(completed);
         }
     }
 
@@ -445,10 +486,16 @@ export class WordDropView {
         this.guessButton.disabled = false;
         this.inputContainer.hidden = true;
         this.nextButton.hidden = true;
+        if (this.surrenderBtn) this.surrenderBtn.hidden = true;
         this.answerInput.value = '';
         this.flagHint.hidden = true;
+        this.hintEl.textContent = '';
+        this.hintEl.hidden = true;
         this.stopAnswerCountdown();
         this.updateScore(0);
         this.updateLives(3);
+        if (this.roundProgressView) {
+            this.roundProgressView.update(0);
+        }
     }
 }

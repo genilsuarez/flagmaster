@@ -22,6 +22,7 @@ const DEFAULT_STATS = {
     currentStreak: 0,
     longestStreak: 0,
     lastPlayedDate: null,
+    lastPlayedMode: null,
     uniqueCountriesCorrect: [],
     achievements: {
         explorer: false,    // 10 correct answers total
@@ -77,6 +78,14 @@ export class StatsService {
     }
 
     /**
+     * Returns the last played mode ID, or null if no game has been played.
+     * @returns {string|null}
+     */
+    getLastPlayedMode() {
+        return this.stats.lastPlayedMode || null;
+    }
+
+    /**
      * Returns all per-mode stats.
      * @returns {object} Map of modeId → mode stats
      */
@@ -101,9 +110,9 @@ export class StatsService {
 
     /**
      * Called after every finished game (legacy method for backward compatibility).
-     * @param {object} payload - { correct, wrong, elapsedSeconds }
+     * @param {object} payload - { correct, wrong, elapsedSeconds, completedNaturally, totalQuestions }
      */
-    recordGame({ correct = 0, wrong = 0, elapsedSeconds = 0 } = {}) {
+    recordGame({ correct = 0, wrong = 0, elapsedSeconds = 0, completedNaturally = true, totalQuestions = null } = {}) {
         const today = this.today();
         const s = this.stats;
 
@@ -111,7 +120,16 @@ export class StatsService {
         s.totalCorrect += correct;
         s.totalWrong += wrong;
 
-        if (elapsedSeconds > 0 && (s.bestTimeSeconds === null || elapsedSeconds < s.bestTimeSeconds)) {
+        // Best time only counts for naturally completed games with a meaningful
+        // number of questions answered (at least 5). This prevents a 1-answer
+        // session or a tiny filtered pool from polluting the best time stat.
+        const MIN_QUESTIONS_FOR_BEST_TIME = 5;
+        const qualifiesForBestTime =
+            completedNaturally &&
+            elapsedSeconds > 0 &&
+            (totalQuestions === null || totalQuestions >= MIN_QUESTIONS_FOR_BEST_TIME);
+
+        if (qualifiesForBestTime && (s.bestTimeSeconds === null || elapsedSeconds < s.bestTimeSeconds)) {
             s.bestTimeSeconds = elapsedSeconds;
         }
 
@@ -127,7 +145,7 @@ export class StatsService {
             }
         }
 
-        this.checkAchievements({ correct, elapsedSeconds });
+        this.checkAchievements({ correct, elapsedSeconds, completedNaturally, totalQuestions });
         this.save();
         return this.getStats();
     }
@@ -146,10 +164,15 @@ export class StatsService {
      * @returns {object} Updated stats
      */
     recordIndividualGame(sessionResults) {
-        const { modeId, totalScore = 0, correct = 0, wrong = 0, elapsedSeconds = 0, powerUpsUsed = 0 } = sessionResults;
+        const { modeId, totalScore = 0, correct = 0, wrong = 0, elapsedSeconds = 0, powerUpsUsed = 0, completedNaturally = true, totalQuestions = null } = sessionResults;
 
         // Update global stats via existing method
-        this.recordGame({ correct, wrong, elapsedSeconds });
+        this.recordGame({ correct, wrong, elapsedSeconds, completedNaturally, totalQuestions });
+
+        // Track last played mode
+        if (modeId) {
+            this.stats.lastPlayedMode = modeId;
+        }
 
         // Update per-mode stats
         if (modeId) {
@@ -248,13 +271,21 @@ export class StatsService {
         }
     }
 
-    checkAchievements({ correct, elapsedSeconds }) {
+    checkAchievements({ correct, elapsedSeconds, completedNaturally = true, totalQuestions = null }) {
         const s = this.stats;
         const a = s.achievements;
 
         if (!a.explorer && s.totalCorrect >= 10) a.explorer = true;
         if (!a.sniper && correct >= 10) a.sniper = true;
-        if (!a.lightning && elapsedSeconds > 0 && elapsedSeconds <= 60 && correct > 0) a.lightning = true;
+        // Lightning: only counts for naturally completed games with enough questions
+        const MIN_QUESTIONS_FOR_BEST_TIME = 5;
+        const qualifiesForLightning =
+            completedNaturally &&
+            elapsedSeconds > 0 &&
+            elapsedSeconds <= 60 &&
+            correct > 0 &&
+            (totalQuestions === null || totalQuestions >= MIN_QUESTIONS_FOR_BEST_TIME);
+        if (!a.lightning && qualifiesForLightning) a.lightning = true;
         if (!a.persistent && s.currentStreak >= 7) a.persistent = true;
         // Conqueror achievement is tracked externally when a continent is completed
     }

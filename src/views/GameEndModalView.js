@@ -1,5 +1,6 @@
 import { GAME_MODES } from '../models/ModeDefinition.js';
 import { ACHIEVEMENTS } from '../services/AchievementService.js';
+import { MODE_OPTIONS } from '../models/ModeOptions.js';
 
 /**
  * GameEndModalView - Modal overlay displaying game results at session end.
@@ -33,6 +34,15 @@ export class GameEndModalView {
     /** @type {string|null} */
     #modeId = null;
 
+    /** @type {Object|null} */
+    #modeOptions = null;
+
+    /** @type {string|null} */
+    #continent = null;
+
+    /** @type {string|null} */
+    #sovereignty = null;
+
     /** @type {function|null} */
     #boundKeyHandler = null;
 
@@ -54,8 +64,11 @@ export class GameEndModalView {
      * @param {Object} options.teamScores - Map of team color to score (e.g. { red: 5, blue: 3, green: 2 })
      * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showTeamResults({ modeId, teamScores, newAchievements = [] }) {
+    showTeamResults({ modeId, teamScores, newAchievements = [], modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
+        this.#modeOptions = modeOptions;
+        this.#continent = continent;
+        this.#sovereignty = sovereignty;
         this.#previousFocus = document.activeElement;
 
         const overlay = this.#createOverlay();
@@ -64,16 +77,22 @@ export class GameEndModalView {
         // Header
         content.appendChild(this.#createHeader());
 
+        // Body
+        const body = document.createElement('div');
+        body.className = 'app-modal__body';
+
         // Team scores
         const statsSection = document.createElement('div');
         statsSection.className = 'game-end-modal__stats';
         statsSection.appendChild(this.#createTeamScores(teamScores));
-        content.appendChild(statsSection);
+        body.appendChild(statsSection);
 
         // Achievements
         if (newAchievements.length > 0) {
-            content.appendChild(this.#createAchievementsSection(newAchievements));
+            body.appendChild(this.#createAchievementsSection(newAchievements));
         }
+
+        content.appendChild(body);
 
         // Buttons
         content.appendChild(this.#createButtons());
@@ -94,8 +113,11 @@ export class GameEndModalView {
      * @param {number} options.elapsedSeconds - Total time elapsed in seconds
      * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [] }) {
+    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [], modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
+        this.#modeOptions = modeOptions;
+        this.#continent = continent;
+        this.#sovereignty = sovereignty;
         this.#previousFocus = document.activeElement;
 
         const overlay = this.#createOverlay();
@@ -104,16 +126,22 @@ export class GameEndModalView {
         // Header
         content.appendChild(this.#createHeader());
 
+        // Body
+        const body = document.createElement('div');
+        body.className = 'app-modal__body';
+
         // Individual stats
         const statsSection = document.createElement('div');
         statsSection.className = 'game-end-modal__stats';
         statsSection.appendChild(this.#createIndividualStats({ totalScore, correct, wrong, maxStreak, elapsedSeconds }));
-        content.appendChild(statsSection);
+        body.appendChild(statsSection);
 
         // Achievements
         if (newAchievements.length > 0) {
-            content.appendChild(this.#createAchievementsSection(newAchievements));
+            body.appendChild(this.#createAchievementsSection(newAchievements));
         }
+
+        content.appendChild(body);
 
         // Buttons
         content.appendChild(this.#createButtons());
@@ -123,45 +151,170 @@ export class GameEndModalView {
     }
 
     /**
-     * Creates the modal overlay element.
+     * Creates the modal overlay/backdrop element.
      * @returns {HTMLElement}
      * @private
      */
     #createOverlay() {
         const overlay = document.createElement('div');
-        overlay.className = 'game-end-modal game-end-modal__overlay';
+        overlay.className = 'game-end-modal game-end-modal__overlay app-modal__backdrop';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', 'Resultados del juego');
+        overlay.setAttribute('data-close', 'true');
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) {
+                this.close();
+            }
+        });
         return overlay;
     }
 
     /**
-     * Creates the modal content container.
+     * Creates the modal content panel container.
      * @returns {HTMLElement}
      * @private
      */
     #createContent() {
         const content = document.createElement('div');
-        content.className = 'game-end-modal__content';
+        content.className = 'game-end-modal__content app-modal__panel';
+        content.style.maxWidth = '400px';
         return content;
     }
 
     /**
-     * Creates the modal header with game-over title.
+     * Creates the modal header with game-over title, game name, difficulty badge and close button.
      * @returns {HTMLElement}
      * @private
      */
     #createHeader() {
-        const header = document.createElement('div');
-        header.className = 'game-end-modal__header';
+        const header = document.createElement('header');
+        header.className = 'game-end-modal__header app-modal__header';
 
         const title = document.createElement('h2');
-        title.className = 'game-end-modal__title';
-        title.textContent = '🎉 ¡Juego Terminado! 🎉';
+        title.className = 'game-end-modal__title app-modal__title';
+        title.textContent = '¡Juego Terminado!';
 
         header.appendChild(title);
+
+        // Game name
+        const mode = GAME_MODES[this.#modeId];
+        if (mode) {
+            const gameName = document.createElement('p');
+            gameName.className = 'game-end-modal__game-name';
+            gameName.textContent = `${mode.icon} ${mode.name}`;
+            header.appendChild(gameName);
+        }
+
+        // Difficulty / mode options summary — chip grid
+        const difficultyParts = this.#buildDifficultyParts();
+        if (difficultyParts.length > 0) {
+            const summary = document.createElement('div');
+            summary.className = 'game-end-modal__options-summary';
+            
+            difficultyParts.forEach(part => {
+                const chip = document.createElement('span');
+                chip.className = 'game-end-modal__option-chip';
+                chip.textContent = part;
+                summary.appendChild(chip);
+            });
+            
+            header.appendChild(summary);
+        }
+
+        // Close button — appended last so it sits on top via absolute positioning
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn btn--icon app-modal__close';
+        closeBtn.setAttribute('aria-label', 'Cerrar');
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', () => {
+            if (this.#onHome) {
+                this.#onHome();
+            }
+            this.close();
+        });
+        header.appendChild(closeBtn);
+
         return header;
+    }
+
+    /**
+     * Builds an array of human-readable option labels for the current mode.
+     * Includes mode-specific options (select and number types) plus common
+     * filters (continent, sovereignty) when they differ from the default "All".
+     * Returns empty array if there are no relevant options to display.
+     * @returns {string[]}
+     * @private
+     */
+    #buildDifficultyParts() {
+        if (!this.#modeId) return [];
+
+        const parts = [];
+        const opts = this.#modeOptions || {};
+
+        // Mode-specific options from MODE_OPTIONS
+        const optionDefs = MODE_OPTIONS[this.#modeId] || [];
+        for (const def of optionDefs) {
+            const val = opts[def.id] !== undefined ? opts[def.id] : def.default;
+            if (val === undefined || val === null) continue;
+
+            if (def.type === 'select') {
+                const opt = def.options?.find(o => o.value === val);
+                if (opt) parts.push(opt.label);
+            } else if (def.type === 'number') {
+                if (def.id === 'rounds') {
+                    parts.push(`${val} rondas`);
+                } else if (def.id === 'timePerQuestion') {
+                    parts.push(`${val}s/pregunta`);
+                } else if (def.id === 'sessionTime') {
+                    // Only show sessionTime when endCondition is 'time'
+                    const endCondition = opts['endCondition'] ?? (optionDefs.find(d => d.id === 'endCondition')?.default);
+                    if (endCondition === 'time') {
+                        const mins = Math.floor(val / 60);
+                        const secs = val % 60;
+                        const timeLabel = mins > 0
+                            ? (secs > 0 ? `${mins}m ${secs}s` : `${mins} min`)
+                            : `${val}s`;
+                        parts.push(timeLabel);
+                    }
+                } else {
+                    parts.push(`${def.label}: ${val}`);
+                }
+            }
+        }
+
+        // Common filters: continent
+        const continent = this.#continent;
+        if (continent && continent !== 'All' && continent !== 'all') {
+            const continentLabels = {
+                Africa: 'África',
+                America: 'América',
+                Asia: 'Asia',
+                Europe: 'Europa',
+                Oceania: 'Oceanía',
+            };
+            parts.push(continentLabels[continent] || continent);
+        }
+
+        // Common filters: sovereignty
+        const sovereignty = this.#sovereignty;
+        if (sovereignty && sovereignty !== 'All' && sovereignty !== 'all') {
+            if (sovereignty === 'Yes') parts.push('solo soberanos');
+            else if (sovereignty === 'No') parts.push('solo territorios');
+        }
+
+        return parts;
+    }
+
+    /**
+     * @deprecated Use #buildDifficultyParts instead.
+     * @returns {string|null}
+     * @private
+     */
+    #buildDifficultyText() {
+        const parts = this.#buildDifficultyParts();
+        return parts.length > 0 ? parts.join(' · ') : null;
     }
 
     /**
@@ -314,12 +467,12 @@ export class GameEndModalView {
      * @private
      */
     #createButtons() {
-        const footer = document.createElement('div');
-        footer.className = 'game-end-modal__footer';
+        const footer = document.createElement('footer');
+        footer.className = 'game-end-modal__footer app-modal__footer';
 
         const playAgainBtn = document.createElement('button');
         playAgainBtn.type = 'button';
-        playAgainBtn.className = 'game-end-modal__btn game-end-modal__btn--play-again';
+        playAgainBtn.className = 'btn btn--primary game-end-modal__btn game-end-modal__btn--play-again';
         playAgainBtn.textContent = 'Jugar de nuevo';
         playAgainBtn.setAttribute('aria-label', 'Jugar de nuevo con el mismo modo');
         playAgainBtn.addEventListener('click', () => {
@@ -331,7 +484,7 @@ export class GameEndModalView {
 
         const homeBtn = document.createElement('button');
         homeBtn.type = 'button';
-        homeBtn.className = 'game-end-modal__btn game-end-modal__btn--home';
+        homeBtn.className = 'btn btn--secondary game-end-modal__btn game-end-modal__btn--home';
         homeBtn.textContent = 'Inicio';
         homeBtn.setAttribute('aria-label', 'Volver al inicio');
         homeBtn.addEventListener('click', () => {
@@ -352,8 +505,14 @@ export class GameEndModalView {
      * @private
      */
     #mount(overlay) {
-        // Remove any existing modal
+        // Save the trigger element before close() can null it out
+        const triggerElement = this.#previousFocus;
+
+        // Remove any existing modal (resets #previousFocus to null)
         this.close();
+
+        // Restore the trigger element after close() cleared it
+        this.#previousFocus = triggerElement;
 
         this.#modalElement = overlay;
         document.body.appendChild(overlay);
@@ -452,5 +611,8 @@ export class GameEndModalView {
         this.#onPlayAgain = null;
         this.#onHome = null;
         this.#modeId = null;
+        this.#modeOptions = null;
+        this.#continent = null;
+        this.#sovereignty = null;
     }
 }

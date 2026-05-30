@@ -286,5 +286,87 @@ describe('StatsService', () => {
             expect(stats.totalCorrect).toBe(50);
             expect(stats.modeStats).toEqual({});
         });
+
+        it('loads stats without lastPlayedMode field gracefully', () => {
+            const oldData = {
+                gamesPlayed: 5,
+                totalCorrect: 20,
+                totalWrong: 5,
+                bestTimeSeconds: 30,
+                currentStreak: 2,
+                longestStreak: 4,
+                lastPlayedDate: '2024-03-10',
+                uniqueCountriesCorrect: ['FR'],
+                achievements: { explorer: true, sniper: false, lightning: false, conqueror: false, persistent: false },
+                modeStats: { flagRush: { gamesPlayed: 3, totalScore: 9000, bestScore: 4000, totalCorrect: 15 } },
+            };
+            localStorageMock.setItem('flagquiz_stats_v1', JSON.stringify(oldData));
+
+            const svc = new StatsService();
+            expect(svc.getLastPlayedMode()).toBeNull();
+        });
+    });
+
+    describe('getLastPlayedMode()', () => {
+        it('returns null when no game has been played', () => {
+            expect(service.getLastPlayedMode()).toBeNull();
+        });
+
+        it('returns the mode ID after recording an individual game', () => {
+            service.recordIndividualGame({
+                modeId: 'flagRush',
+                totalScore: 5000,
+                correct: 8,
+                wrong: 2,
+                elapsedSeconds: 90,
+            });
+
+            expect(service.getLastPlayedMode()).toBe('flagRush');
+        });
+
+        it('returns the most recently played mode', () => {
+            service.recordIndividualGame({
+                modeId: 'flagRush',
+                totalScore: 5000,
+                correct: 8,
+                wrong: 2,
+                elapsedSeconds: 90,
+            });
+            service.recordIndividualGame({
+                modeId: 'capitalClash',
+                totalScore: 3000,
+                correct: 5,
+                wrong: 1,
+                elapsedSeconds: 60,
+            });
+
+            expect(service.getLastPlayedMode()).toBe('capitalClash');
+        });
+
+        it('persists lastPlayedMode across service instances', () => {
+            service.recordIndividualGame({
+                modeId: 'streakBlitz',
+                totalScore: 7000,
+                correct: 12,
+                wrong: 3,
+                elapsedSeconds: 120,
+            });
+
+            const service2 = new StatsService();
+            expect(service2.getLastPlayedMode()).toBe('streakBlitz');
+        });
+
+        it('is included in getStats() response', () => {
+            service.recordIndividualGame({
+                modeId: 'geoPuzzle',
+                totalScore: 2000,
+                correct: 4,
+                wrong: 0,
+                elapsedSeconds: 60,
+            });
+
+            const stats = service.getStats();
+            expect(stats.lastPlayedMode).toBe('geoPuzzle');
+        });
     });
 });

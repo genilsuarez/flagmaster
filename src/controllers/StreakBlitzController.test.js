@@ -152,24 +152,22 @@ describe('StreakBlitzController', () => {
 
         it('shows flag image for flag questions', () => {
             controller = new StreakBlitzController({ container });
-            // Force flag type by mocking Math.random
             vi.spyOn(Math, 'random').mockReturnValue(0.1); // < 0.5 → flag
             controller.start(pool);
             const flagEl = container.querySelector('.streak-blitz-flag');
             const promptEl = container.querySelector('.streak-blitz-prompt');
-            expect(flagEl.style.display).not.toBe('none');
-            expect(promptEl.style.display).toBe('none');
+            expect(flagEl.style.visibility).not.toBe('hidden');
+            expect(promptEl.style.visibility).toBe('hidden');
         });
 
         it('shows country name for capital questions', () => {
             controller = new StreakBlitzController({ container });
-            // Force capital type by mocking Math.random
             vi.spyOn(Math, 'random').mockReturnValue(0.9); // >= 0.5 → capital
             controller.start(pool);
             const flagEl = container.querySelector('.streak-blitz-flag');
             const promptEl = container.querySelector('.streak-blitz-prompt');
-            expect(flagEl.style.display).toBe('none');
-            expect(promptEl.style.display).not.toBe('none');
+            expect(flagEl.style.visibility).toBe('hidden');
+            expect(promptEl.style.visibility).not.toBe('hidden');
         });
 
         it('enforces max 3 consecutive same type', () => {
@@ -246,13 +244,14 @@ describe('StreakBlitzController', () => {
             expect(controller.streakService.count).toBe(0);
         });
 
-        it('immediately advances to next question (no feedback delay)', () => {
+        it('advances to next question after feedback delay', () => {
             controller = new StreakBlitzController({ container });
             controller.start(pool);
             const initialRound = controller.currentRound;
             controller.handleAnswer(0, true);
-            // Should advance immediately without needing to wait
-            expect(controller.currentRound).toBe(initialRound + 1);
+            // Should NOT advance immediately — there's a feedback delay
+            expect(controller.currentRound).toBe(initialRound);
+            expect(controller.feedbackTimeout).not.toBeNull();
         });
 
         it('calls onRoundEnd callback with round data', () => {
@@ -305,12 +304,14 @@ describe('StreakBlitzController', () => {
             expect(controller.streakService.count).toBe(0);
         });
 
-        it('immediately advances to next question on timeout', () => {
+        it('advances to next question after feedback delay on timeout', () => {
             controller = new StreakBlitzController({ container });
             controller.start(pool);
             const roundBeforeTimeout = controller.currentRound;
             controller.handleTimeout();
-            expect(controller.currentRound).toBe(roundBeforeTimeout + 1);
+            // Should NOT advance immediately — there's a feedback delay
+            expect(controller.currentRound).toBe(roundBeforeTimeout);
+            expect(controller.feedbackTimeout).not.toBeNull();
         });
     });
 
@@ -428,8 +429,8 @@ describe('StreakBlitzController', () => {
             controller.start(pool, { timePerQuestion: 10 });
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(10);
             controller.handleAnswer(0, true);
-            // BASE_POINTS * (10/10) * 1.0 = 1000
-            expect(controller.totalScore).toBe(1000);
+            // BASE_POINTS * (10/10) * 1.0 = 100
+            expect(controller.totalScore).toBe(100);
         });
 
         it('calculates score with streak multiplier', () => {
@@ -438,27 +439,47 @@ describe('StreakBlitzController', () => {
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(10);
 
             // Answer 3 correct to reach 1.5x multiplier
-            controller.handleAnswer(0, true); // streak 1, mult 1.0 → 1000
-            controller.handleAnswer(0, true); // streak 2, mult 1.0 → 1000
-            controller.handleAnswer(0, true); // streak 3, mult 1.5 → 1500
+            controller.handleAnswer(0, true); // streak 1, mult 1.0 → 100
+            controller.handleAnswer(0, true); // streak 2, mult 1.0 → 100
+            controller.handleAnswer(0, true); // streak 3, mult 1.5 → 150
 
-            expect(controller.totalScore).toBe(1000 + 1000 + 1500);
+            expect(controller.totalScore).toBe(100 + 100 + 150);
         });
     });
 
     describe('pool cycling', () => {
-        it('cycles through the pool when more questions than pool size', () => {
+        it('ends the session when pool is exhausted in time mode (no recycling)', () => {
             controller = new StreakBlitzController({ container });
             const smallPool = pool.slice(0, 5);
-            controller.start(smallPool);
+            controller.start(smallPool, { endCondition: 'time', sessionTime: 90 });
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(5);
+            vi.useFakeTimers();
 
-            // Answer more questions than pool size
-            for (let i = 0; i < 6; i++) {
+            // Answer exactly as many questions as the pool size
+            for (let i = 0; i < 5; i++) {
                 controller.handleAnswer(0, true);
+                vi.advanceTimersByTime(StreakBlitzController.FEEDBACK_DELAY_MS);
             }
 
-            // Should still be active (no crash from running out of pool)
+            vi.useRealTimers();
+            // Pool exhausted → game should have ended
+            expect(controller.isActive).toBe(false);
+        });
+
+        it('recycles the pool in lives mode so the game continues beyond pool size', () => {
+            controller = new StreakBlitzController({ container });
+            const smallPool = pool.slice(0, 5);
+            controller.start(smallPool, { endCondition: 'lives' });
+            vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(5);
+            vi.useFakeTimers();
+
+            // Answer more questions than pool size — should still be active
+            for (let i = 0; i < 6; i++) {
+                controller.handleAnswer(0, true);
+                vi.advanceTimersByTime(StreakBlitzController.FEEDBACK_DELAY_MS);
+            }
+
+            vi.useRealTimers();
             expect(controller.isActive).toBe(true);
             expect(controller.currentRound).toBe(7);
         });

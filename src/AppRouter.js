@@ -1,21 +1,27 @@
 /**
- * AppRouter: manages screen transitions for the application.
+ * AppRouter v2: manages screen transitions for Home ↔ Game flow.
  *
- * Replaces the previous `landing-mode` body class toggle with a proper
- * state machine that shows/hides screen containers and manages body classes.
+ * Simplified from 4 screens to 2, integrating with browser History API
+ * for back-button support and CSS transitions for smooth navigation.
  *
- * Screens: landing, modeSelector, parametrization, game
+ * Screens: home, game
  */
 export class AppRouter {
     /** @type {string[]} All valid screen identifiers */
-    static SCREENS = ['landing', 'modeSelector', 'parametrization', 'game'];
+    static SCREENS = ['home', 'game'];
 
     /** @type {string} CSS class prefix applied to <body> for each screen */
     static BODY_CLASS_PREFIX = 'screen-';
 
+    /** @type {string} CSS class for fade-in animation */
+    static FADE_IN_CLASS = 'screen-fade-in';
+
+    /** @type {string} CSS class for fade-out animation */
+    static FADE_OUT_CLASS = 'screen-fade-out';
+
     constructor() {
         /** @type {string} Currently active screen */
-        this.currentScreen = 'landing';
+        this.currentScreen = 'home';
 
         /** @type {string[]} Navigation history stack for back-navigation */
         this.history = [];
@@ -24,7 +30,8 @@ export class AppRouter {
         this.containers = {};
 
         this._cacheContainers();
-        this._applyScreen('landing');
+        this._applyScreen('home');
+        this._initPopstateListener();
     }
 
     /**
@@ -44,16 +51,23 @@ export class AppRouter {
         this.currentScreen = screen;
         this._applyScreen(screen);
 
+        // Integrate with browser History API
+        try {
+            window.history.pushState({ screen }, '', '');
+        } catch (e) {
+            // Silently handle environments where pushState is unavailable
+        }
+
         this._dispatchNavigationEvent(screen, params);
     }
 
     /**
      * Navigate back to the previous screen in the history stack.
-     * If history is empty, navigates to landing.
+     * If history is empty, stays on home.
      * @returns {string} The screen navigated to
      */
     back() {
-        const previousScreen = this.history.pop() || 'landing';
+        const previousScreen = this.history.pop() || 'home';
         this.currentScreen = previousScreen;
         this._applyScreen(previousScreen);
 
@@ -63,11 +77,11 @@ export class AppRouter {
 
     /**
      * Navigate directly to a screen without pushing to history.
-     * Useful for resetting to landing after game end.
+     * Useful for resetting to home after game end.
      * @param {string} screen - Target screen identifier
      * @param {Object} [params={}] - Optional parameters
      */
-    reset(screen = 'landing', params = {}) {
+    reset(screen = 'home', params = {}) {
         if (!AppRouter.SCREENS.includes(screen)) {
             console.warn(`[AppRouter] Unknown screen: "${screen}"`);
             return;
@@ -100,14 +114,11 @@ export class AppRouter {
 
     /**
      * Caches DOM references for screen containers.
-     * Containers are identified by `data-screen` attribute or known IDs.
      * @private
      */
     _cacheContainers() {
         this.containers = {
-            landing: document.getElementById('landingHero'),
-            modeSelector: document.getElementById('modeSelectorScreen'),
-            parametrization: document.getElementById('parametrizationScreen'),
+            home: document.getElementById('homeScreen'),
             game: document.querySelector('.game-wrapper'),
         };
     }
@@ -132,6 +143,8 @@ export class AppRouter {
         for (const [key, container] of Object.entries(this.containers)) {
             if (container) {
                 container.classList.add('screen-hidden');
+                container.classList.remove(AppRouter.FADE_IN_CLASS);
+                container.classList.add(AppRouter.FADE_OUT_CLASS);
                 container.setAttribute('aria-hidden', 'true');
             }
         }
@@ -146,6 +159,8 @@ export class AppRouter {
         const container = this.containers[screen];
         if (container) {
             container.classList.remove('screen-hidden');
+            container.classList.remove(AppRouter.FADE_OUT_CLASS);
+            container.classList.add(AppRouter.FADE_IN_CLASS);
             container.removeAttribute('aria-hidden');
         }
     }
@@ -153,7 +168,6 @@ export class AppRouter {
     /**
      * Updates the body class to reflect the current screen.
      * Removes all screen-* classes and adds the active one.
-     * Also manages legacy `landing-mode` class for backward compatibility.
      * @param {string} screen - Active screen identifier
      * @private
      */
@@ -165,16 +179,21 @@ export class AppRouter {
             body.classList.remove(`${AppRouter.BODY_CLASS_PREFIX}${s}`);
         });
 
-        // Remove legacy class
-        body.classList.remove('landing-mode');
-
         // Add current screen class
         body.classList.add(`${AppRouter.BODY_CLASS_PREFIX}${screen}`);
+    }
 
-        // Maintain backward compatibility with landing-mode
-        if (screen === 'landing') {
-            body.classList.add('landing-mode');
-        }
+    /**
+     * Initializes the popstate listener for browser back-button support.
+     * When on the game screen, pressing back navigates to home.
+     * @private
+     */
+    _initPopstateListener() {
+        window.addEventListener('popstate', (e) => {
+            if (this.currentScreen === 'game') {
+                this.reset('home');
+            }
+        });
     }
 
     /**

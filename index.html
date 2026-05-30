@@ -13,11 +13,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;450;500;600;700&display=swap">
     <link rel="stylesheet" href="assets/styles/styles.css">
 </head>
-<body class="landing-mode">
-    <!-- ===== LANDING HERO ===== -->
-    <section id="landingHero" class="landing-hero" aria-label="Bienvenido al Quiz de Banderas">
+<body class="screen-home">
+    <!-- ===== LANDING HERO (Home Screen) ===== -->
+    <section id="homeScreen" class="landing-hero" aria-label="Bienvenido al Quiz de Banderas">
         <nav class="landing-nav">
-            <button id="landingMenuBtn" class="landing-nav-btn landing-menu-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="appDrawer">
+            <button id="homeMenuBtn" class="landing-nav-btn landing-menu-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="appDrawer">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="4" y1="7" x2="20" y2="7"/>
                     <line x1="4" y1="12" x2="20" y2="12"/>
@@ -71,7 +71,7 @@
                     <span class="landing-settings-btn__label" aria-hidden="true">Ajustes</span>
                 </button>
             </div>
-            <div id="landingModesGrid" class="landing-modes-grid"></div>
+            <div id="modeCardsContainer" class="landing-modes" role="region" aria-label="Modos de juego"></div>
         </section>
     </section>
 
@@ -134,7 +134,7 @@
 
         <footer class="drawer-footer">
             <a href="https://github.com" target="_blank" rel="noopener" class="drawer-footer-link">GitHub</a>
-            <span class="drawer-version">v1.0.0</span>
+            <span class="drawer-version">v1.1.0</span>
         </footer>
     </aside>
 
@@ -154,12 +154,6 @@
             <div id="appModalBody" class="app-modal__body"></div>
         </div>
     </div>
-
-    <!-- ===== MODE SELECTOR SCREEN ===== -->
-    <div id="modeSelectorScreen" class="screen-hidden" aria-label="Selección de modo de juego"></div>
-
-    <!-- ===== PARAMETRIZATION SCREEN ===== -->
-    <div id="parametrizationScreen" class="screen-hidden" aria-label="Configuración de partida"></div>
 
     <!-- ===== INTERFAZ DEL JUEGO ===== -->
     <div class="game-wrapper screen-hidden">

@@ -49,6 +49,8 @@ export class DistractorService {
 
     /**
      * Combine the correct answer with distractors and return a shuffled array.
+     * Tracks recent correct-answer positions to avoid streaks where the correct
+     * answer lands in the same slot multiple times in a row.
      *
      * @param {import('../models/Country.js').Country} correct - The correct answer
      * @param {import('../models/Country.js').Country[]} distractors - The distractor options
@@ -56,7 +58,49 @@ export class DistractorService {
      */
     shuffleOptions(correct, distractors) {
         const options = [correct, ...distractors];
-        return this.shuffle(options);
+        const totalOptions = options.length;
+
+        // Initialize position history if not present
+        if (!this._recentCorrectPositions) {
+            this._recentCorrectPositions = [];
+        }
+
+        // Attempt shuffle up to 10 times to avoid repeating the same position
+        // 3+ times consecutively
+        const MAX_REPEAT = 2;
+        const MAX_ATTEMPTS = 10;
+
+        let shuffled;
+        let correctIndex;
+
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+            shuffled = this.shuffle(options);
+            correctIndex = shuffled.indexOf(correct);
+
+            // Check if this position would create a streak of MAX_REPEAT+1
+            const history = this._recentCorrectPositions;
+            const recentSame = history.length >= MAX_REPEAT &&
+                history.slice(-MAX_REPEAT).every(pos => pos === correctIndex);
+
+            if (!recentSame) {
+                break;
+            }
+        }
+
+        // Record the position (keep last 5 entries)
+        this._recentCorrectPositions.push(correctIndex);
+        if (this._recentCorrectPositions.length > 5) {
+            this._recentCorrectPositions.shift();
+        }
+
+        return shuffled;
+    }
+
+    /**
+     * Resets the position history tracker. Call when starting a new game session.
+     */
+    resetPositionHistory() {
+        this._recentCorrectPositions = [];
     }
 
     /**

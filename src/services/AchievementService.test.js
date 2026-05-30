@@ -227,13 +227,13 @@ describe('AchievementService', () => {
             expect(result).not.toContain('velocista');
         });
 
-        it('unlocks cartografo when all 8 modes completed', () => {
-            const allModes = ['banderaFlash', 'capitalQuest', 'letrasEnCaida', 'flagRush', 'capitalClash', 'streakBlitz', 'geoPuzzle', 'supervivencia'];
+        it('unlocks cartografo when all 7 modes completed', () => {
+            const allModes = ['banderaFlash', 'capitalQuest', 'letrasEnCaida', 'flagRush', 'capitalClash', 'streakBlitz', 'geoPuzzle'];
             const result = service.check(baseSession, { ...baseStats, modesCompleted: allModes });
             expect(result).toContain('cartografo');
         });
 
-        it('does not unlock cartografo with fewer than 8 modes', () => {
+        it('does not unlock cartografo with fewer than 7 modes', () => {
             const result = service.check(baseSession, { ...baseStats, modesCompleted: ['flagRush', 'capitalClash'] });
             expect(result).not.toContain('cartografo');
         });
@@ -243,9 +243,9 @@ describe('AchievementService', () => {
             expect(result).toContain('coleccionista');
         });
 
-        it('unlocks superviviente when round 50 reached in supervivencia', () => {
+        it('unlocks superviviente when round 50 reached in streakBlitz', () => {
             const result = service.check(
-                { ...baseSession, modeId: 'supervivencia', roundsReached: 50 },
+                { ...baseSession, modeId: 'streakBlitz', roundsReached: 50 },
                 baseStats
             );
             expect(result).toContain('superviviente');

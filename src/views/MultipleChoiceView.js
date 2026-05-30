@@ -19,6 +19,9 @@ export class MultipleChoiceView {
     /** @type {boolean} */
     #disabled = false;
 
+    /** @type {function|null} Keyboard event handler reference */
+    #keyboardHandler = null;
+
     /** @type {number} Feedback delay in ms before calling onSelect */
     static FEEDBACK_DELAY_MS = 300;
 
@@ -35,6 +38,7 @@ export class MultipleChoiceView {
      * Each button displays an option text (country name or capital).
      * On selection, shows correct/incorrect feedback with a 300ms delay
      * before invoking the onSelect callback.
+     * Enables keyboard shortcuts: keys 1-4 to select options.
      *
      * @param {Array<{text: string, correct: boolean}>} options - Array of 4 options
      * @param {function(number, boolean): void} onSelect - Callback with (selectedIndex, isCorrect)
@@ -42,6 +46,9 @@ export class MultipleChoiceView {
     render(options, onSelect) {
         this.#disabled = false;
         this.#buttons = [];
+
+        // Remove previous keyboard handler if any
+        this.#removeKeyboardHandler();
 
         if (!this.#container) return;
         this.#container.innerHTML = '';
@@ -55,9 +62,23 @@ export class MultipleChoiceView {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'mc-option';
-            button.textContent = option.text;
-            button.setAttribute('aria-label', option.text);
+            
+            // Add keyboard number indicator
+            const numberSpan = document.createElement('span');
+            numberSpan.className = 'mc-option__number';
+            numberSpan.textContent = (index + 1).toString();
+            numberSpan.setAttribute('aria-hidden', 'true');
+            button.appendChild(numberSpan);
+            
+            // Add option text
+            const textSpan = document.createElement('span');
+            textSpan.className = 'mc-option__text';
+            textSpan.textContent = option.text;
+            button.appendChild(textSpan);
+            
+            button.setAttribute('aria-label', `Opción ${index + 1}: ${option.text}`);
 
+            button.dataset.correct = option.correct ? 'true' : 'false';
             button.addEventListener('click', () => {
                 if (this.#disabled) return;
                 this.#handleSelection(index, options, onSelect);
@@ -68,6 +89,9 @@ export class MultipleChoiceView {
         });
 
         this.#container.appendChild(grid);
+
+        // Add keyboard event listener
+        this.#addKeyboardHandler(options, onSelect);
     }
 
     /**
@@ -87,12 +111,15 @@ export class MultipleChoiceView {
         // Show feedback on the selected button
         if (isCorrect) {
             this.#buttons[selectedIndex].classList.add('mc-option--correct');
+            this.#addFeedbackIcon(this.#buttons[selectedIndex], '✓');
         } else {
             this.#buttons[selectedIndex].classList.add('mc-option--incorrect');
+            this.#addFeedbackIcon(this.#buttons[selectedIndex], '✗');
             // Also highlight the correct answer
             const correctIndex = options.findIndex(o => o.correct);
             if (correctIndex !== -1) {
                 this.#buttons[correctIndex].classList.add('mc-option--correct');
+                this.#addFeedbackIcon(this.#buttons[correctIndex], '✓');
             }
         }
 
@@ -102,6 +129,65 @@ export class MultipleChoiceView {
                 onSelect(selectedIndex, isCorrect);
             }
         }, MultipleChoiceView.FEEDBACK_DELAY_MS);
+    }
+
+    /**
+     * Adds keyboard event handler for keys 1-4.
+     * @param {Array<{text: string, correct: boolean}>} options - The options array
+     * @param {function(number, boolean): void} onSelect - Callback
+     * @private
+     */
+    #addKeyboardHandler(options, onSelect) {
+        this.#keyboardHandler = (event) => {
+            // Ignore if disabled or if user is typing in an input field
+            if (this.#disabled) return;
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+            const key = event.key;
+            const numericKeys = ['1', '2', '3', '4'];
+            
+            if (numericKeys.includes(key)) {
+                event.preventDefault();
+                const index = parseInt(key) - 1;
+                
+                if (this.#buttons[index] && !this.#buttons[index].disabled) {
+                    // Add visual feedback that key was pressed
+                    this.#buttons[index].classList.add('mc-option--pressed');
+                    setTimeout(() => {
+                        this.#buttons[index]?.classList.remove('mc-option--pressed');
+                    }, 100);
+                    
+                    this.#handleSelection(index, options, onSelect);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', this.#keyboardHandler);
+    }
+
+    /**
+     * Removes the keyboard event handler.
+     * @private
+     */
+    #removeKeyboardHandler() {
+        if (this.#keyboardHandler) {
+            document.removeEventListener('keydown', this.#keyboardHandler);
+            this.#keyboardHandler = null;
+        }
+    }
+
+    /**
+     * Appends a feedback icon (✓ or ✗) to a button element.
+     * @param {HTMLButtonElement} button
+     * @param {string} icon
+     * @private
+     */
+    #addFeedbackIcon(button, icon) {
+        const span = document.createElement('span');
+        span.className = 'mc-option__icon';
+        span.textContent = ` ${icon}`;
+        span.setAttribute('aria-hidden', 'true');
+        button.appendChild(span);
     }
 
     /**
@@ -131,9 +217,24 @@ export class MultipleChoiceView {
     }
 
     /**
+     * Highlights the correct answer button without requiring a selection.
+     * Used when the timer expires so the player can see which answer was correct.
+     */
+    revealCorrectAnswer() {
+        this.#buttons.forEach(button => {
+            if (button.dataset.correct === 'true') {
+                button.classList.add('mc-option--correct');
+                this.#addFeedbackIcon(button, '✓');
+            }
+        });
+    }
+
+    /**
      * Removes the rendered content and resets internal state.
      */
     destroy() {
+        this.#removeKeyboardHandler();
+        
         if (this.#container) {
             this.#container.innerHTML = '';
         }

@@ -44,7 +44,7 @@ export class WordDropController {
         this.view.onAnswerSubmitted = (answer) => this.handleAnswerSubmitted(answer);
         this.view.onNextPressed = () => this.advanceToNextRound();
         this.view.onAnswerTimeout = () => this.handleAnswerTimeout();
-        this.view.onEndGame = () => this.endGame();
+        this.view.onSurrenderPressed = () => this.handleSurrender();
 
         this.service.onLetterRevealed = (position, char) => {
             this.view.revealLetter(position, char);
@@ -131,6 +131,7 @@ export class WordDropController {
         this.view.setLivesVisible(this.isSurvivalMode);
         this.view.updateLives(this.lives);
         this.view.setDifficulty(this.difficulty);
+        this.view.initProgress(this.countries.length);
 
         this.startRound();
     }
@@ -154,7 +155,15 @@ export class WordDropController {
             speed: this.speed
         });
 
-        this.view.setupWord(round.word, this.showFlag, country.flagUrl);
+        // Contextual hint for easy mode:
+        // - guessing country name → show the capital as hint
+        // - guessing capital → show the country name as hint
+        const hintValue = this.category === 'capital'
+            ? country.spanishName
+            : (country.capital || null);
+        const hint = hintValue || null;
+
+        this.view.setupWord(round.word, this.showFlag, country.flagUrl, hint);
         
         // Small delay before starting reveal for visual readiness
         this.revealStartTimeout = setTimeout(() => {
@@ -233,6 +242,7 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
 
         // Delay phase change to prevent same-event bubbling from triggering advance
         setTimeout(() => { this.phase = 'review'; }, 0);
@@ -263,6 +273,38 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
+        setTimeout(() => { this.phase = 'review'; }, 0);
+    }
+
+    /**
+     * Called when the player presses "Me rindo" during the input phase.
+     * Applies the -15 penalty immediately without waiting for the countdown.
+     */
+    handleSurrender() {
+        if (!this.isActive || !this.service.currentRound) return;
+        if (this.phase !== 'input') return;
+
+        this.view.revealAllLetters(this.service.currentRound.word);
+        this.view.showFeedback(false, -15, this.service.currentRound.word, this.service.currentRound.country?.flagUrl);
+
+        this.totalScore -= 15;
+        this.view.updateScore(Math.max(0, this.totalScore));
+
+        // Notify streak callback for GameSessionManager integration
+        if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+
+        if (this.isSurvivalMode) {
+            this.lives--;
+            this.view.updateLives(this.lives);
+            if (this.lives <= 0) {
+                this.roundTransitionTimeout = setTimeout(() => this.endGame(), 1500);
+                return;
+            }
+        }
+
+        this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
         setTimeout(() => { this.phase = 'review'; }, 0);
     }
 
@@ -271,6 +313,8 @@ export class WordDropController {
      */
     advanceToNextRound() {
         if (!this.isActive) return;
+        if (this.phase !== 'review') return;
+        this.phase = 'advancing'; // prevent double-advance from keydown + button click
         this.startRound();
     }
 
@@ -299,6 +343,7 @@ export class WordDropController {
         }
 
         this.currentIndex++;
+        this.view.updateProgress(this.currentIndex);
         this.phase = 'review';
     }
 
@@ -371,7 +416,13 @@ export class WordDropController {
 
         const wordsGuessed = this.currentIndex;
         const emoji = this.totalScore >= 200 ? '🏆' : this.totalScore >= 100 ? '⭐' : '🎮';
-        const diffLabel = this.difficulty === 'hard' ? '🔴 Difícil (sin bandera)' : '🟢 Fácil (con bandera)';
+        const diffLabel = this.difficulty === 'hard'
+            ? '🔴 Difícil (sin pista)'
+            : this.difficulty === 'medium'
+                ? '🟡 Medio (solo bandera)'
+                : this.category === 'capital'
+                    ? '🟢 Fácil (bandera + país)'
+                    : '🟢 Fácil (bandera + capital)';
 
         modal.innerHTML = `
             <div class="modal-content">

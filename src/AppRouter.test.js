@@ -6,9 +6,7 @@ import { AppRouter } from './AppRouter.js';
  */
 function setupDOM() {
     document.body.innerHTML = `
-        <section id="landingHero"></section>
-        <div id="modeSelectorScreen"></div>
-        <div id="parametrizationScreen"></div>
+        <main id="homeScreen"></main>
         <div class="game-wrapper"></div>
     `;
     document.body.className = '';
@@ -25,154 +23,179 @@ describe('AppRouter', () => {
     afterEach(() => {
         document.body.innerHTML = '';
         document.body.className = '';
+        vi.restoreAllMocks();
     });
 
     describe('constructor', () => {
-        it('initializes with landing as the current screen', () => {
-            expect(router.getCurrentScreen()).toBe('landing');
+        it('initializes with home as the current screen', () => {
+            expect(router.getCurrentScreen()).toBe('home');
         });
 
         it('starts with an empty history stack', () => {
             expect(router.canGoBack()).toBe(false);
         });
 
-        it('applies landing body class on initialization', () => {
-            expect(document.body.classList.contains('screen-landing')).toBe(true);
+        it('applies home body class on initialization', () => {
+            expect(document.body.classList.contains('screen-home')).toBe(true);
         });
 
-        it('applies legacy landing-mode class on initialization', () => {
-            expect(document.body.classList.contains('landing-mode')).toBe(true);
+        it('shows the home container and hides others', () => {
+            const home = document.getElementById('homeScreen');
+            const game = document.querySelector('.game-wrapper');
+
+            expect(home.classList.contains('screen-hidden')).toBe(false);
+            expect(game.classList.contains('screen-hidden')).toBe(true);
         });
 
-        it('shows the landing container and hides others', () => {
-            const landing = document.getElementById('landingHero');
-            const modeSelector = document.getElementById('modeSelectorScreen');
+        it('does not apply legacy landing-mode class', () => {
+            expect(document.body.classList.contains('landing-mode')).toBe(false);
+        });
+    });
 
-            expect(landing.classList.contains('screen-hidden')).toBe(false);
-            expect(modeSelector.classList.contains('screen-hidden')).toBe(true);
+    describe('SCREENS', () => {
+        it('contains only home and game', () => {
+            expect(AppRouter.SCREENS).toEqual(['home', 'game']);
+        });
+
+        it('does not contain legacy screens', () => {
+            expect(AppRouter.SCREENS).not.toContain('landing');
+            expect(AppRouter.SCREENS).not.toContain('modeSelector');
+            expect(AppRouter.SCREENS).not.toContain('parametrization');
         });
     });
 
     describe('navigate()', () => {
         it('transitions to the target screen', () => {
-            router.navigate('modeSelector');
-            expect(router.getCurrentScreen()).toBe('modeSelector');
+            router.navigate('game');
+            expect(router.getCurrentScreen()).toBe('game');
         });
 
         it('pushes the previous screen onto the history stack', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
             expect(router.canGoBack()).toBe(true);
         });
 
         it('updates the body class to the new screen', () => {
-            router.navigate('modeSelector');
-            expect(document.body.classList.contains('screen-modeSelector')).toBe(true);
-            expect(document.body.classList.contains('screen-landing')).toBe(false);
-        });
-
-        it('removes legacy landing-mode class when navigating away from landing', () => {
-            router.navigate('modeSelector');
-            expect(document.body.classList.contains('landing-mode')).toBe(false);
+            router.navigate('game');
+            expect(document.body.classList.contains('screen-game')).toBe(true);
+            expect(document.body.classList.contains('screen-home')).toBe(false);
         });
 
         it('shows the target container and hides others', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
 
-            const landing = document.getElementById('landingHero');
-            const modeSelector = document.getElementById('modeSelectorScreen');
+            const home = document.getElementById('homeScreen');
+            const game = document.querySelector('.game-wrapper');
 
-            expect(landing.classList.contains('screen-hidden')).toBe(true);
-            expect(modeSelector.classList.contains('screen-hidden')).toBe(false);
+            expect(home.classList.contains('screen-hidden')).toBe(true);
+            expect(game.classList.contains('screen-hidden')).toBe(false);
         });
 
         it('sets aria-hidden on hidden containers', () => {
             router.navigate('game');
 
-            const landing = document.getElementById('landingHero');
+            const home = document.getElementById('homeScreen');
             const game = document.querySelector('.game-wrapper');
 
-            expect(landing.getAttribute('aria-hidden')).toBe('true');
+            expect(home.getAttribute('aria-hidden')).toBe('true');
             expect(game.hasAttribute('aria-hidden')).toBe(false);
         });
 
+        it('adds fade-in class to the shown container', () => {
+            router.navigate('game');
+            const game = document.querySelector('.game-wrapper');
+            expect(game.classList.contains('screen-fade-in')).toBe(true);
+        });
+
+        it('adds fade-out class to hidden containers', () => {
+            router.navigate('game');
+            const home = document.getElementById('homeScreen');
+            expect(home.classList.contains('screen-fade-out')).toBe(true);
+        });
+
         it('does nothing when navigating to the current screen', () => {
-            router.navigate('landing');
+            router.navigate('home');
             expect(router.canGoBack()).toBe(false);
         });
 
         it('warns and does nothing for unknown screens', () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
             router.navigate('unknown');
-            expect(router.getCurrentScreen()).toBe('landing');
+            expect(router.getCurrentScreen()).toBe('home');
             expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown screen'));
-            warnSpy.mockRestore();
+        });
+
+        it('warns and does nothing for legacy screen names', () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            router.navigate('landing');
+            expect(router.getCurrentScreen()).toBe('home');
+            expect(warnSpy).toHaveBeenCalled();
+
+            router.navigate('modeSelector');
+            expect(router.getCurrentScreen()).toBe('home');
+
+            router.navigate('parametrization');
+            expect(router.getCurrentScreen()).toBe('home');
         });
 
         it('dispatches app:navigate event with screen and params', () => {
             const handler = vi.fn();
             document.addEventListener('app:navigate', handler);
 
-            router.navigate('parametrization', { modeId: 'flagRush' });
+            router.navigate('game', { modeId: 'flagRush' });
 
             expect(handler).toHaveBeenCalledTimes(1);
             const detail = handler.mock.calls[0][0].detail;
-            expect(detail.screen).toBe('parametrization');
+            expect(detail.screen).toBe('game');
             expect(detail.params.modeId).toBe('flagRush');
 
             document.removeEventListener('app:navigate', handler);
         });
 
-        it('supports sequential navigation building up history', () => {
-            router.navigate('modeSelector');
-            router.navigate('parametrization');
+        it('calls history.pushState with screen state', () => {
+            const pushStateSpy = vi.spyOn(window.history, 'pushState').mockImplementation(() => {});
             router.navigate('game');
+            expect(pushStateSpy).toHaveBeenCalledWith({ screen: 'game' }, '', '');
+        });
 
-            expect(router.getCurrentScreen()).toBe('game');
-            expect(router.history).toEqual(['landing', 'modeSelector', 'parametrization']);
+        it('builds up history with sequential navigation', () => {
+            router.navigate('game');
+            expect(router.history).toEqual(['home']);
         });
     });
 
     describe('back()', () => {
         it('returns to the previous screen', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
             const result = router.back();
 
-            expect(result).toBe('landing');
-            expect(router.getCurrentScreen()).toBe('landing');
+            expect(result).toBe('home');
+            expect(router.getCurrentScreen()).toBe('home');
         });
 
         it('pops the history stack', () => {
-            router.navigate('modeSelector');
-            router.navigate('parametrization');
+            router.navigate('game');
             router.back();
 
-            expect(router.getCurrentScreen()).toBe('modeSelector');
-            expect(router.canGoBack()).toBe(true);
+            expect(router.canGoBack()).toBe(false);
         });
 
-        it('navigates to landing when history is empty', () => {
+        it('returns home when history is empty', () => {
             const result = router.back();
-            expect(result).toBe('landing');
-            expect(router.getCurrentScreen()).toBe('landing');
+            expect(result).toBe('home');
+            expect(router.getCurrentScreen()).toBe('home');
         });
 
         it('updates body class on back navigation', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
             router.back();
 
-            expect(document.body.classList.contains('screen-landing')).toBe(true);
-            expect(document.body.classList.contains('screen-modeSelector')).toBe(false);
-        });
-
-        it('restores landing-mode class when going back to landing', () => {
-            router.navigate('modeSelector');
-            router.back();
-
-            expect(document.body.classList.contains('landing-mode')).toBe(true);
+            expect(document.body.classList.contains('screen-home')).toBe(true);
+            expect(document.body.classList.contains('screen-game')).toBe(false);
         });
 
         it('dispatches app:navigate event with isBack flag', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
 
             const handler = vi.fn();
             document.addEventListener('app:navigate', handler);
@@ -188,26 +211,25 @@ describe('AppRouter', () => {
 
     describe('reset()', () => {
         it('navigates to the specified screen and clears history', () => {
-            router.navigate('modeSelector');
-            router.navigate('parametrization');
-            router.reset('landing');
+            router.navigate('game');
+            router.reset('home');
 
-            expect(router.getCurrentScreen()).toBe('landing');
+            expect(router.getCurrentScreen()).toBe('home');
             expect(router.canGoBack()).toBe(false);
         });
 
-        it('defaults to landing when no screen is specified', () => {
+        it('defaults to home when no screen is specified', () => {
             router.navigate('game');
             router.reset();
 
-            expect(router.getCurrentScreen()).toBe('landing');
+            expect(router.getCurrentScreen()).toBe('home');
         });
 
         it('updates body class correctly', () => {
             router.navigate('game');
-            router.reset('landing');
+            router.reset('home');
 
-            expect(document.body.classList.contains('screen-landing')).toBe(true);
+            expect(document.body.classList.contains('screen-home')).toBe(true);
             expect(document.body.classList.contains('screen-game')).toBe(false);
         });
 
@@ -216,7 +238,7 @@ describe('AppRouter', () => {
             document.addEventListener('app:navigate', handler);
 
             router.navigate('game');
-            router.reset('landing');
+            router.reset('home');
 
             const lastCall = handler.mock.calls[handler.mock.calls.length - 1][0].detail;
             expect(lastCall.params.isReset).toBe(true);
@@ -231,7 +253,6 @@ describe('AppRouter', () => {
 
             expect(router.getCurrentScreen()).toBe('game');
             expect(warnSpy).toHaveBeenCalled();
-            warnSpy.mockRestore();
         });
     });
 
@@ -241,12 +262,12 @@ describe('AppRouter', () => {
         });
 
         it('returns true after a navigation', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
             expect(router.canGoBack()).toBe(true);
         });
 
         it('returns false after navigating back to the start', () => {
-            router.navigate('modeSelector');
+            router.navigate('game');
             router.back();
             expect(router.canGoBack()).toBe(false);
         });
@@ -254,26 +275,52 @@ describe('AppRouter', () => {
 
     describe('body class management', () => {
         it('only has one screen class at a time', () => {
-            router.navigate('modeSelector');
-            router.navigate('parametrization');
+            router.navigate('game');
 
             const screenClasses = AppRouter.SCREENS
                 .map(s => `screen-${s}`)
                 .filter(cls => document.body.classList.contains(cls));
 
             expect(screenClasses).toHaveLength(1);
-            expect(screenClasses[0]).toBe('screen-parametrization');
+            expect(screenClasses[0]).toBe('screen-game');
+        });
+
+        it('does not add landing-mode class for any screen', () => {
+            router.navigate('game');
+            expect(document.body.classList.contains('landing-mode')).toBe(false);
+
+            router.back();
+            expect(document.body.classList.contains('landing-mode')).toBe(false);
+        });
+    });
+
+    describe('popstate listener', () => {
+        it('resets to home when popstate fires on game screen', () => {
+            router.navigate('game');
+
+            // Simulate browser back button
+            window.dispatchEvent(new PopStateEvent('popstate'));
+
+            expect(router.getCurrentScreen()).toBe('home');
+            expect(router.canGoBack()).toBe(false);
+        });
+
+        it('does nothing when popstate fires on home screen', () => {
+            // Already on home
+            window.dispatchEvent(new PopStateEvent('popstate'));
+
+            expect(router.getCurrentScreen()).toBe('home');
         });
     });
 
     describe('container visibility', () => {
         it('handles missing containers gracefully', () => {
             // Remove a container from the DOM
-            document.getElementById('modeSelectorScreen').remove();
+            document.getElementById('homeScreen').remove();
 
             // Re-create router with missing container
             const router2 = new AppRouter();
-            expect(() => router2.navigate('modeSelector')).not.toThrow();
+            expect(() => router2.navigate('game')).not.toThrow();
         });
     });
 });

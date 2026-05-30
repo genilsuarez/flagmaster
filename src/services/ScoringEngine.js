@@ -2,15 +2,15 @@
  * ScoringEngine - Calculates points based on speed, streak, and power-ups.
  *
  * Scoring formula (individual modes):
- *   points = BASE_POINTS × Speed_Factor × streak_multiplier × (2 if doubleActive)
+ *   points = 100 × Speed_Factor × streak_multiplier × (2 if doubleActive)
  *   Speed_Factor = time_remaining / total_time (range 0.0 to 1.0)
  *
  * GeoPuzzle formula:
- *   points = BASE_POINTS × ((6 - N + 1) / 6) × streak_multiplier
+ *   points = 100 × ((6 - N + 1) / 6) × streak_multiplier
  *   where N = number of hints revealed
  */
 export class ScoringEngine {
-    static BASE_POINTS = 1000;
+    static BASE_POINTS = 100;
 
     /**
      * Calculate points for timed modes (Flag Rush, Capital Clash, Streak Blitz, Supervivencia).

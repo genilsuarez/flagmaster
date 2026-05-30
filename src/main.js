@@ -3,27 +3,39 @@ import { GameSessionManager } from './controllers/GameSessionManager.js';
 import { CountryService } from './services/CountryService.js';
 import { StatsService } from './services/StatsService.js';
 import { AchievementService } from './services/AchievementService.js';
-import { ModeSelectorView } from './views/ModeSelectorView.js';
-import { ParametrizationView } from './views/ParametrizationView.js';
+import { GlobalDefaultsService } from './services/GlobalDefaultsService.js';
+import { BottomSheetView } from './views/BottomSheetView.js';
 import { GameEndModalView } from './views/GameEndModalView.js';
 import { AchievementToast } from './views/AchievementToast.js';
 import { AppMenu } from './views/AppMenu.js';
+import { GAME_MODES } from './models/ModeDefinition.js';
 
 /**
  * Application entry point.
  *
  * Uses AppRouter for screen navigation and GameSessionManager for game orchestration.
- * The flow is: Landing → ModeSelector → Parametrization → Game → (Results) → Landing.
+ * The flow is: Home → BottomSheet (config) → Game → (Results) → Home.
  */
 document.addEventListener('DOMContentLoaded', () => {
     const countryService = new CountryService();
     const statsService = new StatsService();
     const achievementService = new AchievementService();
+    const globalDefaults = new GlobalDefaultsService();
 
     const router = new AppRouter();
 
     // Game container is the .game-wrapper element
     const gameContainer = document.querySelector('.game-wrapper');
+
+    // Bottom sheet for game configuration
+    const bottomSheet = new BottomSheetView({
+        countryService,
+        globalDefaults,
+        onPlay: (config) => startGame(config, router, sessionManager, countryService),
+        onDismiss: () => {
+            // Sheet closed without playing — no action needed
+        },
+    });
 
     // Session manager orchestrates all game modes
     const sessionManager = new GameSessionManager({
@@ -32,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statsService,
         achievementService,
         onSessionEnd: (results) => {
-            handleSessionEnd(results, router, gameEndModal);
+            handleSessionEnd(results, router, gameEndModal, bottomSheet);
             // Show achievement toast notifications
             if (results.newAchievements && results.newAchievements.length > 0) {
                 achievementToast.show(results.newAchievements);
@@ -42,85 +54,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Game end modal for showing results
     const gameEndModal = new GameEndModalView({
-        onPlayAgain: (modeId) => handlePlayAgain(modeId, router),
-        onHome: () => router.reset('landing'),
+        onPlayAgain: (modeId) => handlePlayAgain(modeId, router, bottomSheet),
+        onHome: () => router.reset('home'),
     });
 
     // Achievement toast for unlock notifications
     const achievementToast = new AchievementToast();
 
-    // Views for mode selection and parametrization
-    let parametrizationView = null;
-    let selectedModeId = null;
-
-    // Landing mode grid — rendered once, stays alive with the landing hero
-    const landingModesGrid = document.getElementById('landingModesGrid');
-    new ModeSelectorView({
-        container: landingModesGrid,
-        showHeading: false,
-        onSelect: (modeId) => startGameFromLanding(modeId, router, sessionManager, countryService),
-    });
-
-    // App menu (drawer) — "Jugar ahora" goes back to landing (modes are there)
+    // App menu (drawer) — "Jugar ahora" goes to home where mode cards are visible
     const appMenu = new AppMenu({
         statsService,
-        onPlay: () => router.reset('landing'),
-        onOpenSettings: () => openSettingsModal(),
+        onPlay: () => router.reset('home'),
+        onOpenSettings: () => openSettingsModal(globalDefaults, countryService),
         onHome: () => {
-            router.reset('landing');
+            router.reset('home');
             appMenu.updateMotivationUI();
         },
     });
 
-    // Listen for navigation events to initialize/destroy views
+    // Listen for navigation events to manage view lifecycle
     document.addEventListener('app:navigate', (event) => {
         const { screen, params } = event.detail;
 
         switch (screen) {
-            case 'landing':
-                if (parametrizationView) {
-                    parametrizationView.destroy();
-                    parametrizationView = null;
-                }
+            case 'home':
                 appMenu.updateMotivationUI();
                 break;
 
-            case 'parametrization': {
-                const modeId = params.modeId || selectedModeId;
-                if (!modeId) {
-                    router.back();
-                    return;
-                }
-                parametrizationView = new ParametrizationView({
-                    countryService,
-                    onBack: () => router.back(),
-                    onPlay: (config) => startGame(config, router, sessionManager, countryService),
-                });
-                parametrizationView.setMode(modeId);
-                break;
-            }
-
             case 'game':
-                if (parametrizationView) {
-                    parametrizationView.destroy();
-                    parametrizationView = null;
-                }
+                // Game screen is managed by GameSessionManager
                 break;
         }
     });
 
-    // Wire landing settings button → open settings modal
-    const landingSettingsBtn = document.getElementById('landingSettingsBtn');
-    landingSettingsBtn?.addEventListener('click', () => openSettingsModal());
-
-    // Preserve settings persistence (legacy filter elements)
-    wireSettingsPersistence();
-
-    // Wait for country data to load, then restore settings
+    // Wait for country data to load, then render mode cards
     const waitForInit = setInterval(() => {
         if (countryService.countries && countryService.countries.length > 0) {
             clearInterval(waitForInit);
-            wireSettingsPersistence(true);
+
+            // Render mode cards directly into the landing (clicking goes straight to game)
+            renderModeCards(router, sessionManager, countryService, globalDefaults);
+
+            // Wire settings button
+            const settingsBtn = document.getElementById('landingSettingsBtn');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => openSettingsModal(globalDefaults, countryService));
+            }
         }
     }, 50);
 
@@ -128,47 +107,73 @@ document.addEventListener('DOMContentLoaded', () => {
     countryService.loadCountries().catch(err => {
         console.error('Failed to load countries:', err);
     });
-
-    /**
-     * Destroys mode selector and parametrization views.
-     */
-    function destroyViews() {
-        if (modeSelectorView) {
-            modeSelectorView.destroy();
-            modeSelectorView = null;
-        }
-        if (parametrizationView) {
-            parametrizationView.destroy();
-            parametrizationView = null;
-        }
-    }
 });
 
 /**
- * Starts a game directly from the landing mode grid using saved settings as defaults.
+ * Renders mode cards directly into the landing hero.
+ * Clicking a card starts the game immediately using global defaults.
  */
-function startGameFromLanding(modeId, router, sessionManager, countryService) {
-    let saved = {};
-    try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (raw) saved = JSON.parse(raw);
-    } catch (e) { /* ignore */ }
+function renderModeCards(router, sessionManager, countryService, globalDefaults) {
+    const container = document.getElementById('modeCardsContainer');
+    if (!container) return;
 
-    const config = {
-        modeId,
-        continent: saved.continentFilter || 'All',
-        sovereigntyStatus: saved.sovereignFilter || 'All',
-        maxCount: parseInt(saved.maxCountries, 10) || 0,
-        modeOptions: {},
-        practiceMode: false,
-        randomOrder: saved.randomMode !== false,
-    };
+    const modes = Object.values(GAME_MODES);
+    const teamModes = modes.filter(m => m.category === 'team');
+    const individualModes = modes.filter(m => m.category === 'individual');
 
-    startGame(config, router, sessionManager, countryService);
+    const makeCard = (mode) => createModeCard(mode, router, sessionManager, countryService, globalDefaults);
+
+    const teamLabel = document.createElement('h3');
+    teamLabel.className = 'landing-modes__label';
+    teamLabel.textContent = 'Modos en Equipo';
+    container.appendChild(teamLabel);
+
+    const teamGrid = document.createElement('div');
+    teamGrid.className = 'landing-modes__grid';
+    teamModes.forEach(mode => teamGrid.appendChild(makeCard(mode)));
+    container.appendChild(teamGrid);
+
+    const indLabel = document.createElement('h3');
+    indLabel.className = 'landing-modes__label';
+    indLabel.textContent = 'Modos Individuales';
+    container.appendChild(indLabel);
+
+    const indGrid = document.createElement('div');
+    indGrid.className = 'landing-modes__grid';
+    individualModes.forEach(mode => indGrid.appendChild(makeCard(mode)));
+    container.appendChild(indGrid);
 }
 
 /**
- * Starts a game session with the given config from ParametrizationView.
+ * Creates a single mode card button that starts the game directly.
+ */
+function createModeCard(mode, router, sessionManager, countryService, globalDefaults) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'landing-mode-card';
+    btn.setAttribute('data-mode-id', mode.id);
+    btn.setAttribute('aria-label', `${mode.name} — ${mode.category === 'team' ? 'Equipos' : 'Individual'}`);
+    btn.innerHTML = `
+        <span class="landing-mode-card__icon" aria-hidden="true">${mode.icon}</span>
+        <span class="landing-mode-card__name">${mode.name}</span>
+    `;
+    btn.addEventListener('click', () => {
+        const d = globalDefaults.get();
+        startGame({
+            modeId: mode.id,
+            continent: d.continent,
+            sovereigntyStatus: d.sovereigntyStatus,
+            maxCount: d.maxCount,
+            modeOptions: {},
+            practiceMode: false,
+            randomOrder: d.randomOrder,
+        }, router, sessionManager, countryService);
+    });
+    return btn;
+}
+
+/**
+ * Starts a game session with the given config from BottomSheetView.
  */
 function startGame(config, router, sessionManager, countryService) {
     const { modeId, continent, sovereigntyStatus, maxCount, modeOptions, practiceMode, randomOrder } = config;
@@ -202,6 +207,13 @@ function startGame(config, router, sessionManager, countryService) {
     // Navigate to game screen
     router.navigate('game');
 
+    // Update game header title to reflect the active mode
+    const gameTitleEl = document.querySelector('.game-header h1');
+    if (gameTitleEl) {
+        const mode = GAME_MODES[modeId];
+        gameTitleEl.textContent = mode ? `${mode.icon} ${mode.name}` : 'Quiz de Banderas';
+    }
+
     // Start the session through GameSessionManager
     sessionManager.startSession(modeId, {
         modeOptions: modeOptions || {},
@@ -216,8 +228,11 @@ function startGame(config, router, sessionManager, countryService) {
 /**
  * Handles session end: shows the game end modal with results.
  */
-function handleSessionEnd(results, router, gameEndModal) {
-    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements } = results;
+function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
+    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements, modeOptions, continent, sovereignty } = results;
+
+    // Navigate back to home
+    router.reset('home');
 
     // Determine if this was a team mode
     const teamModes = ['banderaFlash', 'capitalQuest'];
@@ -233,6 +248,9 @@ function handleSessionEnd(results, router, gameEndModal) {
             modeId,
             teamScores,
             newAchievements: newAchievements || [],
+            modeOptions: modeOptions || {},
+            continent: continent || null,
+            sovereignty: sovereignty || null,
         });
     } else {
         // Individual mode: show individual stats
@@ -244,28 +262,48 @@ function handleSessionEnd(results, router, gameEndModal) {
             maxStreak: maxStreak || 0,
             elapsedSeconds: elapsedSeconds || 0,
             newAchievements: newAchievements || [],
+            modeOptions: modeOptions || {},
+            continent: continent || null,
+            sovereignty: sovereignty || null,
         });
     }
 }
 
 /**
  * Handles "Play Again" from the game end modal.
- * Navigates back to parametrization with the same mode pre-selected.
+ * Opens the BottomSheet for the same mode to allow quick replay.
  */
-function handlePlayAgain(modeId, router) {
-    router.navigate('parametrization', { modeId });
+function handlePlayAgain(modeId, router, bottomSheet) {
+    router.reset('home');
+    // Open bottom sheet for the mode after a brief delay to let the home screen render
+    setTimeout(() => {
+        bottomSheet.open(modeId);
+    }, 100);
 }
 
 // ─── Settings Modal ─────────────────────────────────────────────────────────
 
-function openSettingsModal() {
-    if (document.querySelector('.settings-modal-overlay')) return; // already open
+/**
+ * Opens the global preferences modal.
+ *
+ * Governs the four shared defaults that apply to every game mode:
+ *   - Continente        (continent filter)
+ *   - Países incluidos  (sovereignty filter)
+ *   - Cantidad máxima   (maxCount — null means "use all")
+ *   - Orden aleatorio   (randomOrder)
+ *
+ * On save, writes to GlobalDefaultsService which persists to localStorage
+ * under 'flagquiz_global_defaults'. The BottomSheetView reads these as the
+ * starting point before applying per-mode overrides.
+ *
+ * @param {import('./services/GlobalDefaultsService.js').GlobalDefaultsService} globalDefaults
+ * @param {import('./services/CountryService.js').CountryService} countryService
+ */
+function openSettingsModal(globalDefaults, countryService) {
+    if (document.querySelector('.settings-modal-overlay')) return;
 
-    let saved = {};
-    try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (raw) saved = JSON.parse(raw);
-    } catch (e) { /* ignore */ }
+    const current = globalDefaults.get();
+    const fd = globalDefaults.constructor.FACTORY_DEFAULTS;
 
     const continentOptions = [
         { value: 'All',     label: '🌍 Todos' },
@@ -281,11 +319,8 @@ function openSettingsModal() {
         { value: 'No',  label: '🏢 Territorios' },
     ];
 
-    const activeCont = saved.continentFilter || 'All';
-    const activeSov  = saved.sovereignFilter || 'All';
-
-    const makeChips = (options, activeValue, name) =>
-        options.map(o => `<button type="button" class="settings-chip${o.value === activeValue ? ' is-selected' : ''}" data-group="${name}" data-value="${o.value}">${o.label}</button>`).join('');
+    const makeChips = (options, activeValue, group) =>
+        options.map(o => `<button type="button" class="settings-chip${o.value === activeValue ? ' is-selected' : ''}" data-group="${group}" data-value="${o.value}">${o.label}</button>`).join('');
 
     const overlay = document.createElement('div');
     overlay.className = 'settings-modal-overlay';
@@ -297,7 +332,7 @@ function openSettingsModal() {
             <div class="settings-modal__header">
                 <div class="settings-modal__header-text">
                     <h2 id="settingsModalTitle" class="settings-modal__title">Ajustes de partida</h2>
-                    <p class="settings-modal__subtitle">Se aplicarán como punto de partida en cada juego</p>
+                    <p class="settings-modal__subtitle">Valores base — cada modo puede ajustarse por separado</p>
                 </div>
                 <button class="settings-modal__close" aria-label="Cerrar" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -310,20 +345,14 @@ function openSettingsModal() {
                 <div class="settings-field">
                     <span class="settings-field__label">🌍 Continente</span>
                     <div class="settings-chips" role="group" aria-label="Continente">
-                        ${makeChips(continentOptions, activeCont, 'continentFilter')}
+                        ${makeChips(continentOptions, current.continent, 'continent')}
                     </div>
                 </div>
                 <div class="settings-field">
                     <span class="settings-field__label">🏳️ Países incluidos</span>
                     <div class="settings-chips" role="group" aria-label="Países incluidos">
-                        ${makeChips(sovereignOptions, activeSov, 'sovereignFilter')}
+                        ${makeChips(sovereignOptions, current.sovereigntyStatus, 'sovereigntyStatus')}
                     </div>
-                </div>
-                <div class="settings-field">
-                    <label class="settings-field__label" for="sm-max">🔢 Cantidad máxima</label>
-                    <input id="sm-max" name="maxCountries" type="number" min="5" max="250"
-                           placeholder="Ej: 50 (dejar vacío = todos)" class="settings-field__control"
-                           value="${saved.maxCountries || ''}">
                 </div>
                 <label class="settings-toggle">
                     <span class="settings-toggle__label">
@@ -331,7 +360,7 @@ function openSettingsModal() {
                         <span class="settings-toggle__label-hint">Mezcla las banderas en cada partida</span>
                     </span>
                     <span class="settings-toggle__track">
-                        <input id="sm-random" name="randomMode" type="checkbox" class="settings-toggle__input"${saved.randomMode !== false ? ' checked' : ''}>
+                        <input id="sm-random" name="randomOrder" type="checkbox" class="settings-toggle__input"${current.randomOrder ? ' checked' : ''}>
                         <span class="settings-toggle__thumb" aria-hidden="true"></span>
                     </span>
                 </label>
@@ -343,7 +372,7 @@ function openSettingsModal() {
         </div>
     `;
 
-    // Chip selection logic
+    // Chip selection
     overlay.addEventListener('click', (e) => {
         const chip = e.target.closest('.settings-chip');
         if (!chip) return;
@@ -353,9 +382,7 @@ function openSettingsModal() {
     });
 
     const modal = overlay.querySelector('.settings-modal');
-
     document.body.appendChild(overlay);
-    // Animate in
     requestAnimationFrame(() => overlay.classList.add('is-open'));
     modal.querySelector('.settings-modal__close').focus();
 
@@ -373,121 +400,15 @@ function openSettingsModal() {
 
     const saveBtn = overlay.querySelector('.settings-modal__save');
     saveBtn.addEventListener('click', () => {
-        const getChipValue = (group) => overlay.querySelector(`.settings-chip[data-group="${group}"].is-selected`)?.dataset.value || 'All';
-        const next = {
-            continentFilter: getChipValue('continentFilter'),
-            sovereignFilter: getChipValue('sovereignFilter'),
-            maxCountries:    modal.querySelector('[name="maxCountries"]').value,
-            randomMode:      modal.querySelector('[name="randomMode"]').checked,
-        };
-        // Merge preserving other keys (gameMode, practiceMode, etc.)
-        try {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...saved, ...next }));
-        } catch (e) { /* quota exceeded */ }
+        const chipVal = (group) => overlay.querySelector(`.settings-chip[data-group="${group}"].is-selected`)?.dataset.value;
+        globalDefaults.set({
+            continent:         chipVal('continent')         || fd.continent,
+            sovereigntyStatus: chipVal('sovereigntyStatus') || fd.sovereigntyStatus,
+            randomOrder:       modal.querySelector('[name="randomOrder"]').checked,
+        });
 
-        // Sync legacy hidden inputs so ParametrizationView picks them up
-        const sync = {
-            continentFilter: document.getElementById('continentFilter'),
-            sovereignFilter: document.getElementById('sovereignFilter'),
-            maxCountries:    document.getElementById('maxCountries'),
-            randomMode:      document.getElementById('randomMode'),
-        };
-        if (sync.continentFilter) sync.continentFilter.value = next.continentFilter;
-        if (sync.sovereignFilter) sync.sovereignFilter.value = next.sovereignFilter;
-        if (sync.maxCountries)    sync.maxCountries.value    = next.maxCountries;
-        if (sync.randomMode)      sync.randomMode.checked    = next.randomMode;
-
-        // Brief confirmation then close
         saveBtn.classList.add('is-saved');
         saveBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> ¡Guardado!`;
         setTimeout(close, 700);
     });
-}
-
-// ─── Settings Persistence (Legacy) ─────────────────────────────────────────
-
-const SETTINGS_KEY = 'flagsQuiz_settings';
-
-/**
- * Persists filter/settings values to localStorage on change,
- * and restores them on page load.
- * @param {boolean} restoreOnly - If true, only restore without re-wiring listeners
- */
-function wireSettingsPersistence(restoreOnly = false) {
-    const controls = {
-        gameModeFilter: document.getElementById('gameModeFilter'),
-        continentFilter: document.getElementById('continentFilter'),
-        sovereignFilter: document.getElementById('sovereignFilter'),
-        maxCountries: document.getElementById('maxCountries'),
-        practiceMode: document.getElementById('practiceMode'),
-        randomMode: document.getElementById('randomMode'),
-        capitalsHintMode: document.getElementById('capitalsHintMode'),
-    };
-
-    // Restore saved settings
-    restoreSettings(controls);
-
-    if (restoreOnly) return;
-
-    // Save on any change
-    Object.entries(controls).forEach(([key, el]) => {
-        if (!el) return;
-        el.addEventListener('change', () => saveSettings(controls));
-        if (el.type === 'number') {
-            el.addEventListener('input', () => saveSettings(controls));
-        }
-    });
-}
-
-function saveSettings(controls) {
-    const settings = {};
-    Object.entries(controls).forEach(([key, el]) => {
-        if (!el) return;
-        if (el.type === 'checkbox') {
-            settings[key] = el.checked;
-        } else {
-            settings[key] = el.value;
-        }
-    });
-    try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch (e) { /* quota exceeded or private mode */ }
-}
-
-function restoreSettings(controls) {
-    let settings;
-    try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return;
-        settings = JSON.parse(raw);
-    } catch (e) { return; }
-
-    Object.entries(settings).forEach(([key, value]) => {
-        const el = controls[key];
-        if (!el) return;
-        if (el.type === 'checkbox') {
-            el.checked = value;
-        } else if (el.type === 'number') {
-            const max = parseInt(el.max, 10);
-            const numVal = parseInt(value, 10);
-            if (!isNaN(numVal) && (!max || numVal <= max) && numVal >= 1) {
-                el.value = value;
-            }
-        } else {
-            if (el.tagName === 'SELECT') {
-                const options = Array.from(el.options).map(o => o.value);
-                if (options.includes(value)) {
-                    el.value = value;
-                }
-            } else {
-                el.value = value;
-            }
-        }
-    });
-
-    // Trigger change on gameModeFilter to update UI visibility
-    const gameModeFilter = controls.gameModeFilter;
-    if (gameModeFilter) {
-        gameModeFilter.dispatchEvent(new Event('change'));
-    }
 }

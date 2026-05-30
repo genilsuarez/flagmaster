@@ -6,9 +6,9 @@ import { FlagRushController } from './FlagRushController.js';
 import { CapitalClashController } from './CapitalClashController.js';
 import { StreakBlitzController } from './StreakBlitzController.js';
 import { GeoPuzzleController } from './GeoPuzzleController.js';
-import { SupervivenciaController } from './SupervivenciaController.js';
 import { GameController } from './GameController.js';
 import { WordDropController } from './WordDropController.js';
+import { OrdenaContinenteController } from './ordena-continente/OrdenaContinenteController.js';
 
 /**
  * GameSessionManager - Central orchestrator for all game modes.
@@ -37,6 +37,7 @@ export class GameSessionManager {
      */
     constructor({ container, countryService = null, statsService = null, achievementService = null, onSessionEnd = null }) {
         this.container = container;
+        this.gameContent = container.querySelector('.container') || container;
         this.countryService = countryService;
         this.statsService = statsService;
         this.achievementService = achievementService;
@@ -85,11 +86,122 @@ export class GameSessionManager {
         this.streakService.reset();
         this.powerUpService.reset();
 
+        // Prepare game UI: hide legacy elements, show end button
+        this.prepareGameUI(modeId);
+
+        // Register centralized Escape key handler for all modes
+        this._escapeHandler = (e) => {
+            if (e.key === 'Escape' && this.session && this.session.isActive) {
+                e.preventDefault();
+                this.endSession();
+            }
+        };
+        document.addEventListener('keydown', this._escapeHandler);
+
         // Create the appropriate controller
         this.activeController = this.createController(modeId, config.modeOptions || {});
 
         // Start the controller with the pool and mode options
         this.startController(modeId, pool, config.modeOptions || {});
+    }
+
+    /**
+     * Prepares the game UI by hiding legacy elements and showing the
+     * end game button for individual modes.
+     *
+     * @param {string} modeId - Mode identifier
+     * @private
+     */
+    prepareGameUI(modeId) {
+        const endGameButton = document.getElementById('endGameButton');
+        const skipButton = document.getElementById('skipButton');
+        const startButton = document.getElementById('startButton');
+        const flagImage = document.getElementById('flagImage');
+        const countryInfo = document.getElementById('countryInfo');
+        const capitalInfo = document.getElementById('capitalInfo');
+        const teamsContainer = document.getElementById('teamsContainer');
+
+        const individualModes = ['flagRush', 'capitalClash', 'streakBlitz', 'geoPuzzle', 'letrasEnCaida', 'ordenaContinente'];
+
+        if (individualModes.includes(modeId)) {
+            // Hide legacy elements that individual modes don't use
+            if (flagImage) flagImage.style.display = 'none';
+            if (countryInfo) countryInfo.style.display = 'none';
+            if (capitalInfo) capitalInfo.style.display = 'none';
+            if (teamsContainer) teamsContainer.style.display = 'none';
+            if (startButton) startButton.hidden = true;
+            if (skipButton) skipButton.hidden = true;
+
+            // Create a dedicated render target for individual mode controllers
+            // so they don't wipe the legacy elements with innerHTML = ''
+            let renderTarget = this.container.querySelector('.game-mode-content');
+            if (!renderTarget) {
+                renderTarget = document.createElement('div');
+                renderTarget.className = 'game-mode-content';
+                this.gameContent.appendChild(renderTarget);
+            }
+            renderTarget.innerHTML = '';
+            this.gameContent = renderTarget;
+
+            // Show end game button and wire it
+            if (endGameButton) {
+                endGameButton.hidden = false;
+                this._endGameHandler = () => this.endSession();
+                endGameButton.addEventListener('click', this._endGameHandler);
+            }
+        } else {
+            // Team modes: show skip/end buttons via GameView (legacy)
+            if (startButton) startButton.hidden = true;
+            if (endGameButton) {
+                endGameButton.hidden = false;
+                this._endGameHandler = () => this.endSession();
+                endGameButton.addEventListener('click', this._endGameHandler);
+            }
+            if (skipButton) skipButton.hidden = false;
+        }
+    }
+
+    /**
+     * Restores the game UI to its default state after a session ends.
+     * @private
+     */
+    restoreGameUI() {
+        // Remove centralized Escape key handler
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
+            this._escapeHandler = null;
+        }
+
+        const endGameButton = document.getElementById('endGameButton');
+        const skipButton = document.getElementById('skipButton');
+        const startButton = document.getElementById('startButton');
+        const flagImage = document.getElementById('flagImage');
+        const countryInfo = document.getElementById('countryInfo');
+        const capitalInfo = document.getElementById('capitalInfo');
+        const teamsContainer = document.getElementById('teamsContainer');
+
+        if (flagImage) flagImage.style.display = '';
+        if (countryInfo) countryInfo.style.display = '';
+        if (capitalInfo) capitalInfo.style.display = '';
+        if (teamsContainer) teamsContainer.style.display = '';
+        if (startButton) startButton.hidden = false;
+        if (endGameButton) {
+            endGameButton.hidden = true;
+            if (this._endGameHandler) {
+                endGameButton.removeEventListener('click', this._endGameHandler);
+                this._endGameHandler = null;
+            }
+        }
+        if (skipButton) skipButton.hidden = true;
+
+        // Remove the render target
+        const renderTarget = this.container.querySelector('.game-mode-content');
+        if (renderTarget) {
+            renderTarget.remove();
+        }
+
+        // Reset gameContent reference
+        this.gameContent = this.container.querySelector('.container') || this.container;
     }
 
     /**
@@ -108,35 +220,28 @@ export class GameSessionManager {
         switch (modeId) {
             case 'flagRush':
                 return new FlagRushController({
-                    container: this.container,
+                    container: this.gameContent,
                     onRoundEnd: (data) => this.handleRoundEnd(data),
                     onGameEnd: (data) => this.handleGameEnd(data),
                 });
 
             case 'capitalClash':
                 return new CapitalClashController({
-                    container: this.container,
+                    container: this.gameContent,
                     onRoundEnd: (data) => this.handleRoundEnd(data),
                     onGameEnd: (data) => this.handleGameEnd(data),
                 });
 
             case 'streakBlitz':
                 return new StreakBlitzController({
-                    container: this.container,
+                    container: this.gameContent,
                     onRoundEnd: (data) => this.handleRoundEnd(data),
                     onGameEnd: (data) => this.handleGameEnd(data),
                 });
 
             case 'geoPuzzle':
                 return new GeoPuzzleController({
-                    container: this.container,
-                    onRoundEnd: (data) => this.handleRoundEnd(data),
-                    onGameEnd: (data) => this.handleGameEnd(data),
-                });
-
-            case 'supervivencia':
-                return new SupervivenciaController({
-                    container: this.container,
+                    container: this.gameContent,
                     onRoundEnd: (data) => this.handleRoundEnd(data),
                     onGameEnd: (data) => this.handleGameEnd(data),
                 });
@@ -144,6 +249,14 @@ export class GameSessionManager {
             case 'banderaFlash':
             case 'capitalQuest':
                 return new GameController({
+                    onGameEnd: (data) => this.handleGameEnd(data),
+                    skipInit: true,
+                });
+
+            case 'ordenaContinente':
+                return new OrdenaContinenteController({
+                    container: this.gameContent,
+                    onRoundEnd: (data) => this.handleRoundEnd(data),
                     onGameEnd: (data) => this.handleGameEnd(data),
                 });
 
@@ -173,7 +286,6 @@ export class GameSessionManager {
             case 'capitalClash':
             case 'streakBlitz':
             case 'geoPuzzle':
-            case 'supervivencia':
                 this.activeController.start(pool, modeOptions);
                 break;
 
@@ -188,16 +300,29 @@ export class GameSessionManager {
                 }
                 break;
 
-            case 'letrasEnCaida':
+            case 'ordenaContinente':
+                this.activeController.start(pool, modeOptions);
+                break;
+
+            case 'letrasEnCaida': {
+                const difficulty = modeOptions.difficulty || 'easy';
+                const category = modeOptions.category || 'country';
+                // hard = no flag, easy/medium = flag shown
+                const showFlag = difficulty !== 'hard';
+                // When guessing capitals, only include countries that have a capital registered
+                const filteredPool = category === 'capital'
+                    ? pool.filter(c => c.capital && c.capital.trim() !== '' && c.capital !== 'Desconocida')
+                    : pool;
                 this.activeController.start({
-                    countries: pool,
+                    countries: filteredPool.length > 0 ? filteredPool : pool,
                     survival: modeOptions.survival !== false,
-                    showFlag: modeOptions.showFlag !== false,
-                    category: modeOptions.category || 'country',
+                    showFlag,
+                    category,
                     speed: modeOptions.speed || 'normal',
-                    difficulty: modeOptions.difficulty || 'easy',
+                    difficulty,
                 });
                 break;
+            }
         }
     }
 
@@ -255,11 +380,6 @@ export class GameSessionManager {
             this.session.streak = 0;
             this.session.multiplier = 1.0;
 
-            // Deduct life for Supervivencia
-            if (this.session.modeId === 'supervivencia' && this.session.lives !== null) {
-                this.session.lives--;
-            }
-
             // Record round
             this.session.roundHistory.push({
                 correct: false,
@@ -311,12 +431,29 @@ export class GameSessionManager {
 
         this.session.isActive = false;
 
+        // Sync round history from the controller before stopping it,
+        // so that buildSessionResults() has accurate data even when the
+        // user ends the game manually (stop() does not fire onGameEnd).
+        if (this.activeController && this.activeController.roundHistory) {
+            const controllerHistory = this.activeController.roundHistory;
+            if (controllerHistory.length > 0) {
+                this.session.roundHistory = controllerHistory.map(r => ({
+                    correct: r.correct,
+                    points: r.points || 0,
+                    timeMs: r.timeRemaining != null ? r.timeRemaining * 1000 : (r.timeMs || 0),
+                }));
+            }
+        }
+
         // Stop the active controller
         if (this.activeController) {
             if (typeof this.activeController.stop === 'function') {
                 this.activeController.stop();
             }
         }
+
+        // Restore game UI to default state
+        this.restoreGameUI();
 
         // Calculate session results
         const results = this.buildSessionResults();
@@ -403,6 +540,9 @@ export class GameSessionManager {
     handleGameEnd(data) {
         if (!this.session) return;
 
+        // Mark session as naturally completed (not manually abandoned)
+        this.session.completedNaturally = true;
+
         // Sync final state from controller
         if (data.totalScore !== undefined) {
             this.session.totalScore = data.totalScore;
@@ -477,6 +617,9 @@ export class GameSessionManager {
 
         return {
             modeId: this.session.modeId,
+            modeOptions: this.session.config?.modeOptions || {},
+            continent: this.session.config?.continent || null,
+            sovereignty: this.session.config?.sovereignty || null,
             totalScore: this.session.totalScore,
             correct,
             wrong,
@@ -487,6 +630,7 @@ export class GameSessionManager {
             roundsReached: this.session.currentRound,
             powerUpsUsed: this.powerUpsUsedThisSession,
             roundHistory: history,
+            completedNaturally: this.session.completedNaturally === true,
         };
     }
 
@@ -508,6 +652,8 @@ export class GameSessionManager {
                 wrong: results.wrong,
                 elapsedSeconds: results.elapsedSeconds,
                 powerUpsUsed: results.powerUpsUsed,
+                completedNaturally: results.completedNaturally,
+                totalQuestions: results.totalQuestions,
             });
         } catch {
             // Ignore stats recording errors
@@ -595,6 +741,10 @@ export class GameSessionManager {
      * Destroys the session manager and all associated resources.
      */
     destroy() {
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
+            this._escapeHandler = null;
+        }
         this.destroyActiveController();
         this.session = null;
         this.sessionStartTime = null;

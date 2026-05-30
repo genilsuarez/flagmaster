@@ -7,6 +7,7 @@ Una aplicación de quiz de banderas con diseño editorial refinado y arquitectur
 - 🎨 **Diseño Editorial Luxe**: Estética inspirada en revistas contemporáneas
 - 🏴 **250+ Banderas**: Base de datos completa de países y territorios
 - 🎮 **Múltiples Modos**: Banderas, Capitales, Letras en Caída
+- ⌨️ **Atajos de Teclado**: Selecciona opciones con teclas 1-4 en modos de opción múltiple
 - 📱 **Responsive**: Diseño compacto que funciona en todos los dispositivos
 - ⚡ **Optimizado**: Build de producción con Vite, gzip < 12KB total
 - ♿ **Accesible**: Contraste AAA, soporte para motion reducido
@@ -137,6 +138,16 @@ dist/
 - Modo difícil: Sin pista visual
 - Sistema de vidas y puntuación
 
+## ⌨️ Controles y Atajos de Teclado
+
+En los modos con opciones múltiples (Flag Rush, Capital Clash, GeoPuzzle):
+- **Tecla 1**: Selecciona la primera opción (arriba-izquierda)
+- **Tecla 2**: Selecciona la segunda opción (arriba-derecha)
+- **Tecla 3**: Selecciona la tercera opción (abajo-izquierda)
+- **Tecla 4**: Selecciona la cuarta opción (abajo-derecha)
+
+Los botones muestran indicadores visuales con los números correspondientes para facilitar la selección.
+
 ## 🎨 Personalización
 
 ### Filtros Disponibles
@@ -172,4 +183,4 @@ dist/
 
 ---
 
-*Diseñado con atención meticulosa al detalle — Mayo 2026*
+*Diseñado y construido por [Genil Suarez](https://github.com/gsuarez) — Mayo 2026*

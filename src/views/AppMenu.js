@@ -13,8 +13,8 @@ const MODAL_TEMPLATES = {
             </div>
             <div class="modal-section">
                 <h3>Créditos</h3>
-                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#c77d5f">flagcdn.com</a>.</p>
-                <p>Diseñado y construido con vanilla JavaScript y Vite.</p>
+                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#c2694a">flagcdn.com</a>.</p>
+                <p>Diseñado y construido por <strong>Genil Suarez</strong> con vanilla JavaScript y Vite.</p>
             </div>
         `
     },
@@ -24,7 +24,7 @@ const MODAL_TEMPLATES = {
             <ol class="howto-steps">
                 <li>
                     <span class="howto-num">1</span>
-                    <div><h4>Elige tu modo</h4><p>Bandera Flash, Capital Quest, Letras en Caída y más desde el selector de modos.</p></div>
+                    <div><h4>Elige tu modo</h4><p>Bandera Flash, Búsqueda de Capitales, Letras en Caída y más desde el selector de modos.</p></div>
                 </li>
                 <li>
                     <span class="howto-num">2</span>
@@ -75,61 +75,87 @@ const MODAL_TEMPLATES = {
             // Per-mode stats section
             const modeStats = stats.modeStats || {};
             const modeNames = {
-                flagRush: '🚩 Flag Rush',
-                capitalClash: '⚔️ Capital Clash',
-                streakBlitz: '⚡ Streak Blitz',
-                geoPuzzle: '🧩 Geo Puzzle',
-                supervivencia: '💀 Supervivencia',
-                banderaFlash: '🏴 Bandera Flash',
-                capitalQuest: '🏛️ Capital Quest',
-                letrasEnCaida: '✏️ Letras en Caída',
+                flagRush: { icon: '🚩', name: 'Carrera de Banderas' },
+                capitalClash: { icon: '⚔️', name: 'Duelo de Capitales' },
+                streakBlitz: { icon: '⚡', name: 'Racha Relámpago' },
+                geoPuzzle: { icon: '🧩', name: 'Geo Pistas' },
+                banderaFlash: { icon: '🏴', name: 'Bandera Flash' },
+                capitalQuest: { icon: '🏛️', name: 'Búsqueda de Capitales' },
+                letrasEnCaida: { icon: '✏️', name: 'Letras en Caída' },
             };
 
-            const modeStatsHtml = Object.entries(modeNames)
-                .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0)
-                .map(([id, name]) => {
+            const playedModes = Object.entries(modeNames)
+                .filter(([id]) => modeStats[id] && modeStats[id].gamesPlayed > 0);
+
+            const maxScore = playedModes.reduce((max, [id]) => Math.max(max, modeStats[id].bestScore), 1);
+
+            const modeStatsHtml = playedModes
+                .map(([id, { icon, name }]) => {
                     const m = modeStats[id];
+                    const barWidth = maxScore > 0 ? Math.round((m.bestScore / maxScore) * 100) : 0;
                     return `
                         <div class="mode-stat-row">
+                            <span class="mode-stat-icon" aria-hidden="true">${icon}</span>
                             <span class="mode-stat-name">${name}</span>
-                            <span class="mode-stat-detail">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'} · Mejor: ${m.bestScore.toLocaleString()}</span>
+                            <div class="mode-stat-bar-track">
+                                <div class="mode-stat-bar-fill" style="width:${barWidth}%"></div>
+                            </div>
+                            <span class="mode-stat-score">${m.bestScore.toLocaleString()}</span>
+                            <span class="mode-stat-games">${m.gamesPlayed}p</span>
                         </div>
                     `;
                 }).join('');
 
+            const uniqueCount = Array.isArray(stats.uniqueCountriesCorrect) ? stats.uniqueCountriesCorrect.length : 0;
+            const totalCountries = 195;
+            const uniquePct = Math.round((uniqueCount / totalCountries) * 100);
+
             return `
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">Partidas jugadas</div>
+                        <div class="stat-card-icon" aria-hidden="true">🎮</div>
+                        <div class="stat-label">Partidas</div>
                         <div class="stat-value">${stats.gamesPlayed}</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Aciertos totales</div>
+                        <div class="stat-card-icon" aria-hidden="true">✅</div>
+                        <div class="stat-label">Aciertos</div>
                         <div class="stat-value">${stats.totalCorrect}</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-card--accent">
+                        <div class="stat-card-icon" aria-hidden="true">🎯</div>
                         <div class="stat-label">Precisión</div>
                         <div class="stat-value">${accuracy}<small>%</small></div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">⏱️</div>
                         <div class="stat-label">Mejor tiempo</div>
                         <div class="stat-value">${bestTime}</div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">🔥</div>
                         <div class="stat-label">Racha actual</div>
-                        <div class="stat-value">${stats.currentStreak} <small>días</small></div>
+                        <div class="stat-value">${stats.currentStreak}<small>días</small></div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-card-icon" aria-hidden="true">🏆</div>
                         <div class="stat-label">Racha más larga</div>
-                        <div class="stat-value">${stats.longestStreak} <small>días</small></div>
+                        <div class="stat-value">${stats.longestStreak}<small>días</small></div>
                     </div>
                 </div>
-                <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);text-align:center;margin-top:8px">
-                    Banderas únicas acertadas: <strong style="color:#ec4899">${stats.uniqueCountriesCorrect.length}</strong>
-                </p>
+                <div class="stats-unique-card">
+                    <div class="stats-unique-left">
+                        <span class="stats-unique-icon" aria-hidden="true">🌍</span>
+                        <div>
+                            <div class="stats-unique-label">Banderas únicas acertadas</div>
+                            <div class="stats-unique-sub">${uniquePct}% del mundo desbloqueado</div>
+                        </div>
+                    </div>
+                    <div class="stats-unique-value">${uniqueCount}<span class="stats-unique-total">/${totalCountries}</span></div>
+                </div>
                 ${modeStatsHtml ? `
                     <div class="mode-stats-section">
-                        <h3 class="mode-stats-title">Estadísticas por modo</h3>
+                        <p class="mode-stats-title">Estadísticas por modo</p>
                         ${modeStatsHtml}
                     </div>
                 ` : ''}
@@ -173,7 +199,7 @@ export class AppMenu {
 
         this.drawer = document.getElementById('appDrawer');
         this.overlay = document.getElementById('drawerOverlay');
-        this.menuBtn = document.getElementById('landingMenuBtn');
+        this.menuBtn = document.getElementById('homeMenuBtn') || document.querySelector('[data-action="menu"]');
         this.closeBtn = document.getElementById('drawerCloseBtn');
         this.modal = document.getElementById('appModal');
         this.modalTitle = document.getElementById('appModalTitle');
@@ -187,6 +213,15 @@ export class AppMenu {
         this.menuBtn?.addEventListener('click', () => this.openDrawer());
         this.closeBtn?.addEventListener('click', () => this.closeDrawer());
         this.overlay?.addEventListener('click', () => this.closeDrawer());
+
+        // Event delegation for dynamically rendered menu buttons
+        document.addEventListener('click', (e) => {
+            const menuTrigger = e.target.closest('[data-action="menu"]');
+            if (menuTrigger && !this.menuBtn) {
+                this.menuBtn = menuTrigger;
+                this.openDrawer();
+            }
+        });
 
         // Drawer items
         this.drawer?.querySelectorAll('.drawer-item').forEach(btn => {
@@ -207,24 +242,26 @@ export class AppMenu {
     }
 
     openDrawer() {
+        if (!this.menuBtn) {
+            this.menuBtn = document.getElementById('homeMenuBtn') || document.querySelector('[data-action="menu"]');
+        }
         this.overlay.classList.add('show');
         this.drawer.classList.add('open');
         this.drawer.setAttribute('aria-hidden', 'false');
-        this.menuBtn.setAttribute('aria-expanded', 'true');
+        this.menuBtn?.setAttribute('aria-expanded', 'true');
     }
 
     closeDrawer() {
         this.overlay.classList.remove('show');
         this.drawer.classList.remove('open');
         this.drawer.setAttribute('aria-hidden', 'true');
-        this.menuBtn.setAttribute('aria-expanded', 'false');
+        this.menuBtn?.setAttribute('aria-expanded', 'false');
     }
 
     handleDrawerAction(action) {
         switch (action) {
             case 'home':
                 this.closeDrawer();
-                document.body.classList.add('landing-mode');
                 this.updateMotivationUI();
                 this.onHome?.();
                 break;
@@ -290,24 +327,6 @@ export class AppMenu {
             }
         }
 
-        const progressEl = document.getElementById('landingProgress');
-        if (progressEl) {
-            const count = stats.uniqueCountriesCorrect?.length || 0;
-            if (count > 0) {
-                progressEl.hidden = false;
-                progressEl.querySelector('.progress-current').textContent = count;
-            } else {
-                progressEl.hidden = true;
-            }
-        }
 
-        const ctaText = document.querySelector('#landingCTA .cta-text');
-        if (ctaText) {
-            if (stats.gamesPlayed > 0) {
-                ctaText.textContent = '¡Jugar!';
-            } else {
-                ctaText.textContent = 'Comenzar Juego';
-            }
-        }
     }
 }

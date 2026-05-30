@@ -128,6 +128,9 @@ export class GameView {
         teamConfigurations.forEach(teamConfig => {
             const counterElement = document.createElement('div');
             counterElement.id = `${teamConfig.teamId}Counter`;
+            counterElement.setAttribute('aria-live', 'polite');
+            counterElement.setAttribute('aria-atomic', 'true');
+            counterElement.setAttribute('aria-label', `${teamConfig.teamDisplayName}: 0 puntos`);
             
             const nameSpan = document.createElement('span');
             nameSpan.textContent = teamConfig.teamDisplayName;
@@ -140,6 +143,7 @@ export class GameView {
             // Cache span references to avoid querySelectorAll on each score update
             counterElement._nameSpan = nameSpan;
             counterElement._scoreSpan = scoreSpan;
+            counterElement._teamDisplayName = teamConfig.teamDisplayName;
             
             teamCounters[teamConfig.teamId] = counterElement;
             elements.teamsContainer.appendChild(counterElement);
@@ -195,6 +199,7 @@ export class GameView {
 
     updateFlagDisplay(country) {
         if (country) {
+            // Always start hidden and empty — text is set only at reveal time
             this.elements.countryInfo.classList.add('hidden-keep-space');
             this.elements.countryInfo.textContent = '';
             
@@ -210,14 +215,13 @@ export class GameView {
                 }
                 
                 // Show/hide country name based on hint mode
-                if (hintMode === 'flagOnly') {
-                    this.elements.countryInfo.classList.add('hidden-keep-space');
-                } else {
+                // For flagOnly: countryInfo stays hidden and empty (set at reveal time)
+                if (hintMode !== 'flagOnly') {
                     this.elements.countryInfo.textContent = country.displayName;
                     this.elements.countryInfo.classList.remove('hidden-keep-space');
                 }
             } else {
-                // Flags mode: show flag, hide name
+                // Flags mode: show flag, hide name — text set at reveal time in showCountryInfo()
                 this.elements.flagImage.style.display = '';
                 this.elements.flagImage.src = country.flagUrl;
             }
@@ -228,6 +232,8 @@ export class GameView {
         const counter = this.elements.teamCounters[teamColor];
         if (counter) {
             counter._scoreSpan.textContent = score;
+            const teamName = counter._teamDisplayName || counter._nameSpan?.textContent || teamColor;
+            counter.setAttribute('aria-label', `${teamName}: ${score} puntos`);
         }
     }
 
@@ -447,18 +453,15 @@ export class GameView {
     }
 
     showCapitalInfo() {
-        this.elements.capitalInfo.style.opacity = '1';
-        this.elements.capitalInfo.style.visibility = 'visible';
+        this.elements.capitalInfo.classList.add('revealed');
     }
 
     hideCapitalInfo() {
-        this.elements.capitalInfo.style.opacity = '0';
-        this.elements.capitalInfo.style.visibility = 'hidden';
+        this.elements.capitalInfo.classList.remove('revealed');
     }
 
     clearCapitalInfo() {
-        this.elements.capitalInfo.textContent = 'Capital Name';
-        this.elements.capitalInfo.style.opacity = '0';
-        this.elements.capitalInfo.style.visibility = 'hidden';
+        this.elements.capitalInfo.textContent = '';
+        this.elements.capitalInfo.classList.remove('revealed');
     }
 }

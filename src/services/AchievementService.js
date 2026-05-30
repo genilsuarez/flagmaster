@@ -26,7 +26,7 @@ export const ACHIEVEMENTS = {
     imparable:      { id: 'imparable',       icon: '💪', name: 'Imparable',      condition: '20 answer streak' },
     erudito:        { id: 'erudito',         icon: '🧠', name: 'Erudito',        condition: '100% in 30+ questions' },
     velocista:      { id: 'velocista',       icon: '🏎️', name: 'Velocista',      condition: 'avg < 2s in session' },
-    cartografo:     { id: 'cartografo',      icon: '🗺️', name: 'Cartógrafo',     condition: 'all 8 modes played' },
+    cartografo:     { id: 'cartografo',      icon: '🗺️', name: 'Cartógrafo',     condition: 'all 7 modes played' },
     coleccionista:  { id: 'coleccionista',   icon: '💎', name: 'Coleccionista',  condition: '50 power-ups used' },
     superviviente:  { id: 'superviviente',   icon: '💀', name: 'Superviviente',  condition: 'round 50 survival' },
 };
@@ -205,8 +205,8 @@ export class AchievementService {
             newlyUnlocked.push('velocista');
         }
 
-        // Cartógrafo: all 8 modes played at least once
-        if (!this.unlocked.cartografo && cumulativeStats.modesCompleted && cumulativeStats.modesCompleted.length >= 8) {
+        // Cartógrafo: all 7 modes played at least once
+        if (!this.unlocked.cartografo && cumulativeStats.modesCompleted && cumulativeStats.modesCompleted.length >= 7) {
             this.unlocked.cartografo = true;
             newlyUnlocked.push('cartografo');
         }
@@ -217,8 +217,8 @@ export class AchievementService {
             newlyUnlocked.push('coleccionista');
         }
 
-        // Superviviente: reach round 50 in Supervivencia
-        if (!this.unlocked.superviviente && sessionResult.modeId === 'supervivencia' && sessionResult.roundsReached >= 50) {
+        // Superviviente: reach round 50 in Streak Blitz (lives mode)
+        if (!this.unlocked.superviviente && sessionResult.modeId === 'streakBlitz' && sessionResult.roundsReached >= 50) {
             this.unlocked.superviviente = true;
             newlyUnlocked.push('superviviente');
         }
