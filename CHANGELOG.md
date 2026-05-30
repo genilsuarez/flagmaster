@@ -1,5 +1,26 @@
 # Changelog — Flag Quiz Editorial Luxe
 
+## [2.1.0] - 2026-05-30
+
+### ✨ Added
+- **Atajos de teclado para opciones múltiples**
+  - Teclas 1-4 para seleccionar opciones en modos Flag Rush, Capital Clash y GeoPuzzle
+  - Indicadores visuales de números en cada botón de opción
+  - Feedback visual al presionar teclas (efecto pressed)
+  - Los atajos respetan el estado deshabilitado de las opciones (ej. power-up 50/50)
+  
+### 🎨 Changed
+- **MultipleChoiceView**
+  - Estructura de botones actualizada con spans para número y texto
+  - Estilos CSS mejorados con gap y position relative
+  - Nuevo estilo `.mc-option__number` con círculo gris
+  - Nuevo estilo `.mc-option__text` para el texto de la opción
+  - Clase `.mc-option--pressed` para feedback de teclado
+  
+### 📝 Documentation
+- README actualizado con sección de atajos de teclado
+- Mejora en accessibility con aria-labels descriptivos
+
 ## [2.0.0] - 2026-05-16
 
 ### 🎨 Rediseño Completo - Editorial Luxe

@@ -4106,6 +4106,37 @@ body.screen-game .game-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: var(--space-xs);
+    position: relative;
+}
+
+.mc-option__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--warm-gray);
+    color: var(--charcoal);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all var(--duration-quick) var(--ease-gentle);
+}
+
+.mc-option__text {
+    flex: 1;
+}
+
+.mc-option:hover:not(:disabled) .mc-option__number {
+    background: var(--stone);
+    color: var(--warm-white);
+}
+
+.mc-option--pressed {
+    transform: scale(0.97);
+    background: var(--soft-sand);
 }
 
 .mc-option:hover:not(:disabled) {
