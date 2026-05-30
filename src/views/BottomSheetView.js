@@ -289,12 +289,17 @@ export class BottomSheetView {
         const section = document.createElement('section');
         section.className = 'bottom-sheet__section';
 
+        // Hide entire filters section for ordenaContinente — all filtering is done via mode options
+        if (this.modeId === 'ordenaContinente') {
+            section.hidden = true;
+        }
+
         const title = document.createElement('h3');
         title.className = 'bottom-sheet__section-title';
         title.textContent = 'Filtros de Contenido';
         section.appendChild(title);
 
-        // Continent selector
+        // Continent selector (hidden for ordenaContinente — uses continents multiSelect in mode options)
         const continentGroup = this._createFieldGroup('bs-continent', 'Continente');
         this.continentSelect = document.createElement('select');
         this.continentSelect.id = 'bs-continent';
@@ -309,6 +314,9 @@ export class BottomSheetView {
         }
         this.continentSelect.addEventListener('change', () => this._onFilterChange());
         continentGroup.appendChild(this.continentSelect);
+        if (this.modeId === 'ordenaContinente') {
+            continentGroup.hidden = true;
+        }
         section.appendChild(continentGroup);
 
         // Sovereignty filter
@@ -330,6 +338,9 @@ export class BottomSheetView {
         }
         this.sovereigntySelect.addEventListener('change', () => this._onFilterChange());
         sovereigntyGroup.appendChild(this.sovereigntySelect);
+        if (this.modeId === 'ordenaContinente') {
+            sovereigntyGroup.hidden = true;
+        }
         section.appendChild(sovereigntyGroup);
 
         // Country count input (hidden for ordenaContinente — uses itemCount in mode options)
