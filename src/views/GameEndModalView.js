@@ -37,6 +37,12 @@ export class GameEndModalView {
     /** @type {Object|null} */
     #modeOptions = null;
 
+    /** @type {string|null} */
+    #continent = null;
+
+    /** @type {string|null} */
+    #sovereignty = null;
+
     /** @type {function|null} */
     #boundKeyHandler = null;
 
@@ -58,9 +64,11 @@ export class GameEndModalView {
      * @param {Object} options.teamScores - Map of team color to score (e.g. { red: 5, blue: 3, green: 2 })
      * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showTeamResults({ modeId, teamScores, newAchievements = [], modeOptions = {} }) {
+    showTeamResults({ modeId, teamScores, newAchievements = [], modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
         this.#modeOptions = modeOptions;
+        this.#continent = continent;
+        this.#sovereignty = sovereignty;
         this.#previousFocus = document.activeElement;
 
         const overlay = this.#createOverlay();
@@ -105,9 +113,11 @@ export class GameEndModalView {
      * @param {number} options.elapsedSeconds - Total time elapsed in seconds
      * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [], modeOptions = {} }) {
+    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [], modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
         this.#modeOptions = modeOptions;
+        this.#continent = continent;
+        this.#sovereignty = sovereignty;
         this.#previousFocus = document.activeElement;
 
         const overlay = this.#createOverlay();
@@ -187,7 +197,25 @@ export class GameEndModalView {
 
         header.appendChild(title);
 
-        // Close button
+        // Game name
+        const mode = GAME_MODES[this.#modeId];
+        if (mode) {
+            const gameName = document.createElement('p');
+            gameName.className = 'game-end-modal__game-name';
+            gameName.textContent = `${mode.icon} ${mode.name}`;
+            header.appendChild(gameName);
+        }
+
+        // Difficulty / mode options summary — single compact line
+        const difficultyParts = this.#buildDifficultyParts();
+        if (difficultyParts.length > 0) {
+            const summary = document.createElement('p');
+            summary.className = 'game-end-modal__options-summary';
+            summary.textContent = difficultyParts.join(' · ');
+            header.appendChild(summary);
+        }
+
+        // Close button — appended last so it sits on top via absolute positioning
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'btn btn--icon app-modal__close';
@@ -201,34 +229,13 @@ export class GameEndModalView {
         });
         header.appendChild(closeBtn);
 
-        // Game name
-        const mode = GAME_MODES[this.#modeId];
-        if (mode) {
-            const gameName = document.createElement('p');
-            gameName.className = 'game-end-modal__game-name';
-            gameName.textContent = `${mode.icon} ${mode.name}`;
-            header.appendChild(gameName);
-        }
-
-        // Difficulty / mode options summary as individual chips
-        const difficultyParts = this.#buildDifficultyParts();
-        if (difficultyParts.length > 0) {
-            const chipsRow = document.createElement('div');
-            chipsRow.className = 'game-end-modal__option-chips';
-            difficultyParts.forEach(text => {
-                const chip = document.createElement('span');
-                chip.className = 'game-end-modal__option-chip';
-                chip.textContent = text;
-                chipsRow.appendChild(chip);
-            });
-            header.appendChild(chipsRow);
-        }
-
         return header;
     }
 
     /**
      * Builds an array of human-readable option labels for the current mode.
+     * Includes mode-specific options (select and number types) plus common
+     * filters (continent, sovereignty) when they differ from the default "All".
      * Returns empty array if there are no relevant options to display.
      * @returns {string[]}
      * @private
@@ -236,12 +243,11 @@ export class GameEndModalView {
     #buildDifficultyParts() {
         if (!this.#modeId) return [];
 
-        const optionDefs = MODE_OPTIONS[this.#modeId] || [];
-        if (optionDefs.length === 0) return [];
-
-        const opts = this.#modeOptions || {};
         const parts = [];
+        const opts = this.#modeOptions || {};
 
+        // Mode-specific options from MODE_OPTIONS
+        const optionDefs = MODE_OPTIONS[this.#modeId] || [];
         for (const def of optionDefs) {
             const val = opts[def.id] !== undefined ? opts[def.id] : def.default;
             if (val === undefined || val === null) continue;
@@ -252,8 +258,43 @@ export class GameEndModalView {
             } else if (def.type === 'number') {
                 if (def.id === 'rounds') {
                     parts.push(`${val} rondas`);
+                } else if (def.id === 'timePerQuestion') {
+                    parts.push(`${val}s/pregunta`);
+                } else if (def.id === 'sessionTime') {
+                    // Only show sessionTime when endCondition is 'time'
+                    const endCondition = opts['endCondition'] ?? (optionDefs.find(d => d.id === 'endCondition')?.default);
+                    if (endCondition === 'time') {
+                        const mins = Math.floor(val / 60);
+                        const secs = val % 60;
+                        const timeLabel = mins > 0
+                            ? (secs > 0 ? `${mins}m ${secs}s` : `${mins} min`)
+                            : `${val}s`;
+                        parts.push(timeLabel);
+                    }
+                } else {
+                    parts.push(`${def.label}: ${val}`);
                 }
             }
+        }
+
+        // Common filters: continent
+        const continent = this.#continent;
+        if (continent && continent !== 'All' && continent !== 'all') {
+            const continentLabels = {
+                Africa: 'África',
+                America: 'América',
+                Asia: 'Asia',
+                Europe: 'Europa',
+                Oceania: 'Oceanía',
+            };
+            parts.push(continentLabels[continent] || continent);
+        }
+
+        // Common filters: sovereignty
+        const sovereignty = this.#sovereignty;
+        if (sovereignty && sovereignty !== 'All' && sovereignty !== 'all') {
+            if (sovereignty === 'Yes') parts.push('solo soberanos');
+            else if (sovereignty === 'No') parts.push('solo territorios');
         }
 
         return parts;
@@ -563,5 +604,8 @@ export class GameEndModalView {
         this.#onPlayAgain = null;
         this.#onHome = null;
         this.#modeId = null;
+        this.#modeOptions = null;
+        this.#continent = null;
+        this.#sovereignty = null;
     }
 }

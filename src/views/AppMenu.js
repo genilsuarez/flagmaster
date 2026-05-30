@@ -13,8 +13,8 @@ const MODAL_TEMPLATES = {
             </div>
             <div class="modal-section">
                 <h3>Créditos</h3>
-                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#c77d5f">flagcdn.com</a>.</p>
-                <p>Diseñado y construido con vanilla JavaScript y Vite.</p>
+                <p>Banderas servidas por <a href="https://flagcdn.com" target="_blank" rel="noopener" style="color:#c2694a">flagcdn.com</a>.</p>
+                <p>Diseñado y construido por <strong>Genil Suarez</strong> con vanilla JavaScript y Vite.</p>
             </div>
         `
     },
@@ -96,18 +96,12 @@ const MODAL_TEMPLATES = {
                     return `
                         <div class="mode-stat-row">
                             <span class="mode-stat-icon" aria-hidden="true">${icon}</span>
-                            <div class="mode-stat-body">
-                                <div class="mode-stat-top">
-                                    <span class="mode-stat-name">${name}</span>
-                                    <span class="mode-stat-score">${m.bestScore.toLocaleString()}</span>
-                                </div>
-                                <div class="mode-stat-bottom">
-                                    <div class="mode-stat-bar-track">
-                                        <div class="mode-stat-bar-fill" style="width:${barWidth}%"></div>
-                                    </div>
-                                    <span class="mode-stat-games">${m.gamesPlayed} partida${m.gamesPlayed === 1 ? '' : 's'}</span>
-                                </div>
+                            <span class="mode-stat-name">${name}</span>
+                            <div class="mode-stat-bar-track">
+                                <div class="mode-stat-bar-fill" style="width:${barWidth}%"></div>
                             </div>
+                            <span class="mode-stat-score">${m.bestScore.toLocaleString()}</span>
+                            <span class="mode-stat-games">${m.gamesPlayed}p</span>
                         </div>
                     `;
                 }).join('');

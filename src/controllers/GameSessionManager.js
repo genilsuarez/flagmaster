@@ -528,6 +528,9 @@ export class GameSessionManager {
     handleGameEnd(data) {
         if (!this.session) return;
 
+        // Mark session as naturally completed (not manually abandoned)
+        this.session.completedNaturally = true;
+
         // Sync final state from controller
         if (data.totalScore !== undefined) {
             this.session.totalScore = data.totalScore;
@@ -603,6 +606,8 @@ export class GameSessionManager {
         return {
             modeId: this.session.modeId,
             modeOptions: this.session.config?.modeOptions || {},
+            continent: this.session.config?.continent || null,
+            sovereignty: this.session.config?.sovereignty || null,
             totalScore: this.session.totalScore,
             correct,
             wrong,
@@ -613,6 +618,7 @@ export class GameSessionManager {
             roundsReached: this.session.currentRound,
             powerUpsUsed: this.powerUpsUsedThisSession,
             roundHistory: history,
+            completedNaturally: this.session.completedNaturally === true,
         };
     }
 
@@ -634,6 +640,8 @@ export class GameSessionManager {
                 wrong: results.wrong,
                 elapsedSeconds: results.elapsedSeconds,
                 powerUpsUsed: results.powerUpsUsed,
+                completedNaturally: results.completedNaturally,
+                totalQuestions: results.totalQuestions,
             });
         } catch {
             // Ignore stats recording errors

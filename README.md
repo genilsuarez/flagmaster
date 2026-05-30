@@ -172,4 +172,4 @@ dist/
 
 ---
 
-*Diseñado con atención meticulosa al detalle — Mayo 2026*
+*Diseñado y construido por [Genil Suarez](https://github.com/gsuarez) — Mayo 2026*

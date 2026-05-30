@@ -151,6 +151,7 @@ function createModeCard(mode, bottomSheet) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'landing-mode-card';
+    btn.setAttribute('data-mode-id', mode.id);
     btn.setAttribute('aria-label', `${mode.name} — ${mode.category === 'team' ? 'Equipos' : 'Individual'}`);
     btn.innerHTML = `
         <span class="landing-mode-card__icon" aria-hidden="true">${mode.icon}</span>
@@ -217,7 +218,7 @@ function startGame(config, router, sessionManager, countryService) {
  * Handles session end: shows the game end modal with results.
  */
 function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
-    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements, modeOptions } = results;
+    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements, modeOptions, continent, sovereignty } = results;
 
     // Navigate back to home
     router.reset('home');
@@ -237,6 +238,8 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
             teamScores,
             newAchievements: newAchievements || [],
             modeOptions: modeOptions || {},
+            continent: continent || null,
+            sovereignty: sovereignty || null,
         });
     } else {
         // Individual mode: show individual stats
@@ -249,6 +252,8 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
             elapsedSeconds: elapsedSeconds || 0,
             newAchievements: newAchievements || [],
             modeOptions: modeOptions || {},
+            continent: continent || null,
+            sovereignty: sovereignty || null,
         });
     }
 }
@@ -287,7 +292,6 @@ function openSettingsModal(globalDefaults, countryService) {
     if (document.querySelector('.settings-modal-overlay')) return;
 
     const current = globalDefaults.get();
-    const totalCountries = countryService.countries.length;
 
     const overlay = document.createElement('div');
     overlay.className = 'settings-modal-overlay';
@@ -332,15 +336,6 @@ function openSettingsModal(globalDefaults, countryService) {
                     </select>
                 </div>
 
-                <div class="settings-field">
-                    <label class="settings-field__label" for="sm-max">
-                        Cantidad de países
-                        <span class="settings-field__hint">Máximo disponible: ${totalCountries}</span>
-                    </label>
-                    <input id="sm-max" name="maxCount" type="number" min="5" max="${totalCountries}"
-                           placeholder="Todos (${totalCountries})" class="settings-field__control">
-                </div>
-
                 <label class="settings-toggle">
                     <span class="settings-toggle__label">Orden aleatorio</span>
                     <span class="settings-toggle__track">
@@ -365,14 +360,12 @@ function openSettingsModal(globalDefaults, countryService) {
 
     field('continent').value         = current.continent;
     field('sovereigntyStatus').value = current.sovereigntyStatus;
-    if (current.maxCount) field('maxCount').value = String(current.maxCount);
     field('randomOrder').checked     = current.randomOrder;
 
     // Helper: check if current values differ from factory defaults
     const isModified = () =>
         field('continent').value         !== fd.continent         ||
         field('sovereigntyStatus').value !== fd.sovereigntyStatus ||
-        field('maxCount').value.trim()   !== ''                   ||
         field('randomOrder').checked     !== fd.randomOrder;
 
     // Show reset only when values differ from factory defaults
@@ -382,7 +375,6 @@ function openSettingsModal(globalDefaults, countryService) {
     const updateResetVisibility = () => { resetBtn.hidden = !isModified(); };
     field('continent').addEventListener('change', updateResetVisibility);
     field('sovereigntyStatus').addEventListener('change', updateResetVisibility);
-    field('maxCount').addEventListener('input', updateResetVisibility);
     field('randomOrder').addEventListener('change', updateResetVisibility);
 
     document.body.appendChild(overlay);
@@ -404,20 +396,15 @@ function openSettingsModal(globalDefaults, countryService) {
     overlay.querySelector('.settings-modal__reset').addEventListener('click', () => {
         field('continent').value         = fd.continent;
         field('sovereigntyStatus').value = fd.sovereigntyStatus;
-        field('maxCount').value          = '';
         field('randomOrder').checked     = fd.randomOrder;
         updateResetVisibility();
     });
 
     overlay.querySelector('.settings-modal__save').addEventListener('click', () => {
-        const rawMax = field('maxCount').value.trim();
-        const parsedMax = rawMax ? parseInt(rawMax, 10) : null;
-
         globalDefaults.set({
-            continent:        field('continent').value,
+            continent:         field('continent').value,
             sovereigntyStatus: field('sovereigntyStatus').value,
-            maxCount:         (parsedMax && parsedMax >= 5) ? parsedMax : null,
-            randomOrder:      field('randomOrder').checked,
+            randomOrder:       field('randomOrder').checked,
         });
 
         close();
