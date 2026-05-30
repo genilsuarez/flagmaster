@@ -8,44 +8,42 @@
 export const MODE_OPTIONS = {
     flagRush: [
         { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 10, min: 5, max: 30 },
-        { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 5, max: 50 },
     ],
     capitalClash: [
         { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 15, min: 5, max: 30 },
         { id: 'variant', label: 'Variante', type: 'select', options: [
-            { value: 'default', label: 'País → Capital' },
-            { value: 'inverse', label: 'Capital → País' },
+            { value: 'default', label: '🏳️→🏙️ País → Capital' },
+            { value: 'inverse', label: '🏙️→🏳️ Capital → País' },
         ], default: 'default' },
-        { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 5, max: 50 },
     ],
     streakBlitz: [
         { id: 'endCondition', label: 'Condición de fin', type: 'select', options: [
-            { value: 'time', label: '⚡ Contrarreloj (90s)' },
-            { value: 'lives', label: '💀 Supervivencia (3 vidas)' },
+            { value: 'time', label: '⚡ Contrarreloj' },
+            { value: 'lives', label: '💀 Supervivencia' },
         ], default: 'time' },
-        { id: 'sessionTime', label: 'Tiempo de sesión (s)', type: 'number', default: 90, min: 30, max: 180 },
+        // sessionTime is only shown when endCondition === 'time'.
+        // It is rendered conditionally by BottomSheetView, not as a static field.
+        { id: 'sessionTime', label: 'Tiempo de sesión (s)', type: 'number', default: 90, min: 30, max: 600, _conditionalOn: { id: 'endCondition', value: 'time' } },
         { id: 'timePerQuestion', label: 'Tiempo por pregunta (s)', type: 'number', default: 10, min: 5, max: 20 },
     ],
-    geoPuzzle: [
-        { id: 'rounds', label: 'Número de rondas', type: 'number', default: 10, min: 3, max: 30 },
-    ],
+    geoPuzzle: [],
     banderaFlash: [],
     capitalQuest: [
         { id: 'hintMode', label: 'Pista', type: 'select', options: [
-            { value: 'flagAndName', label: 'Bandera + Nombre del país' },
-            { value: 'flagOnly', label: 'Solo bandera' },
-            { value: 'nameOnly', label: 'Solo nombre del país' },
+            { value: 'flagAndName', label: '🏳️+📝 Bandera+Nombre' },
+            { value: 'flagOnly', label: '🏳️ Bandera' },
+            { value: 'nameOnly', label: '📝 Nombre' },
         ], default: 'flagAndName' },
     ],
     letrasEnCaida: [
         { id: 'difficulty', label: 'Dificultad', type: 'select', options: [
-            { value: 'easy',   label: '🟢 Fácil — Bandera + pista' },
-            { value: 'medium', label: '🟡 Medio — Solo bandera' },
-            { value: 'hard',   label: '🔴 Difícil — Sin pista' },
+            { value: 'easy',   label: '🟢 Fácil' },
+            { value: 'medium', label: '🟡 Medio' },
+            { value: 'hard',   label: '🔴 Difícil' },
         ], default: 'easy' },
         { id: 'category', label: 'Categoría', type: 'select', options: [
-            { value: 'country', label: '🌍 Países (adivina el país)' },
-            { value: 'capital', label: '🏛️ Capitales (adivina la capital)' },
+            { value: 'country', label: '🌍 Países' },
+            { value: 'capital', label: '🏛️ Capitales' },
         ], default: 'country' },
         { id: 'speed', label: 'Velocidad', type: 'select', options: [
             { value: 'slow', label: '🐢 Lento' },

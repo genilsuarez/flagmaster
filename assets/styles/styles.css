@@ -562,6 +562,8 @@ body {
     object-fit: contain;
     margin: 0 auto var(--space-md);
     border-radius: var(--radius-lg);
+    /* clip-path ensures the image content is clipped to the rounded corners */
+    clip-path: inset(0 round var(--radius-lg));
     box-shadow: 0 0 0 4px var(--warm-white),
                 0 0 0 6px var(--terracotta),
                 0 12px 36px rgba(28, 25, 23, 0.18);
@@ -592,7 +594,6 @@ body {
 
 /* Game mode flag images — constrained size */
 .flag-rush-flag,
-.geo-puzzle-flag,
 .supervivencia-flag {
     width: 100%;
     max-width: 240px;
@@ -600,11 +601,30 @@ body {
     object-fit: contain;
     margin: 0 auto var(--space-sm);
     border-radius: var(--radius-lg);
+    /* clip-path ensures the image content is clipped to the rounded corners */
+    clip-path: inset(0 round var(--radius-lg));
     box-shadow: 0 0 0 4px var(--warm-white),
                 0 0 0 6px var(--terracotta),
                 0 12px 36px rgba(28, 25, 23, 0.15);
     background: linear-gradient(135deg, var(--soft-sand) 0%, var(--warm-white) 100%);
     padding: var(--space-sm);
+    display: block;
+}
+
+/* Geo Puzzle flag — smaller to keep layout compact when all hints are visible */
+.geo-puzzle-flag {
+    width: 100%;
+    max-width: 160px;
+    height: 90px;
+    object-fit: contain;
+    margin: 0 auto var(--space-xs);
+    border-radius: var(--radius-lg);
+    clip-path: inset(0 round var(--radius-lg));
+    box-shadow: 0 0 0 4px var(--warm-white),
+                0 0 0 6px var(--terracotta),
+                0 8px 24px rgba(28, 25, 23, 0.12);
+    background: linear-gradient(135deg, var(--soft-sand) 0%, var(--warm-white) 100%);
+    padding: var(--space-xs);
     display: block;
 }
 
@@ -625,6 +645,8 @@ body {
     height: 130px;
     object-fit: contain;
     border-radius: var(--radius-lg);
+    /* clip-path ensures the image content is clipped to the rounded corners */
+    clip-path: inset(0 round var(--radius-lg));
     box-shadow: 0 0 0 4px var(--warm-white),
                 0 0 0 6px var(--terracotta),
                 0 12px 36px rgba(28, 25, 23, 0.15);
@@ -926,18 +948,18 @@ body {
 }
 
 .geo-puzzle-hints {
-    margin: var(--space-md) 0;
+    margin: var(--space-sm) 0;
     text-align: left;
-    padding: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
     background: var(--soft-sand);
     border-radius: var(--radius-md);
     border: 1px solid var(--warm-gray);
-    min-height: 200px;
+    min-height: 120px;
 }
 
 .geo-puzzle-hint {
-    padding: var(--space-xs) 0;
-    font-size: 0.95rem;
+    padding: 3px 0;
+    font-size: 0.875rem;
     color: var(--charcoal);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     font-weight: 500;
@@ -1019,10 +1041,8 @@ body {
 
 /* "¡Ya sé!" button */
 .geo-puzzle-guess-btn {
-    display: block;
-    width: 100%;
     height: 48px;
-    padding: 0 var(--space-lg);
+    padding: 0 var(--space-xl);
     margin-top: var(--space-md);
     border: none;
     border-radius: var(--radius-pill);
@@ -2869,6 +2889,8 @@ body.screen-game .game-wrapper {
     height: 90px;
     object-fit: contain;
     border-radius: var(--radius-md);
+    /* clip-path ensures the image content is clipped to the rounded corners */
+    clip-path: inset(0 round var(--radius-md));
     border: 2.5px solid rgba(28, 25, 23, 0.15);
     box-shadow: 0 4px 12px rgba(28, 25, 23, 0.08);
     background: var(--warm-white);
@@ -3264,10 +3286,15 @@ body.screen-game .game-wrapper {
 
     .flag-rush-flag,
     .streak-blitz-flag,
-    .geo-puzzle-flag,
     .supervivencia-flag {
         max-width: 200px;
         height: 110px;
+        padding: var(--space-xs);
+    }
+
+    .geo-puzzle-flag {
+        max-width: 140px;
+        height: 80px;
         padding: var(--space-xs);
     }
 
@@ -4919,11 +4946,11 @@ body.screen-game .game-wrapper {
     background: var(--warm-white);
     border-radius: 16px;
     box-shadow: 0 8px 40px rgba(29, 26, 22, 0.15);
-    max-height: 70vh;
+    max-height: 92vh;
     max-width: 400px;
     width: calc(100% - 32px);
     overflow-y: auto;
-    padding: var(--space-md) var(--space-lg) var(--space-lg);
+    padding: var(--space-sm) var(--space-lg) var(--space-md);
     opacity: 0;
     transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -4949,7 +4976,7 @@ body.screen-game .game-wrapper {
 .bottom-sheet__handle {
     display: flex;
     justify-content: center;
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-xs);
 }
 
 .bottom-sheet__handle-bar {
@@ -4963,7 +4990,7 @@ body.screen-game .game-wrapper {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-sm);
 }
 
 .bottom-sheet__mode-icon {
@@ -5001,13 +5028,13 @@ body.screen-game .game-wrapper {
 .bottom-sheet__content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
 }
 
 .bottom-sheet__section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: 3px;
 }
 
 .bottom-sheet__section-title {
@@ -5017,7 +5044,7 @@ body.screen-game .game-wrapper {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--stone);
-    margin: var(--space-xs) 0 0;
+    margin: var(--space-xs) 0 2px;
 }
 
 .bottom-sheet__field {
@@ -5027,17 +5054,38 @@ body.screen-game .game-wrapper {
     gap: var(--space-sm);
 }
 
+/* Chips inside bottom sheet fields: wrap layout, label above chips */
+.bottom-sheet__field .chip-group {
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 4px;
+    overflow-x: visible;
+}
+
+.bottom-sheet__field .chip-group::-webkit-scrollbar {
+    display: none;
+}
+
+.bottom-sheet__field .chip {
+    height: var(--btn-h-xs);
+    padding: 0 8px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .bottom-sheet__label {
     font-family: var(--font-body);
     font-size: var(--fs-label);
     font-weight: 500;
     color: var(--charcoal);
-    min-width: 110px;
+    min-width: 90px;
+    flex-shrink: 0;
 }
 
 .bottom-sheet__control {
     flex: 1;
-    padding: 6px 10px;
+    padding: 4px 8px;
     border: 1.5px solid var(--soft-sand);
     border-radius: var(--radius-md);
     font-family: var(--font-body);
@@ -5070,7 +5118,7 @@ body.screen-game .game-wrapper {
 }
 
 .bottom-sheet__footer {
-    margin-top: var(--space-md);
+    margin-top: var(--space-sm);
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -5078,13 +5126,13 @@ body.screen-game .game-wrapper {
 
 .bottom-sheet__reset-btn {
     width: 100%;
-    padding: 8px var(--space-xl);
+    padding: 6px var(--space-xl);
     border-radius: var(--radius-pill);
     border: 1.5px dashed var(--warm-gray);
     background: transparent;
     color: var(--stone);
     font-family: var(--font-body);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
     transition: border-color var(--duration-quick) var(--ease-gentle),
@@ -5105,7 +5153,7 @@ body.screen-game .game-wrapper {
 .bottom-sheet__play-btn {
     width: 100%;
     height: var(--btn-h-lg);
-    min-height: var(--btn-h-xl);
+    min-height: var(--btn-h-lg);
     padding: 0 var(--btn-px-lg);
     border-radius: var(--radius-pill);
     border: none;

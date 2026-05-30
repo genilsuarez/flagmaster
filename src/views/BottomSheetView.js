@@ -57,6 +57,7 @@ export class BottomSheetView {
         this.continentSelect = null;
         this.sovereigntySelect = null;
         this.countryCountInput = null;
+        this._sessionTimeInput = null;
 
         // Focus management
         this._triggerElement = null;
@@ -258,7 +259,9 @@ export class BottomSheetView {
         // Section 2: Mode Options
         const optionDefs = getOptionsForMode(modeId);
         if (optionDefs.length > 0) {
-            content.appendChild(this._createModeOptionsSection(optionDefs));
+            const modeOptsSection = this._createModeOptionsSection(optionDefs);
+            modeOptsSection.classList.add('bottom-sheet__section--mode-options');
+            content.appendChild(modeOptsSection);
         }
 
         // Section 3: Modifiers (team modes only)
@@ -337,6 +340,7 @@ export class BottomSheetView {
             this.countryCountInput.value = String(this.countryCount);
         }
         this.countryCountInput.addEventListener('input', () => this._onCountryCountChange());
+        this.countryCountInput.addEventListener('blur', () => this._clampCountryCountInput());
         countGroup.appendChild(this.countryCountInput);
         section.appendChild(countGroup);
 
@@ -367,6 +371,12 @@ export class BottomSheetView {
         section.appendChild(title);
 
         for (const opt of optionDefs) {
+            // Skip options that are conditional on another option's value
+            if (opt._conditionalOn) {
+                const { id, value } = opt._conditionalOn;
+                if (this.modeOptions[id] !== value) continue;
+            }
+
             const group = this._createFieldGroup(`bs-opt-${opt.id}`, opt.label);
 
             if (opt.type === 'select') {
@@ -374,7 +384,7 @@ export class BottomSheetView {
                 const useChips = opt.type === 'select' && opt.options.length >= 2 && opt.options.length <= 4;
 
                 if (useChips) {
-                    group.appendChild(this._renderChipGroup(opt, currentValue));
+                    group.appendChild(this._renderChipGroup(opt, currentValue, optionDefs));
                 } else {
                     const select = document.createElement('select');
                     select.id = `bs-opt-${opt.id}`;
@@ -388,6 +398,10 @@ export class BottomSheetView {
                     }
                     select.addEventListener('change', () => {
                         this.modeOptions[opt.id] = select.value;
+                        // Re-render mode options section when a controlling option changes
+                        if (optionDefs.some(o => o._conditionalOn?.id === opt.id)) {
+                            this._rerenderModeOptionsSection(optionDefs);
+                        }
                     });
                     group.appendChild(select);
                 }
@@ -398,13 +412,44 @@ export class BottomSheetView {
                 input.type = 'number';
                 if (opt.min != null) input.min = String(opt.min);
                 if (opt.max != null) input.max = String(opt.max);
+                // For sessionTime in time mode, suggest a value based on pool size
+                if (opt.id === 'sessionTime') {
+                    const suggested = this._computeSuggestedSessionTime();
+                    if (suggested !== null) {
+                        this.modeOptions[opt.id] = suggested;
+                        input.max = String(suggested);
+                    }
+                }
                 input.value = String(this.modeOptions[opt.id]);
+
+                const applyClamp = () => {
+                    const raw = parseInt(input.value, 10);
+                    if (isNaN(raw)) {
+                        // Restore last valid value
+                        input.value = String(this.modeOptions[opt.id]);
+                        return;
+                    }
+                    const min = opt.min != null ? opt.min : -Infinity;
+                    const max = opt.max != null ? opt.max : Infinity;
+                    const clamped = Math.max(min, Math.min(max, raw));
+                    this.modeOptions[opt.id] = clamped;
+                    input.value = String(clamped);
+                };
+
                 input.addEventListener('input', () => {
-                    const val = parseInt(input.value, 10);
-                    if (!isNaN(val)) {
-                        this.modeOptions[opt.id] = val;
+                    const raw = parseInt(input.value, 10);
+                    if (!isNaN(raw)) {
+                        // Store raw while typing; clamp on blur
+                        this.modeOptions[opt.id] = raw;
                     }
                 });
+                // Clamp and correct the displayed value when the user leaves the field
+                input.addEventListener('blur', applyClamp);
+
+                // Store reference to sessionTime input for live updates
+                if (opt.id === 'sessionTime') {
+                    this._sessionTimeInput = input;
+                }
                 group.appendChild(input);
             }
 
@@ -412,6 +457,55 @@ export class BottomSheetView {
         }
 
         return section;
+    }
+
+    /**
+     * Re-renders only the mode options section in place.
+     * Called when a controlling option (e.g. endCondition) changes value.
+     * @param {Array} optionDefs
+     * @private
+     */
+    _rerenderModeOptionsSection(optionDefs) {
+        if (!this.sheet) return;
+        const existing = this.sheet.querySelector('.bottom-sheet__section--mode-options');
+        if (!existing) return;
+        const newSection = this._createModeOptionsSection(optionDefs);
+        newSection.classList.add('bottom-sheet__section--mode-options');
+        existing.replaceWith(newSection);
+    }
+
+    /**
+     * Computes a suggested session time (seconds) based on the effective pool size
+     * and the current timePerQuestion setting.
+     *
+     * Formula: poolSize × timePerQuestion, clamped to [30, 600].
+     * Returns null when not applicable (e.g. not streakBlitz or not time mode).
+     * @returns {number|null}
+     * @private
+     */
+    _computeSuggestedSessionTime() {
+        if (this.modeId !== 'streakBlitz') return null;
+        if (this.modeOptions.endCondition !== 'time') return null;
+
+        const poolSize = this._getEffectivePoolSize();
+        const tpq = this.modeOptions.timePerQuestion || 10;
+        const suggested = poolSize * tpq;
+        return Math.max(30, Math.min(600, suggested));
+    }
+
+    /**
+     * Updates the sessionTime input's max and value to reflect the current pool size.
+     * Called whenever the pool changes (continent, sovereignty, or country count).
+     * @private
+     */
+    _updateSuggestedSessionTime() {
+        if (!this._sessionTimeInput) return;
+        const suggested = this._computeSuggestedSessionTime();
+        if (suggested === null) return;
+
+        this.modeOptions.sessionTime = suggested;
+        this._sessionTimeInput.max = String(suggested);
+        this._sessionTimeInput.value = String(suggested);
     }
 
     /**
@@ -662,12 +756,26 @@ export class BottomSheetView {
      * @private
      */
     _buildConfig() {
+        // Clamp all numeric modeOptions to their defined min/max before building config.
+        // This catches values entered manually without triggering blur.
+        const optionDefs = this.modeId ? (this._getOptionDefs() || []) : [];
+        const clampedOptions = { ...this.modeOptions };
+        for (const opt of optionDefs) {
+            if (opt.type === 'number' && clampedOptions[opt.id] != null) {
+                const min = opt.min != null ? opt.min : -Infinity;
+                const max = opt.max != null ? opt.max : Infinity;
+                clampedOptions[opt.id] = Math.max(min, Math.min(max, clampedOptions[opt.id]));
+            }
+        }
+
         const config = {
             modeId: this.modeId,
             continent: this.continent,
             sovereigntyStatus: this.sovereigntyStatus,
-            maxCount: this.countryCount ?? null,
-            modeOptions: { ...this.modeOptions },
+            maxCount: this.countryCount != null
+                ? Math.max(MIN_POOL_SIZE, Math.min(this.countryCount, this.maxCountryCount))
+                : null,
+            modeOptions: clampedOptions,
         };
 
         if (this.mode && this.mode.category === 'team') {
@@ -676,6 +784,15 @@ export class BottomSheetView {
         }
 
         return config;
+    }
+
+    /**
+     * Returns the option definitions for the current mode.
+     * @returns {Array}
+     * @private
+     */
+    _getOptionDefs() {
+        return getOptionsForMode(this.modeId);
     }
 
     /**
@@ -849,6 +966,8 @@ export class BottomSheetView {
         }
 
         this._updatePlayButtonState();
+        // Update suggested session time when pool changes (streakBlitz time mode)
+        this._updateSuggestedSessionTime();
     }
 
     /**
@@ -868,6 +987,26 @@ export class BottomSheetView {
             }
         }
         this._updatePlayButtonState();
+        // Update suggested session time when pool changes (streakBlitz time mode)
+        this._updateSuggestedSessionTime();
+    }
+
+    /**
+     * Clamps the country count input to [MIN_POOL_SIZE, maxCountryCount] and
+     * updates the displayed value. Called on blur so the user sees the corrected value.
+     * @private
+     */
+    _clampCountryCountInput() {
+        if (!this.countryCountInput) return;
+        const raw = parseInt(this.countryCountInput.value, 10);
+        if (isNaN(raw) || this.countryCountInput.value.trim() === '') return; // empty = no limit, leave as-is
+
+        const clamped = Math.max(MIN_POOL_SIZE, Math.min(raw, this.maxCountryCount));
+        this.countryCount = clamped;
+        this._dirtyCountryCount = true;
+        this.countryCountInput.value = String(clamped);
+        this._updatePlayButtonState();
+        this._updateSuggestedSessionTime();
     }
 
     /**
@@ -903,6 +1042,7 @@ export class BottomSheetView {
         this.continentSelect = null;
         this.sovereigntySelect = null;
         this.countryCountInput = null;
+        this._sessionTimeInput = null;
     }
 
     /**
@@ -939,6 +1079,7 @@ export class BottomSheetView {
         this.continentSelect = null;
         this.sovereigntySelect = null;
         this.countryCountInput = null;
+        this._sessionTimeInput = null;
     }
 
     /**
@@ -946,10 +1087,12 @@ export class BottomSheetView {
      * Chips are mutually exclusive (radio-like behavior).
      * @param {Object} opt - The option definition
      * @param {string|undefined} currentValue - The currently selected value
+     * @param {Array} [allOptDefs] - Full option definitions array, used to trigger
+     *   re-render when this chip controls conditional options.
      * @returns {HTMLElement} The chip-group container
      * @private
      */
-    _renderChipGroup(opt, currentValue) {
+    _renderChipGroup(opt, currentValue, allOptDefs = null) {
         const defaultValue = currentValue ?? opt.default ?? opt.options[0]?.value;
         const group = document.createElement('div');
         group.className = 'chip-group';
@@ -969,6 +1112,10 @@ export class BottomSheetView {
                     c.classList.toggle('chip--selected', c.dataset.value === o.value);
                     c.setAttribute('aria-pressed', String(c.dataset.value === o.value));
                 });
+                // Re-render mode options section when this chip controls conditional fields
+                if (allOptDefs && allOptDefs.some(od => od._conditionalOn?.id === opt.id)) {
+                    this._rerenderModeOptionsSection(allOptDefs);
+                }
             });
             chip.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); }

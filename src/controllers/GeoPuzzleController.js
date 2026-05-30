@@ -797,6 +797,8 @@ export class GeoPuzzleController {
         if (this.guessBtn) {
             this.guessBtn.hidden = false;
             this.guessBtn.disabled = false;
+            // Focus the button so Enter/Space immediately triggers "¡Ya sé!"
+            this.guessBtn.focus();
         }
         if (this.inputContainer) this.inputContainer.hidden = true;
         if (this.skipBtn) this.skipBtn.disabled = false;

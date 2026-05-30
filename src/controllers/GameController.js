@@ -630,12 +630,6 @@ export class GameController {
             return;
         }
         
-        // Escape to end game
-        if (event.key === 'Escape') {
-            this.endGame();
-            return;
-        }
-        
         // Space to reveal
         if (event.key === ' ') {
             event.preventDefault();

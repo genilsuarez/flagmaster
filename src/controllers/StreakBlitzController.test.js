@@ -448,14 +448,32 @@ describe('StreakBlitzController', () => {
     });
 
     describe('pool cycling', () => {
-        it('cycles through the pool when more questions than pool size', () => {
+        it('ends the session when pool is exhausted in time mode (no recycling)', () => {
             controller = new StreakBlitzController({ container });
             const smallPool = pool.slice(0, 5);
-            controller.start(smallPool);
+            controller.start(smallPool, { endCondition: 'time', sessionTime: 90 });
             vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(5);
             vi.useFakeTimers();
 
-            // Answer more questions than pool size, advancing through the delay each time
+            // Answer exactly as many questions as the pool size
+            for (let i = 0; i < 5; i++) {
+                controller.handleAnswer(0, true);
+                vi.advanceTimersByTime(StreakBlitzController.FEEDBACK_DELAY_MS);
+            }
+
+            vi.useRealTimers();
+            // Pool exhausted → game should have ended
+            expect(controller.isActive).toBe(false);
+        });
+
+        it('recycles the pool in lives mode so the game continues beyond pool size', () => {
+            controller = new StreakBlitzController({ container });
+            const smallPool = pool.slice(0, 5);
+            controller.start(smallPool, { endCondition: 'lives' });
+            vi.spyOn(controller.questionTimerView, 'getRemaining').mockReturnValue(5);
+            vi.useFakeTimers();
+
+            // Answer more questions than pool size — should still be active
             for (let i = 0; i < 6; i++) {
                 controller.handleAnswer(0, true);
                 vi.advanceTimersByTime(StreakBlitzController.FEEDBACK_DELAY_MS);

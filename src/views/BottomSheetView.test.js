@@ -84,7 +84,6 @@ describe('BottomSheetView', () => {
         it('renders mode-specific options for flagRush', () => {
             view.open('flagRush');
             expect(document.getElementById('bs-opt-timePerQuestion')).not.toBeNull();
-            expect(document.getElementById('bs-opt-rounds')).not.toBeNull();
         });
 
         it('renders chip group for capitalClash variant (2 options → chips)', () => {
@@ -274,7 +273,8 @@ describe('BottomSheetView', () => {
             view.countryCount = null;
 
             const config = view._buildConfig();
-            expect(config.maxCount).toBe(50);
+            // null means "no limit" — use all available countries
+            expect(config.maxCount).toBeNull();
         });
     });
 

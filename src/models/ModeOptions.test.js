@@ -110,7 +110,7 @@ describe('getOptionsForMode', () => {
     it('returns the options array for a valid mode', () => {
         const options = getOptionsForMode('flagRush');
         expect(options).toBe(MODE_OPTIONS.flagRush);
-        expect(options).toHaveLength(2);
+        expect(options).toHaveLength(1);
     });
 
     it('returns an empty array for an unknown mode', () => {

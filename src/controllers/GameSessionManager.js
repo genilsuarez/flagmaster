@@ -88,6 +88,15 @@ export class GameSessionManager {
         // Prepare game UI: hide legacy elements, show end button
         this.prepareGameUI(modeId);
 
+        // Register centralized Escape key handler for all modes
+        this._escapeHandler = (e) => {
+            if (e.key === 'Escape' && this.session && this.session.isActive) {
+                e.preventDefault();
+                this.endSession();
+            }
+        };
+        document.addEventListener('keydown', this._escapeHandler);
+
         // Create the appropriate controller
         this.activeController = this.createController(modeId, config.modeOptions || {});
 
@@ -156,6 +165,12 @@ export class GameSessionManager {
      * @private
      */
     restoreGameUI() {
+        // Remove centralized Escape key handler
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
+            this._escapeHandler = null;
+        }
+
         const endGameButton = document.getElementById('endGameButton');
         const skipButton = document.getElementById('skipButton');
         const startButton = document.getElementById('startButton');
@@ -706,6 +721,10 @@ export class GameSessionManager {
      * Destroys the session manager and all associated resources.
      */
     destroy() {
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
+            this._escapeHandler = null;
+        }
         this.destroyActiveController();
         this.session = null;
         this.sessionStartTime = null;

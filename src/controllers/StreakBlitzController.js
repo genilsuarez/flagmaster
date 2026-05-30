@@ -216,8 +216,15 @@ export class StreakBlitzController {
 
         this.currentRound++;
 
-        // Pool recycling
+        // Pool exhaustion handling:
+        // - time mode: end the session when all countries have been seen (no recycling)
+        // - lives mode: recycle the pool so the game can continue indefinitely
         if (this.poolIndex >= this.pool.length) {
+            if (this.endCondition === 'time') {
+                this.end();
+                return;
+            }
+            // lives mode: reshuffle and continue
             this.poolIndex = 0;
             this.shufflePool();
         }
