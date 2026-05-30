@@ -39,6 +39,8 @@ export class GameView {
                 elements.flagImage.src = `https://flagcdn.com/w320/${code}.png`;
             }
         };
+        // Evitar rendering progresivo del SVG
+        elements.flagImage.decoding = 'async';
         
         try {
             elements.filterContainer = this.createFilterContainer(elements);

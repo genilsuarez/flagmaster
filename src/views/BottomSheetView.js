@@ -266,6 +266,9 @@ export class BottomSheetView {
         if (optionDefs.length > 0) {
             const modeOptsSection = this._createModeOptionsSection(optionDefs);
             modeOptsSection.classList.add('bottom-sheet__section--mode-options');
+            if (modeId === 'ordenaContinente') {
+                modeOptsSection.classList.add('bottom-sheet__section--spacious');
+            }
             content.appendChild(modeOptsSection);
         }
 
@@ -291,7 +294,7 @@ export class BottomSheetView {
 
         // Hide entire filters section for ordenaContinente — all filtering is done via mode options
         if (this.modeId === 'ordenaContinente') {
-            section.hidden = true;
+            section.style.display = 'none';
         }
 
         const title = document.createElement('h3');
@@ -315,7 +318,7 @@ export class BottomSheetView {
         this.continentSelect.addEventListener('change', () => this._onFilterChange());
         continentGroup.appendChild(this.continentSelect);
         if (this.modeId === 'ordenaContinente') {
-            continentGroup.hidden = true;
+            continentGroup.style.display = 'none';
         }
         section.appendChild(continentGroup);
 
@@ -339,7 +342,7 @@ export class BottomSheetView {
         this.sovereigntySelect.addEventListener('change', () => this._onFilterChange());
         sovereigntyGroup.appendChild(this.sovereigntySelect);
         if (this.modeId === 'ordenaContinente') {
-            sovereigntyGroup.hidden = true;
+            sovereigntyGroup.style.display = 'none';
         }
         section.appendChild(sovereigntyGroup);
 
@@ -359,7 +362,7 @@ export class BottomSheetView {
         this.countryCountInput.addEventListener('blur', () => this._clampCountryCountInput());
         countGroup.appendChild(this.countryCountInput);
         if (this.modeId === 'ordenaContinente') {
-            countGroup.hidden = true;
+            countGroup.style.display = 'none';
         }
         section.appendChild(countGroup);
 
@@ -484,6 +487,8 @@ export class BottomSheetView {
                 }
                 group.appendChild(input);
             } else if (opt.type === 'multiSelect') {
+                // Use vertical layout for multiSelect fields — label above, chips below
+                group.classList.add('bottom-sheet__field--vertical');
                 const currentValue = this.modeOptions[opt.id] || [];
                 const chipGroup = document.createElement('div');
                 chipGroup.className = 'chip-group chip-group--multi';
@@ -554,6 +559,9 @@ export class BottomSheetView {
         if (!existing) return;
         const newSection = this._createModeOptionsSection(optionDefs);
         newSection.classList.add('bottom-sheet__section--mode-options');
+        if (this.modeId === 'ordenaContinente') {
+            newSection.classList.add('bottom-sheet__section--spacious');
+        }
         existing.replaceWith(newSection);
     }
 

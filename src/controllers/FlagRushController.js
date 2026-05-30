@@ -475,6 +475,7 @@ export class FlagRushController {
         this.flagEl = document.createElement('img');
         this.flagEl.className = 'flag-rush-flag';
         this.flagEl.alt = 'Bandera del país a identificar';
+        this.flagEl.decoding = 'async';
         this.flagEl.src = '';
         this.container.appendChild(this.flagEl);
 

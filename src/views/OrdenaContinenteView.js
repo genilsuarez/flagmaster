@@ -154,12 +154,21 @@ export class OrdenaContinenteView {
 
         if (item.displayType === 'flag') {
             const img = document.createElement('img');
-            img.src = item.flagUrl;
+            // Usar PNG rasterizado en vez de SVG para evitar rendering progresivo
+            img.src = this._getFlagPngUrl(item.flagUrl);
             img.alt = item.displayValue || 'Bandera';
             img.className = 'oc-item__flag';
-            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.width = 80;
+            img.height = 53;
             // Fallback si la imagen no carga
             img.addEventListener('error', () => {
+                // Si PNG falla, intentar con SVG original
+                if (!img.dataset.fallbackAttempted) {
+                    img.dataset.fallbackAttempted = 'true';
+                    img.src = item.flagUrl;
+                    return;
+                }
                 img.style.display = 'none';
                 const fallback = document.createElement('span');
                 fallback.className = 'oc-item__fallback';
@@ -175,6 +184,16 @@ export class OrdenaContinenteView {
         }
 
         return el;
+    }
+
+    /**
+     * Convierte URL de SVG de flagcdn a PNG rasterizado (w80) para carga instantánea.
+     * Ejemplo: https://flagcdn.com/dz.svg → https://flagcdn.com/w80/dz.png
+     */
+    _getFlagPngUrl(svgUrl) {
+        if (!svgUrl || !svgUrl.includes('flagcdn.com')) return svgUrl;
+        const code = svgUrl.split('/').pop().replace('.svg', '');
+        return `https://flagcdn.com/w80/${code}.png`;
     }
 
     // ─── Zonas de continente ────────────────────────────────────────────
@@ -681,11 +700,10 @@ export class OrdenaContinenteView {
 .oc-wrapper {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-md);
+    gap: var(--space-xs);
+    padding: var(--space-xs);
     background: var(--cream-bg);
     border-radius: var(--radius-lg);
-    min-height: 400px;
 }
 
 /* ─── Header ─────────────────────────────────────────────────── */
@@ -735,13 +753,12 @@ export class OrdenaContinenteView {
 
 .oc-panel {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-xs);
-    padding: var(--space-sm);
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: var(--space-xs);
     background: var(--warm-white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: 1px solid var(--warm-gray);
-    min-height: 60px;
 }
 
 /* ─── Ítems individuales ─────────────────────────────────────── */
@@ -750,18 +767,18 @@ export class OrdenaContinenteView {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 42px;
-    min-height: 42px;
-    padding: 4px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 3px;
     background: var(--cream-bg);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     box-shadow: var(--shadow-soft);
     cursor: grab;
     transition: transform var(--duration-quick) var(--ease-gentle),
                 box-shadow var(--duration-quick) var(--ease-gentle),
                 opacity var(--duration-quick) var(--ease-gentle),
                 border-color var(--duration-quick) var(--ease-gentle);
-    border: 2px solid transparent;
+    border: 1.5px solid transparent;
     user-select: none;
 }
 
@@ -805,9 +822,9 @@ export class OrdenaContinenteView {
 .oc-item__flag {
     width: 100%;
     height: auto;
-    max-height: 42px;
+    max-height: 36px;
     object-fit: contain;
-    border-radius: var(--radius-sm);
+    border-radius: 2px;
     pointer-events: none;
 }
 
@@ -834,19 +851,19 @@ export class OrdenaContinenteView {
 .oc-zones {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-sm);
+    gap: var(--space-xs);
 }
 
 .oc-zone {
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     background: var(--cream-bg);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-medium);
-    border: 2px solid var(--warm-gray);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    border: 1.5px solid var(--warm-gray);
     transition: border-color var(--duration-quick) var(--ease-gentle),
                 background-color var(--duration-quick) var(--ease-gentle),
                 box-shadow var(--duration-quick) var(--ease-gentle);
-    min-height: 60px;
+    min-height: 44px;
 }
 
 .oc-zone:focus-visible {
@@ -862,19 +879,19 @@ export class OrdenaContinenteView {
 
 .oc-zone__title {
     font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 400;
+    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--ink);
-    margin-bottom: var(--space-sm);
-    padding-bottom: var(--space-xs);
+    margin-bottom: 4px;
+    padding-bottom: 3px;
     border-bottom: 1px solid var(--warm-gray);
 }
 
 .oc-zone__items {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-xs);
-    min-height: 32px;
+    gap: 4px;
+    min-height: 24px;
 }
 
 /* ─── Screen reader only ─────────────────────────────────────── */
@@ -893,30 +910,36 @@ export class OrdenaContinenteView {
 
 /* ─── Responsive Grid ────────────────────────────────────────── */
 
-/* Tablet: 3 columnas (768px - 1023px) */
+/* Tablet: 4 columnas (768px - 1023px) */
 @media (max-width: 1023px) {
     .oc-panel {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
-/* Mobile: 2 columnas (<768px) */
+/* Mobile: 3 columnas (<768px) */
 @media (max-width: 767px) {
+    .oc-panel {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .oc-zones {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .oc-zone__title {
+        font-size: 0.85rem;
+    }
+}
+
+/* Small mobile: 2 columnas (<480px) */
+@media (max-width: 479px) {
     .oc-panel {
         grid-template-columns: repeat(2, 1fr);
     }
 
     .oc-zones {
         grid-template-columns: 1fr;
-    }
-
-    .oc-wrapper {
-        padding: var(--space-sm);
-        gap: var(--space-sm);
-    }
-
-    .oc-zone__title {
-        font-size: 1rem;
     }
 }
 

@@ -672,6 +672,7 @@ export class StreakBlitzController {
         this.flagEl = document.createElement('img');
         this.flagEl.className = 'streak-blitz-flag';
         this.flagEl.alt = 'Bandera del país a identificar';
+        this.flagEl.decoding = 'async';
         this.flagEl.src = '';
         questionArea.appendChild(this.flagEl);
 

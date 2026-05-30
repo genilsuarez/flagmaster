@@ -168,11 +168,18 @@ function startGame(config, router, sessionManager, countryService) {
     const { modeId, continent, sovereigntyStatus, maxCount, modeOptions, practiceMode, randomOrder } = config;
 
     // Filter the country pool
-    let pool = countryService.filterCountries({
-        continent,
-        sovereigntyStatus,
-        maxCount: undefined, // get all matching first
-    });
+    // For ordenaContinente, skip content filters — the mode handles its own filtering
+    // via modeOptions.continents and SessionGenerator's internal sovereignty filter
+    let pool;
+    if (modeId === 'ordenaContinente') {
+        pool = countryService.filterCountries({});
+    } else {
+        pool = countryService.filterCountries({
+            continent,
+            sovereigntyStatus,
+            maxCount: undefined, // get all matching first
+        });
+    }
 
     // Shuffle if random order (default)
     if (randomOrder !== false) {
@@ -183,8 +190,8 @@ function startGame(config, router, sessionManager, countryService) {
         }
     }
 
-    // Apply max count limit
-    if (maxCount && maxCount > 0 && maxCount < pool.length) {
+    // Apply max count limit (skip for ordenaContinente — uses itemCount in modeOptions)
+    if (modeId !== 'ordenaContinente' && maxCount && maxCount > 0 && maxCount < pool.length) {
         pool = pool.slice(0, maxCount);
     }
 

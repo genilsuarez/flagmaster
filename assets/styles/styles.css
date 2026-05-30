@@ -5136,6 +5136,24 @@ body.screen-game .game-wrapper {
     gap: 3px;
 }
 
+/* More breathing room for modes with many options (e.g. ordenaContinente) */
+.bottom-sheet__section--spacious {
+    gap: var(--space-sm);
+}
+
+.bottom-sheet__section--spacious .bottom-sheet__field {
+    padding: 4px 0;
+}
+
+.bottom-sheet__section--spacious .chip-group {
+    gap: 6px;
+}
+
+.bottom-sheet__section--spacious .chip {
+    padding: 0 10px;
+    font-size: 0.75rem;
+}
+
 .bottom-sheet__section-title {
     font-family: var(--font-body);
     font-size: var(--fs-label);
@@ -5151,6 +5169,18 @@ body.screen-game .game-wrapper {
     flex-direction: row;
     align-items: center;
     gap: var(--space-sm);
+}
+
+/* Vertical layout for multiSelect fields — label above, chips below with full width */
+.bottom-sheet__field--vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.bottom-sheet__field--vertical .chip-group {
+    width: 100%;
+    justify-content: flex-start;
 }
 
 /* Chips inside bottom sheet fields: wrap layout, label above chips */
