@@ -199,6 +199,7 @@ export class GameView {
 
     updateFlagDisplay(country) {
         if (country) {
+            // Always start hidden and empty — text is set only at reveal time
             this.elements.countryInfo.classList.add('hidden-keep-space');
             this.elements.countryInfo.textContent = '';
             
@@ -214,14 +215,13 @@ export class GameView {
                 }
                 
                 // Show/hide country name based on hint mode
-                if (hintMode === 'flagOnly') {
-                    this.elements.countryInfo.classList.add('hidden-keep-space');
-                } else {
+                // For flagOnly: countryInfo stays hidden and empty (set at reveal time)
+                if (hintMode !== 'flagOnly') {
                     this.elements.countryInfo.textContent = country.displayName;
                     this.elements.countryInfo.classList.remove('hidden-keep-space');
                 }
             } else {
-                // Flags mode: show flag, hide name
+                // Flags mode: show flag, hide name — text set at reveal time in showCountryInfo()
                 this.elements.flagImage.style.display = '';
                 this.elements.flagImage.src = country.flagUrl;
             }

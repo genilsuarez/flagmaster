@@ -189,8 +189,9 @@ export class GameController {
                         }
                     } else {
                         // Flags mode: hide country name (reserve space for reveal), hide capitalInfo
+                        // Do NOT write the answer text here — set it only at reveal time in showCountryInfo()
                         if (countryInfo) {
-                            countryInfo.textContent = country.displayName;
+                            countryInfo.textContent = '';
                             countryInfo.classList.add('hidden-keep-space');
                         }
                         if (capitalInfo) capitalInfo.style.display = 'none';
@@ -245,7 +246,12 @@ export class GameController {
                 }
             },
             showCountryInfo() {
-                if (countryInfo) countryInfo.classList.remove('hidden-keep-space');
+                if (countryInfo) {
+                    // Set the answer text only at reveal time, not before
+                    const country = this._currentCountry;
+                    if (country) countryInfo.textContent = country.displayName;
+                    countryInfo.classList.remove('hidden-keep-space');
+                }
             },
             showCapitalInfo() {
                 if (capitalInfo) { capitalInfo.classList.add('revealed'); }
