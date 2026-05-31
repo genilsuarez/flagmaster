@@ -76,21 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Wait for country data to load, then render mode cards
-    const waitForInit = setInterval(() => {
-        if (countryService.countries && countryService.countries.length > 0) {
-            clearInterval(waitForInit);
+    // Render mode cards immediately — they don't depend on country data
+    renderModeCards(bottomSheet);
 
-            // Render mode cards directly into the landing
-            renderModeCards(bottomSheet);
-
-            // Wire settings button to open settings modal
-            const settingsBtn = document.getElementById('landingSettingsBtn');
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', () => openSettingsModal(globalDefaults, countryService));
-            }
-        }
-    }, 50);
+    // Wire settings button to open settings modal
+    const settingsBtn = document.getElementById('landingSettingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => openSettingsModal(globalDefaults, countryService));
+    }
 
     // Load country data
     countryService.loadCountries().catch(err => {
