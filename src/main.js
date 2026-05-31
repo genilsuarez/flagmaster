@@ -226,6 +226,7 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
         gameEndModal.showTeamResults({
             modeId,
             teamScores: results.teamScores,
+            practiceMode: results.practiceMode || false,
             modeOptions: modeOptions || {},
             continent: continent || null,
             sovereignty: sovereignty || null,

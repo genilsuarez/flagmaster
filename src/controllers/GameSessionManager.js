@@ -624,6 +624,7 @@ export class GameSessionManager {
         // Include team scores for team-based modes
         if (this.session.teamScores) {
             results.teamScores = { ...this.session.teamScores };
+            results.practiceMode = this.session.config?.practiceMode || false;
         }
 
         return results;

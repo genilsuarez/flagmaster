@@ -61,7 +61,7 @@ export class GameEndModalView {
      * @param {string} options.modeId - The mode that was played
      * @param {Object} options.teamScores - Map of team color to score (e.g. { red: 5, blue: 3, green: 2 })
      */
-    showTeamResults({ modeId, teamScores, modeOptions = {}, continent = null, sovereignty = null }) {
+    showTeamResults({ modeId, teamScores, practiceMode = false, modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
         this.#modeOptions = modeOptions;
         this.#continent = continent;
@@ -81,7 +81,7 @@ export class GameEndModalView {
         // Team scores
         const statsSection = document.createElement('div');
         statsSection.className = 'game-end-modal__stats';
-        statsSection.appendChild(this.#createTeamScores(teamScores));
+        statsSection.appendChild(this.#createTeamScores(teamScores, practiceMode));
         body.appendChild(statsSection);
 
         content.appendChild(body);
@@ -309,7 +309,7 @@ export class GameEndModalView {
      * @returns {HTMLElement}
      * @private
      */
-    #createTeamScores(teamScores) {
+    #createTeamScores(teamScores, practiceMode = false) {
         const container = document.createElement('div');
         container.className = 'game-end-modal__team-scores';
 
@@ -323,35 +323,40 @@ export class GameEndModalView {
         const announcement = document.createElement('div');
         announcement.className = 'game-end-modal__winner';
 
-        if (winners.length > 1) {
+        if (practiceMode) {
+            const total = Object.values(teamScores).reduce((sum, s) => sum + s, 0);
+            announcement.textContent = `📝 Práctica completada — ${total} banderas`;
+        } else if (winners.length > 1) {
             announcement.textContent = '🤝 ¡Empate!';
         } else {
             announcement.textContent = `🏆 ¡${teamNames[winners[0]] || winners[0]} Gana!`;
         }
         container.appendChild(announcement);
 
-        // Score list
-        const scoreList = document.createElement('div');
-        scoreList.className = 'game-end-modal__score-list';
+        // Score list — skip individual team breakdown in practice mode
+        if (!practiceMode) {
+            const scoreList = document.createElement('div');
+            scoreList.className = 'game-end-modal__score-list';
 
-        scores.forEach(([team, score]) => {
-            const item = document.createElement('div');
-            item.className = `game-end-modal__score-item game-end-modal__score-item--${team}`;
+            scores.forEach(([team, score]) => {
+                const item = document.createElement('div');
+                item.className = `game-end-modal__score-item game-end-modal__score-item--${team}`;
 
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'game-end-modal__team-name';
-            nameSpan.textContent = teamNames[team] || team;
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'game-end-modal__team-name';
+                nameSpan.textContent = teamNames[team] || team;
 
-            const scoreSpan = document.createElement('span');
-            scoreSpan.className = 'game-end-modal__team-score';
-            scoreSpan.textContent = String(score);
+                const scoreSpan = document.createElement('span');
+                scoreSpan.className = 'game-end-modal__team-score';
+                scoreSpan.textContent = String(score);
 
-            item.appendChild(nameSpan);
-            item.appendChild(scoreSpan);
-            scoreList.appendChild(item);
-        });
+                item.appendChild(nameSpan);
+                item.appendChild(scoreSpan);
+                scoreList.appendChild(item);
+            });
 
-        container.appendChild(scoreList);
+            container.appendChild(scoreList);
+        }
         return container;
     }
 
