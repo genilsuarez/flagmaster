@@ -47,6 +47,7 @@ export class BottomSheetView {
 
         // Modifier state (team modes only)
         this.practiceMode = false;
+        this.practiceDelay = 2;
         this.randomOrder = true;
 
         // DOM references
@@ -670,14 +671,45 @@ export class BottomSheetView {
         const practiceInput = document.createElement('input');
         practiceInput.type = 'checkbox';
         practiceInput.checked = this.practiceMode;
-        practiceInput.addEventListener('change', () => {
-            this.practiceMode = practiceInput.checked;
-        });
         const practiceText = document.createElement('span');
         practiceText.textContent = 'Modo práctica';
         practiceLabel.appendChild(practiceInput);
         practiceLabel.appendChild(practiceText);
         section.appendChild(practiceLabel);
+
+        // Practice delay select (only visible when practice mode is active)
+        const delayGroup = document.createElement('div');
+        delayGroup.className = 'bottom-sheet__field';
+        delayGroup.style.display = this.practiceMode ? '' : 'none';
+
+        const delayLabel = document.createElement('label');
+        delayLabel.className = 'bottom-sheet__label';
+        delayLabel.setAttribute('for', 'bs-practice-delay');
+        delayLabel.textContent = 'Delay auto-avance (s)';
+
+        const delaySelect = document.createElement('select');
+        delaySelect.id = 'bs-practice-delay';
+        delaySelect.className = 'bottom-sheet__control';
+        [1, 2, 3].forEach(val => {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = `${val} segundo${val > 1 ? 's' : ''}`;
+            if (val === this.practiceDelay) option.selected = true;
+            delaySelect.appendChild(option);
+        });
+        delaySelect.addEventListener('change', () => {
+            this.practiceDelay = Number(delaySelect.value);
+        });
+
+        delayGroup.appendChild(delayLabel);
+        delayGroup.appendChild(delaySelect);
+        section.appendChild(delayGroup);
+
+        // Toggle delay visibility when practice mode changes
+        practiceInput.addEventListener('change', () => {
+            this.practiceMode = practiceInput.checked;
+            delayGroup.style.display = this.practiceMode ? '' : 'none';
+        });
 
         // Random order toggle
         const randomLabel = document.createElement('label');
@@ -853,6 +885,7 @@ export class BottomSheetView {
 
             // Restore modifiers
             if (config.practiceMode !== undefined) this.practiceMode = config.practiceMode;
+            if (config.practiceDelay !== undefined) this.practiceDelay = config.practiceDelay;
             if (config.randomOrder !== undefined)  this.randomOrder  = config.randomOrder;
         } catch {
             // Ignore invalid localStorage data
@@ -878,6 +911,7 @@ export class BottomSheetView {
             // can distinguish an explicit user choice from an inherited global default.
             const perMode = { modeOptions: config.modeOptions || {} };
             if (config.practiceMode !== undefined) perMode.practiceMode = config.practiceMode;
+            if (config.practiceDelay !== undefined) perMode.practiceDelay = config.practiceDelay;
             if (config.randomOrder !== undefined)  perMode.randomOrder  = config.randomOrder;
 
             // Persist content filters with their dirty flags
@@ -931,6 +965,7 @@ export class BottomSheetView {
 
         if (this.mode && this.mode.category === 'team') {
             config.practiceMode = this.practiceMode;
+            config.practiceDelay = this.practiceDelay;
             config.randomOrder = this.randomOrder;
         }
 

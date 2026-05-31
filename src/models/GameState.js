@@ -14,6 +14,7 @@ export class GameState {
         };
         this.isRandomMode = true;
         this.isPracticeMode = false;
+        this.practiceDelay = 2;
     }
 
     reset() {

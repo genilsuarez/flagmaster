@@ -377,6 +377,7 @@ export class GameController {
 
         // Configure game state from external config
         this.gameState.isPracticeMode = config.practiceMode || false;
+        this.gameState.practiceDelay = config.practiceDelay || 2;
         this.gameState.gameMode = gameMode;
         this.gameState.isRandomMode = config.randomOrder !== false;
         this.gameState.capitalsHintMode = config.modeOptions?.hintMode || 'flagAndName';
@@ -546,9 +547,10 @@ export class GameController {
             if (countdownSeconds <= 0) {
                 this.revealCountryInfo();
                 if (this.gameState.isPracticeMode) {
+                    const delayMs = (this.gameState.practiceDelay || 2) * 1000;
                     setTimeout(() => {
                         this.handleTeamScore('blue');
-                    }, 2500);
+                    }, delayMs);
                 }
             }
         }, 1000);
