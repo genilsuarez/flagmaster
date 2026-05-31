@@ -1,5 +1,4 @@
-# Configuración de desarrollo local
-config/
+# Dependencias
 node_modules/
 npm-debug.log*
 yarn-debug.log*

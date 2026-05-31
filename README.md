@@ -179,7 +179,6 @@ Los botones muestran indicadores visuales con los números correspondientes para
 ## 📄 Documentación
 
 - [`DESIGN.md`](./DESIGN.md) - Sistema de diseño completo
-- [`CHANGELOG.md`](./CHANGELOG.md) - Historial de cambios
 
 ---
 
