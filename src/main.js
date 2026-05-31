@@ -221,17 +221,11 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
 
     // Determine if this was a team mode
     const teamModes = ['banderaFlash', 'capitalQuest'];
-    if (teamModes.includes(modeId) && results.roundHistory) {
-        // Team mode: show team scores
-        const teamScores = {};
-        // Build team scores from round history (simplified)
-        teamScores.red = results.correct || 0;
-        teamScores.blue = results.wrong || 0;
-        teamScores.green = 0;
-
+    if (teamModes.includes(modeId) && results.teamScores) {
+        // Team mode: show team scores directly from results
         gameEndModal.showTeamResults({
             modeId,
-            teamScores,
+            teamScores: results.teamScores,
             modeOptions: modeOptions || {},
             continent: continent || null,
             sovereignty: sovereignty || null,

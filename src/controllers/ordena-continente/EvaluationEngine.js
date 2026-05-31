@@ -33,8 +33,9 @@ export function evaluate(assignments, items) {
         };
     });
 
-    const total = items.length;
-    const score = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const POINTS_CORRECT = 100;
+    const PENALTY_INCORRECT = 15;
+    const score = Math.max(0, (correct * POINTS_CORRECT) - (incorrect * PENALTY_INCORRECT));
 
     return { results, score, correct, incorrect };
 }

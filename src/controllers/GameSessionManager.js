@@ -551,19 +551,20 @@ export class GameSessionManager {
 
         // Handle team mode end data (from GameController)
         if (data.teamScores) {
-            const scores = data.teamScores;
-            const correct = (scores.red || 0) + (scores.green || 0);
-            const wrong = scores.blue || 0;
-            this.session.totalScore = correct;
+            // Store team scores directly without manipulation
+            this.session.teamScores = { ...data.teamScores };
+            
+            // Calculate total rounds from all team scores
+            const totalRounds = Object.values(data.teamScores).reduce((sum, score) => sum + score, 0);
+            
+            this.session.currentRound = totalRounds;
             this.session.roundHistory = [];
+            
             // Build synthetic round history for team modes
-            for (let i = 0; i < correct; i++) {
+            // Each team score represents a round won by that team
+            for (let i = 0; i < totalRounds; i++) {
                 this.session.roundHistory.push({ correct: true, points: 1, timeMs: 0 });
             }
-            for (let i = 0; i < wrong; i++) {
-                this.session.roundHistory.push({ correct: false, points: 0, timeMs: 0 });
-            }
-            this.session.currentRound = correct + wrong;
         }
 
         this.endSession();
@@ -602,7 +603,7 @@ export class GameSessionManager {
             ? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
             : null;
 
-        return {
+        const results = {
             modeId: this.session.modeId,
             modeOptions: this.session.config?.modeOptions || {},
             continent: this.session.config?.continent || null,
@@ -619,6 +620,13 @@ export class GameSessionManager {
             roundHistory: history,
             completedNaturally: this.session.completedNaturally === true,
         };
+
+        // Include team scores for team-based modes
+        if (this.session.teamScores) {
+            results.teamScores = { ...this.session.teamScores };
+        }
+
+        return results;
     }
 
     /**
