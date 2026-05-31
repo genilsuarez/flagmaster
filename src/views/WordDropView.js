@@ -27,6 +27,8 @@ export class WordDropView {
         this.onSurrenderPressed = null;
         this.answerCountdownInterval = null;
         this.answerTimeLeft = 10;
+        this.answerCountdownDuration = 10;
+        this.currentSpeed = 'normal';
 
         this.buildDOM();
     }
@@ -282,10 +284,28 @@ export class WordDropView {
     }
 
     /**
-     * Starts a 10-second countdown for answering.
+     * Sets the speed for the typing countdown.
+     * @param {'slow'|'normal'|'fast'} speed
+     */
+    setSpeed(speed) {
+        this.currentSpeed = speed || 'normal';
+    }
+
+    /**
+     * Returns the answer countdown duration based on current speed.
+     * Slow = 15s, Normal = 10s, Fast = 7s.
+     */
+    getAnswerCountdownDuration() {
+        const durations = { slow: 15, normal: 10, fast: 7 };
+        return durations[this.currentSpeed] || 10;
+    }
+
+    /**
+     * Starts a countdown for answering, duration varies by speed setting.
      */
     startAnswerCountdown() {
-        this.answerTimeLeft = 10;
+        this.answerCountdownDuration = this.getAnswerCountdownDuration();
+        this.answerTimeLeft = this.answerCountdownDuration;
         this.updateCountdownDisplay();
         this.countdownEl.hidden = false;
 
@@ -331,7 +351,8 @@ export class WordDropView {
      * Returns how many seconds elapsed since the countdown started.
      */
     getElapsedAnswerSeconds() {
-        return 10 - (this.answerTimeLeft || 0);
+        const duration = this.answerCountdownDuration || 10;
+        return duration - (this.answerTimeLeft || 0);
     }
 
     /**

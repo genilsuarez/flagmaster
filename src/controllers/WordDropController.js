@@ -127,6 +127,7 @@ export class WordDropController {
 
         this.view.show();
         this.view.reset();
+        this.view.setSpeed(this.speed);
         this.view.updateScore(0);
         this.view.setLivesVisible(this.isSurvivalMode);
         this.view.updateLives(this.lives);

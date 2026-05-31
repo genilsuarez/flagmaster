@@ -154,16 +154,20 @@ export class WordDropService {
 
     /**
      * Calculates score based on how many letters were revealed.
+     * Uses a consistent per-letter deduction: each revealed letter reduces
+     * the score proportionally so that 0 revealed = 100 and all revealed = 10.
+     * Formula: score = 100 - (revealedCount / totalLetters) * 90
+     * This ensures consistent scoring regardless of word length.
      */
     calculateScore(revealedCount, totalLetters, isCorrect) {
         if (!isCorrect) return -15;
 
-        const ratio = revealedCount / totalLetters;
+        if (revealedCount === 0) return 100;
 
-        if (ratio <= 0.25) return 100;
-        if (ratio <= 0.50) return 60;
-        if (ratio <= 0.75) return 20;
-        return 10;
+        // Linear scale: 100 at 0 letters revealed, 10 at all letters revealed
+        const ratio = revealedCount / totalLetters;
+        const score = Math.round(100 - ratio * 90);
+        return Math.max(10, score);
     }
 
     /**
