@@ -1891,7 +1891,6 @@ describe('Task 11.4 — Estructura base App_Modal en GameEndModalView (Requireme
     wrong: 5,
     maxStreak: 3,
     elapsedSeconds: 60,
-    newAchievements: [],
   };
 
   beforeEach(() => {
@@ -1954,7 +1953,6 @@ describe('Task 11.4 — Estructura base App_Modal en GameEndModalView (Requireme
     view.showTeamResults({
       modeId: 'banderaFlash',
       teamScores: { red: 5, blue: 3, green: 2 },
-      newAchievements: [],
     });
 
     expect(document.querySelector('.app-modal__panel')).not.toBeNull();
@@ -1998,7 +1996,6 @@ describe('Property 8 — Cerrar modal con Escape restaura el foco (Requirement 8
             wrong: 0,
             maxStreak: 0,
             elapsedSeconds: 0,
-            newAchievements: [],
           });
 
           // Modal should be open and focus should have moved
@@ -2045,7 +2042,6 @@ describe('Property 8 — Cerrar modal con Escape restaura el foco (Requirement 8
             wrong: 0,
             maxStreak: 0,
             elapsedSeconds: 0,
-            newAchievements: [],
           });
 
           const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
@@ -2086,7 +2082,6 @@ describe('Property 9 — Abrir modal mueve el foco al primer elemento interactiv
             wrong: 0,
             maxStreak: 0,
             elapsedSeconds: 0,
-            newAchievements: [],
           });
 
           // The first interactive element inside the modal panel
@@ -2118,7 +2113,6 @@ describe('Property 9 — Abrir modal mueve el foco al primer elemento interactiv
           view.showTeamResults({
             modeId: 'banderaFlash',
             teamScores: { red, blue, green },
-            newAchievements: [],
           });
 
           const modal = document.querySelector('.game-end-modal');
@@ -2160,7 +2154,6 @@ describe('Property 10 — Click en backdrop cierra el modal (Requirement 8.6)', 
             wrong: 0,
             maxStreak: 0,
             elapsedSeconds: 0,
-            newAchievements: [],
           });
 
           // The backdrop is the overlay element with data-close="true"
@@ -2194,7 +2187,6 @@ describe('Property 10 — Click en backdrop cierra el modal (Requirement 8.6)', 
             wrong: 0,
             maxStreak: 0,
             elapsedSeconds: 0,
-            newAchievements: [],
           });
 
           const backdrop = document.querySelector('.app-modal__backdrop');
@@ -2224,7 +2216,6 @@ describe('Property 10 — Click en backdrop cierra el modal (Requirement 8.6)', 
             view.showTeamResults({
               modeId: 'banderaFlash',
               teamScores: { red, blue, green },
-              newAchievements: [],
             });
           } else {
             view.showIndividualResults({
@@ -2234,7 +2225,6 @@ describe('Property 10 — Click en backdrop cierra el modal (Requirement 8.6)', 
               wrong: green,
               maxStreak: 0,
               elapsedSeconds: 0,
-              newAchievements: [],
             });
           }
 

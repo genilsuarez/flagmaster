@@ -1150,7 +1150,7 @@ body {
     color: var(--ink);
     letter-spacing: -0.02em;
     line-height: 1.1;
-    min-height: 3rem;
+    min-height: calc(2.2rem * 1.1 * 2 + var(--space-md) * 2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1173,11 +1173,9 @@ body {
 }
 
 #countryInfo.hidden-keep-space:empty {
-    min-height: 0;
-    padding: 0;
-    margin: 0;
-    border: none;
+    border-color: transparent;
     box-shadow: none;
+    background: transparent;
 }
 
 #countryInfo:not(.hidden-keep-space) {
@@ -2749,52 +2747,6 @@ body.screen-game .game-wrapper {
     font-weight: 500;
 }
 
-.achievements-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: var(--space-sm);
-}
-
-.achievement {
-    padding: var(--space-lg) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1.5px solid var(--soft-sand);
-    background: var(--warm-white);
-    text-align: center;
-    transition: all var(--duration-quick) var(--ease-gentle);
-}
-
-.achievement.unlocked {
-    background: var(--cream-bg);
-    border-color: var(--deep-sage);
-}
-
-.achievement .ach-icon {
-    font-size: 1.8rem;
-    margin-bottom: var(--space-sm);
-    filter: grayscale(0.6) saturate(0.5);
-    opacity: 0.55;
-}
-
-.achievement.unlocked .ach-icon {
-    filter: none;
-    opacity: 1;
-}
-
-.achievement h4 {
-    margin: 0 0 var(--space-xs);
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--ink);
-}
-
-.achievement p {
-    margin: 0;
-    font-size: 0.7rem;
-    color: var(--stone);
-    line-height: 1.4;
-}
 
 /* WORD DROP MODE */
 .word-drop-container {
@@ -3324,7 +3276,7 @@ body.screen-game .game-wrapper {
     #countryInfo {
         font-size: 1.5rem;
         margin: 0 0 var(--space-sm);
-        min-height: 2.5rem;
+        min-height: calc(1.5rem * 1.1 * 2 + var(--space-sm) * 2);
         padding: var(--space-sm) var(--space-md);
     }
 
@@ -4493,46 +4445,6 @@ body.screen-game .game-wrapper {
     color: var(--ink);
 }
 
-.game-end-modal__achievements {
-    margin-bottom: var(--space-md);
-    padding-top: var(--space-sm);
-    border-top: 1px solid var(--soft-sand);
-}
-
-.game-end-modal__achievements-title {
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--stone);
-    margin: 0 0 var(--space-xs);
-}
-
-.game-end-modal__achievements-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-sm);
-    justify-content: center;
-}
-
-.game-end-modal__achievement-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-md);
-    border-radius: var(--radius-pill);
-    background: var(--soft-sand);
-    border: 1px solid var(--warm-gray);
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--charcoal);
-}
-
-.game-end-modal__achievement-icon {
-    font-size: 1rem;
-}
-
 .game-end-modal__footer {
     display: flex;
     gap: var(--space-md);
@@ -4787,44 +4699,6 @@ body.screen-game .game-wrapper {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
-}
-
-/* ─── Achievement Toast ─────────────────────────────────────────────────── */
-
-.achievement-toast {
-    position: fixed;
-    top: var(--space-lg);
-    left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-md) var(--space-xl);
-    background: var(--charcoal);
-    color: var(--warm-white);
-    border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-medium);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 500;
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-}
-
-.achievement-toast--visible {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.achievement-toast__icon {
-    font-size: 1.4rem;
-}
-
-.achievement-toast__text {
-    white-space: nowrap;
 }
 
 /* ─── Per-Mode Stats in Modal ───────────────────────────────────────────── */

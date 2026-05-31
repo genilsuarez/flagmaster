@@ -20,7 +20,6 @@ describe('GameEndModalView', () => {
         const teamOptions = {
             modeId: 'banderaFlash',
             teamScores: { red: 5, blue: 3, green: 2 },
-            newAchievements: [],
         };
 
         it('renders a modal overlay with correct CSS classes', () => {
@@ -86,7 +85,6 @@ describe('GameEndModalView', () => {
             wrong: 2,
             maxStreak: 5,
             elapsedSeconds: 95,
-            newAchievements: [],
         };
 
         it('renders a modal overlay with correct CSS classes', () => {
@@ -121,62 +119,6 @@ describe('GameEndModalView', () => {
         });
     });
 
-    describe('achievements section', () => {
-        it('does not render achievements section when no achievements unlocked', () => {
-            view.showIndividualResults({
-                modeId: 'flagRush',
-                totalScore: 1000,
-                correct: 5,
-                wrong: 5,
-                maxStreak: 3,
-                elapsedSeconds: 60,
-                newAchievements: [],
-            });
-            const achievements = document.querySelector('.game-end-modal__achievements');
-            expect(achievements).toBeNull();
-        });
-
-        it('renders achievements section when achievements are unlocked', () => {
-            view.showIndividualResults({
-                modeId: 'flagRush',
-                totalScore: 1000,
-                correct: 5,
-                wrong: 5,
-                maxStreak: 3,
-                elapsedSeconds: 60,
-                newAchievements: ['explorer', 'imparable'],
-            });
-            const achievements = document.querySelector('.game-end-modal__achievements');
-            expect(achievements).not.toBeNull();
-        });
-
-        it('displays achievement icons and names', () => {
-            view.showIndividualResults({
-                modeId: 'flagRush',
-                totalScore: 1000,
-                correct: 5,
-                wrong: 5,
-                maxStreak: 3,
-                elapsedSeconds: 60,
-                newAchievements: ['explorer'],
-            });
-            const icon = document.querySelector('.game-end-modal__achievement-icon');
-            const name = document.querySelector('.game-end-modal__achievement-name');
-            expect(icon.textContent).toBe('🌍');
-            expect(name.textContent).toBe('Explorador');
-        });
-
-        it('renders multiple achievements', () => {
-            view.showTeamResults({
-                modeId: 'banderaFlash',
-                teamScores: { red: 3, blue: 2, green: 1 },
-                newAchievements: ['explorer', 'sniper', 'lightning'],
-            });
-            const items = document.querySelectorAll('.game-end-modal__achievement-item');
-            expect(items.length).toBe(3);
-        });
-    });
-
     describe('buttons', () => {
         it('renders Jugar de nuevo and Inicio buttons', () => {
             view.showIndividualResults({
@@ -186,7 +128,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const buttons = document.querySelectorAll('.game-end-modal__btn');
             expect(buttons.length).toBe(2);
@@ -202,7 +143,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const playAgainBtn = document.querySelector('.game-end-modal__btn--play-again');
             playAgainBtn.click();
@@ -217,7 +157,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const homeBtn = document.querySelector('.game-end-modal__btn--home');
             homeBtn.click();
@@ -232,7 +171,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const playAgainBtn = document.querySelector('.game-end-modal__btn--play-again');
             playAgainBtn.click();
@@ -248,7 +186,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const homeBtn = document.querySelector('.game-end-modal__btn--home');
             homeBtn.click();
@@ -266,7 +203,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const modal = document.querySelector('.game-end-modal');
             expect(modal.getAttribute('aria-label')).toBe('Resultados del juego');
@@ -280,7 +216,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             // The first interactive element is the close button (app-modal__close),
             // or the first game-end-modal__btn if no close button exists
@@ -296,7 +231,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
             document.dispatchEvent(event);
@@ -312,7 +246,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
             document.dispatchEvent(event);
@@ -327,7 +260,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             // Get all focusable buttons in the modal
             const modal = document.querySelector('.game-end-modal');
@@ -349,7 +281,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             // Get all focusable buttons in the modal
             const modal = document.querySelector('.game-end-modal');
@@ -373,7 +304,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             view.close();
             const modal = document.querySelector('.game-end-modal');
@@ -388,7 +318,6 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             view.destroy();
             const modal = document.querySelector('.game-end-modal');
@@ -403,12 +332,10 @@ describe('GameEndModalView', () => {
                 wrong: 5,
                 maxStreak: 3,
                 elapsedSeconds: 60,
-                newAchievements: [],
             });
             view.showTeamResults({
                 modeId: 'banderaFlash',
                 teamScores: { red: 3, blue: 2, green: 1 },
-                newAchievements: [],
             });
             const modals = document.querySelectorAll('.game-end-modal');
             expect(modals.length).toBe(1);

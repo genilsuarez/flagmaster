@@ -41,7 +41,6 @@ describe('GameSessionManager', () => {
     let manager;
     let pool;
     let mockStatsService;
-    let mockAchievementService;
 
     beforeEach(() => {
         container = document.createElement('div');
@@ -56,10 +55,6 @@ describe('GameSessionManager', () => {
                 currentStreak: 3,
                 uniqueCountriesCorrect: [],
             }),
-        };
-
-        mockAchievementService = {
-            check: vi.fn().mockReturnValue([]),
         };
     });
 
@@ -90,11 +85,9 @@ describe('GameSessionManager', () => {
             manager = new GameSessionManager({
                 container,
                 statsService: mockStatsService,
-                achievementService: mockAchievementService,
                 onSessionEnd,
             });
             expect(manager.statsService).toBe(mockStatsService);
-            expect(manager.achievementService).toBe(mockAchievementService);
             expect(manager.onSessionEnd).toBe(onSessionEnd);
         });
     });
@@ -447,35 +440,6 @@ describe('GameSessionManager', () => {
             }));
         });
 
-        it('checks achievements via AchievementService', () => {
-            manager = new GameSessionManager({
-                container,
-                statsService: mockStatsService,
-                achievementService: mockAchievementService,
-            });
-            manager.startSession('flagRush', { modeOptions: { rounds: 5 } }, pool);
-
-            manager.handleAnswer(true, 10, 10);
-            manager.endSession();
-
-            expect(mockAchievementService.check).toHaveBeenCalled();
-        });
-
-        it('includes newly unlocked achievements in results', () => {
-            mockAchievementService.check.mockReturnValue(['imparable']);
-            manager = new GameSessionManager({
-                container,
-                statsService: mockStatsService,
-                achievementService: mockAchievementService,
-            });
-            manager.startSession('flagRush', { modeOptions: { rounds: 5 } }, pool);
-
-            manager.handleAnswer(true, 10, 10);
-            const results = manager.endSession();
-
-            expect(results.newAchievements).toEqual(['imparable']);
-        });
-
         it('stops the active controller', () => {
             manager = new GameSessionManager({ container });
             manager.startSession('flagRush', { modeOptions: { rounds: 5 } }, pool);
@@ -561,19 +525,4 @@ describe('GameSessionManager', () => {
         });
     });
 
-    describe('modes completed tracking', () => {
-        it('persists completed mode to localStorage', () => {
-            manager = new GameSessionManager({
-                container,
-                statsService: mockStatsService,
-                achievementService: mockAchievementService,
-            });
-            manager.startSession('flagRush', { modeOptions: { rounds: 5 } }, pool);
-            manager.handleAnswer(true, 10, 10);
-            manager.endSession();
-
-            const stored = JSON.parse(localStorage.getItem('flagquiz_modes_completed'));
-            expect(stored).toContain('flagRush');
-        });
-    });
 });

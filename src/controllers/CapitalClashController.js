@@ -412,7 +412,7 @@ export class CapitalClashController {
         if (this.onGameEnd) {
             this.onGameEnd({
                 totalScore: this.totalScore,
-                totalRounds: this.currentRound - 1,
+                totalRounds: this.roundHistory.length,
                 roundHistory: this.roundHistory,
                 highestStreak: this.getHighestStreak(),
             });

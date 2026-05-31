@@ -21,7 +21,7 @@ import { OrdenaContinenteController } from './ordena-continente/OrdenaContinente
  * Used by AppRouter/main.js to start any game mode through a unified interface.
  *
  * @example
- * const manager = new GameSessionManager({ container, countryService, statsService, achievementService });
+ * const manager = new GameSessionManager({ container, countryService, statsService });
  * manager.startSession('flagRush', { modeOptions: { rounds: 10 } }, countryPool);
  * // ... game plays via controller ...
  * // manager.endSession() called automatically or manually
@@ -32,15 +32,13 @@ export class GameSessionManager {
      * @param {HTMLElement} options.container - Parent element for game UI
      * @param {import('../services/CountryService.js').CountryService} [options.countryService] - Country data service
      * @param {import('../services/StatsService.js').StatsService} [options.statsService] - Stats persistence service
-     * @param {import('../services/AchievementService.js').AchievementService} [options.achievementService] - Achievement evaluation service
      * @param {function} [options.onSessionEnd] - Callback with full session results when session ends
      */
-    constructor({ container, countryService = null, statsService = null, achievementService = null, onSessionEnd = null }) {
+    constructor({ container, countryService = null, statsService = null, onSessionEnd = null }) {
         this.container = container;
         this.gameContent = container.querySelector('.container') || container;
         this.countryService = countryService;
         this.statsService = statsService;
-        this.achievementService = achievementService;
         this.onSessionEnd = onSessionEnd;
 
         // Shared services
@@ -421,7 +419,7 @@ export class GameSessionManager {
     /**
      * Ends the current game session.
      *
-     * Stops the active controller, records session stats, checks achievements,
+     * Stops the active controller, records session stats,
      * and invokes the onSessionEnd callback with full results.
      *
      * @returns {Object|null} Session results or null if no active session
@@ -461,23 +459,12 @@ export class GameSessionManager {
         // Record stats
         this.recordStats(results);
 
-        // Check achievements
-        let newAchievements = [];
-        if (this.achievementService) {
-            newAchievements = this.checkAchievements(results);
-        }
-
-        const fullResults = {
-            ...results,
-            newAchievements,
-        };
-
         // Invoke callback
         if (this.onSessionEnd) {
-            this.onSessionEnd(fullResults);
+            this.onSessionEnd(results);
         }
 
-        return fullResults;
+        return results;
     }
 
     /**
@@ -532,7 +519,7 @@ export class GameSessionManager {
 
     /**
      * Handles game-end data from the active controller.
-     * Triggers endSession to finalize stats and achievements.
+     * Triggers endSession to finalize stats.
      *
      * @param {Object} data - Game-end data from the controller
      * @private
@@ -657,70 +644,6 @@ export class GameSessionManager {
             });
         } catch {
             // Ignore stats recording errors
-        }
-    }
-
-    /**
-     * Checks achievements against session results and cumulative stats.
-     *
-     * @param {Object} results - Session results
-     * @returns {string[]} Array of newly unlocked achievement IDs
-     * @private
-     */
-    checkAchievements(results) {
-        if (!this.achievementService) return [];
-
-        try {
-            const cumulativeStats = this.statsService ? this.statsService.getStats() : {};
-
-            return this.achievementService.check(results, {
-                totalCorrect: cumulativeStats.totalCorrect || 0,
-                currentStreak: cumulativeStats.currentStreak || 0,
-                uniqueCountriesCorrect: cumulativeStats.uniqueCountriesCorrect || [],
-                modesCompleted: this.getModesCompleted(results.modeId),
-                powerUpsUsed: this.getCumulativePowerUpsUsed(),
-                continentCompleted: false,
-            });
-        } catch {
-            return [];
-        }
-    }
-
-    /**
-     * Gets the list of modes completed, including the current one.
-     *
-     * @param {string} currentModeId - The mode just completed
-     * @returns {string[]}
-     * @private
-     */
-    getModesCompleted(currentModeId) {
-        try {
-            const stored = localStorage.getItem('flagquiz_modes_completed');
-            const modes = stored ? JSON.parse(stored) : [];
-            if (!modes.includes(currentModeId)) {
-                modes.push(currentModeId);
-                localStorage.setItem('flagquiz_modes_completed', JSON.stringify(modes));
-            }
-            return modes;
-        } catch {
-            return [currentModeId];
-        }
-    }
-
-    /**
-     * Gets the cumulative power-ups used count, including this session.
-     *
-     * @returns {number}
-     * @private
-     */
-    getCumulativePowerUpsUsed() {
-        try {
-            const stored = localStorage.getItem('flagquiz_powerups_used');
-            const total = (stored ? parseInt(stored, 10) : 0) + this.powerUpsUsedThisSession;
-            localStorage.setItem('flagquiz_powerups_used', total.toString());
-            return total;
-        } catch {
-            return this.powerUpsUsedThisSession;
         }
     }
 

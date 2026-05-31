@@ -1,5 +1,4 @@
 import { GAME_MODES } from '../models/ModeDefinition.js';
-import { ACHIEVEMENTS } from '../services/AchievementService.js';
 import { MODE_OPTIONS } from '../models/ModeOptions.js';
 
 /**
@@ -9,14 +8,13 @@ import { MODE_OPTIONS } from '../models/ModeOptions.js';
  * 1. Team scores layout (banderaFlash/capitalQuest): shows team scores and winner announcement
  * 2. Individual stats layout (all other modes): shows total score, correct/wrong, streak, time
  *
- * Also displays newly unlocked achievements and provides navigation buttons.
+ * Provides navigation buttons to replay or return home.
  *
  * CSS classes:
  * - game-end-modal: root modal element
  * - game-end-modal__overlay: backdrop overlay
  * - game-end-modal__content: modal content container
  * - game-end-modal__stats: stats section
- * - game-end-modal__achievements: achievements section
  */
 export class GameEndModalView {
     /** @type {HTMLElement|null} */
@@ -62,9 +60,8 @@ export class GameEndModalView {
      * @param {Object} options
      * @param {string} options.modeId - The mode that was played
      * @param {Object} options.teamScores - Map of team color to score (e.g. { red: 5, blue: 3, green: 2 })
-     * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showTeamResults({ modeId, teamScores, newAchievements = [], modeOptions = {}, continent = null, sovereignty = null }) {
+    showTeamResults({ modeId, teamScores, modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
         this.#modeOptions = modeOptions;
         this.#continent = continent;
@@ -87,11 +84,6 @@ export class GameEndModalView {
         statsSection.appendChild(this.#createTeamScores(teamScores));
         body.appendChild(statsSection);
 
-        // Achievements
-        if (newAchievements.length > 0) {
-            body.appendChild(this.#createAchievementsSection(newAchievements));
-        }
-
         content.appendChild(body);
 
         // Buttons
@@ -111,9 +103,8 @@ export class GameEndModalView {
      * @param {number} options.wrong - Number of wrong answers
      * @param {number} options.maxStreak - Highest streak achieved
      * @param {number} options.elapsedSeconds - Total time elapsed in seconds
-     * @param {string[]} [options.newAchievements] - Array of newly unlocked achievement IDs
      */
-    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements = [], modeOptions = {}, continent = null, sovereignty = null }) {
+    showIndividualResults({ modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, modeOptions = {}, continent = null, sovereignty = null }) {
         this.#modeId = modeId;
         this.#modeOptions = modeOptions;
         this.#continent = continent;
@@ -135,11 +126,6 @@ export class GameEndModalView {
         statsSection.className = 'game-end-modal__stats';
         statsSection.appendChild(this.#createIndividualStats({ totalScore, correct, wrong, maxStreak, elapsedSeconds }));
         body.appendChild(statsSection);
-
-        // Achievements
-        if (newAchievements.length > 0) {
-            body.appendChild(this.#createAchievementsSection(newAchievements));
-        }
 
         content.appendChild(body);
 
@@ -416,49 +402,6 @@ export class GameEndModalView {
         });
 
         return container;
-    }
-
-    /**
-     * Creates the achievements section showing newly unlocked achievements.
-     * @param {string[]} achievementIds - Array of achievement IDs
-     * @returns {HTMLElement}
-     * @private
-     */
-    #createAchievementsSection(achievementIds) {
-        const section = document.createElement('div');
-        section.className = 'game-end-modal__achievements';
-
-        const heading = document.createElement('h3');
-        heading.className = 'game-end-modal__achievements-title';
-        heading.textContent = '🏅 Logros desbloqueados';
-        section.appendChild(heading);
-
-        const list = document.createElement('div');
-        list.className = 'game-end-modal__achievements-list';
-
-        achievementIds.forEach(id => {
-            const achievement = ACHIEVEMENTS[id];
-            if (!achievement) return;
-
-            const item = document.createElement('div');
-            item.className = 'game-end-modal__achievement-item';
-
-            const icon = document.createElement('span');
-            icon.className = 'game-end-modal__achievement-icon';
-            icon.setAttribute('aria-hidden', 'true');
-            icon.textContent = achievement.icon;
-
-            const name = document.createElement('span');
-            name.className = 'game-end-modal__achievement-name';
-            name.textContent = achievement.name;
-
-            item.appendChild(icon);
-            item.appendChild(name);
-            list.appendChild(item);
-        });
-
-        section.appendChild(list);
-        return section;
     }
 
     /**

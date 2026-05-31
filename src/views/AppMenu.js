@@ -1,5 +1,5 @@
 /**
- * AppMenu: hamburger drawer + modals (About, How to play, Shortcuts, Stats, Achievements).
+ * AppMenu: hamburger drawer + modals (About, How to play, Shortcuts, Stats).
  * Decoupled from the game logic. Interacts with StatsService for dynamic content.
  */
 
@@ -161,32 +161,6 @@ const MODAL_TEMPLATES = {
                 ` : ''}
             `;
         }
-    },
-    achievements: {
-        title: 'Logros',
-        body: (stats) => {
-            const items = [
-                { id: 'explorer',   icon: '🌍', name: 'Explorador',  desc: '10 aciertos totales' },
-                { id: 'sniper',     icon: '🎯', name: 'Francotirador', desc: '10 aciertos en una partida' },
-                { id: 'lightning',  icon: '⚡', name: 'Rayo',         desc: 'Partida en menos de 1 min' },
-                { id: 'conqueror',  icon: '🌎', name: 'Conquistador', desc: 'Un continente completo' },
-                { id: 'persistent', icon: '🔥', name: 'Persistente',  desc: '7 días seguidos' }
-            ];
-            return `
-                <div class="achievements-grid">
-                    ${items.map(it => {
-                        const unlocked = stats.achievements?.[it.id];
-                        return `
-                            <div class="achievement ${unlocked ? 'unlocked' : ''}">
-                                <div class="ach-icon">${it.icon}</div>
-                                <h4>${it.name}</h4>
-                                <p>${it.desc}</p>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
     }
 };
 
@@ -275,9 +249,6 @@ export class AppMenu {
                 break;
             case 'stats':
                 this.openModal('stats');
-                break;
-            case 'achievements':
-                this.openModal('achievements');
                 break;
             case 'howto':
                 this.openModal('howto');

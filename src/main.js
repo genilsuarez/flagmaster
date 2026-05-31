@@ -2,11 +2,9 @@ import { AppRouter } from './AppRouter.js';
 import { GameSessionManager } from './controllers/GameSessionManager.js';
 import { CountryService } from './services/CountryService.js';
 import { StatsService } from './services/StatsService.js';
-import { AchievementService } from './services/AchievementService.js';
 import { GlobalDefaultsService } from './services/GlobalDefaultsService.js';
 import { BottomSheetView } from './views/BottomSheetView.js';
 import { GameEndModalView } from './views/GameEndModalView.js';
-import { AchievementToast } from './views/AchievementToast.js';
 import { AppMenu } from './views/AppMenu.js';
 import { GAME_MODES } from './models/ModeDefinition.js';
 
@@ -19,7 +17,6 @@ import { GAME_MODES } from './models/ModeDefinition.js';
 document.addEventListener('DOMContentLoaded', () => {
     const countryService = new CountryService();
     const statsService = new StatsService();
-    const achievementService = new AchievementService();
     const globalDefaults = new GlobalDefaultsService();
 
     const router = new AppRouter();
@@ -42,13 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
         container: gameContainer,
         countryService,
         statsService,
-        achievementService,
         onSessionEnd: (results) => {
             handleSessionEnd(results, router, gameEndModal, bottomSheet);
-            // Show achievement toast notifications
-            if (results.newAchievements && results.newAchievements.length > 0) {
-                achievementToast.show(results.newAchievements);
-            }
         },
     });
 
@@ -57,9 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
         onPlayAgain: (modeId) => handlePlayAgain(modeId, router, bottomSheet),
         onHome: () => router.reset('home'),
     });
-
-    // Achievement toast for unlock notifications
-    const achievementToast = new AchievementToast();
 
     // App menu (drawer)
     const appMenu = new AppMenu({
@@ -225,7 +214,7 @@ function startGame(config, router, sessionManager, countryService) {
  * Handles session end: shows the game end modal with results.
  */
 function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
-    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, newAchievements, modeOptions, continent, sovereignty } = results;
+    const { modeId, totalScore, correct, wrong, maxStreak, elapsedSeconds, modeOptions, continent, sovereignty } = results;
 
     // Navigate back to home
     router.reset('home');
@@ -243,7 +232,6 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
         gameEndModal.showTeamResults({
             modeId,
             teamScores,
-            newAchievements: newAchievements || [],
             modeOptions: modeOptions || {},
             continent: continent || null,
             sovereignty: sovereignty || null,
@@ -257,7 +245,6 @@ function handleSessionEnd(results, router, gameEndModal, bottomSheet) {
             wrong: wrong || 0,
             maxStreak: maxStreak || 0,
             elapsedSeconds: elapsedSeconds || 0,
-            newAchievements: newAchievements || [],
             modeOptions: modeOptions || {},
             continent: continent || null,
             sovereignty: sovereignty || null,

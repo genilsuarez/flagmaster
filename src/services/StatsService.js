@@ -1,6 +1,6 @@
 /**
- * Service for persisting user stats and achievements in localStorage.
- * Enables the motivation features (streak, achievements, progress).
+ * Service for persisting user stats in localStorage.
+ * Enables the motivation features (streak, progress).
  * Tracks both global stats and per-mode stats for individual game modes.
  */
 const STORAGE_KEY = 'flagquiz_stats_v1';
@@ -24,13 +24,6 @@ const DEFAULT_STATS = {
     lastPlayedDate: null,
     lastPlayedMode: null,
     uniqueCountriesCorrect: [],
-    achievements: {
-        explorer: false,    // 10 correct answers total
-        sniper: false,      // 10 correct in a row in a single game
-        lightning: false,   // Finish a full game under 60s
-        conqueror: false,   // All countries from a continent
-        persistent: false   // 7 day streak
-    },
     modeStats: {},
 };
 
@@ -48,7 +41,6 @@ export class StatsService {
             return {
                 ...DEFAULT_STATS,
                 ...parsed,
-                achievements: { ...DEFAULT_STATS.achievements, ...(parsed.achievements || {}) },
                 modeStats: parsed.modeStats || {},
             };
         } catch {
@@ -145,7 +137,6 @@ export class StatsService {
             }
         }
 
-        this.checkAchievements({ correct, elapsedSeconds, completedNaturally, totalQuestions });
         this.save();
         return this.getStats();
     }
@@ -271,27 +262,8 @@ export class StatsService {
         }
     }
 
-    checkAchievements({ correct, elapsedSeconds, completedNaturally = true, totalQuestions = null }) {
-        const s = this.stats;
-        const a = s.achievements;
-
-        if (!a.explorer && s.totalCorrect >= 10) a.explorer = true;
-        if (!a.sniper && correct >= 10) a.sniper = true;
-        // Lightning: only counts for naturally completed games with enough questions
-        const MIN_QUESTIONS_FOR_BEST_TIME = 5;
-        const qualifiesForLightning =
-            completedNaturally &&
-            elapsedSeconds > 0 &&
-            elapsedSeconds <= 60 &&
-            correct > 0 &&
-            (totalQuestions === null || totalQuestions >= MIN_QUESTIONS_FOR_BEST_TIME);
-        if (!a.lightning && qualifiesForLightning) a.lightning = true;
-        if (!a.persistent && s.currentStreak >= 7) a.persistent = true;
-        // Conqueror achievement is tracked externally when a continent is completed
-    }
-
     reset() {
-        this.stats = { ...DEFAULT_STATS, achievements: { ...DEFAULT_STATS.achievements }, modeStats: {} };
+        this.stats = { ...DEFAULT_STATS, modeStats: {} };
         this.save();
     }
 

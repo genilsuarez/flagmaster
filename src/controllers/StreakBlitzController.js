@@ -550,8 +550,8 @@ export class StreakBlitzController {
         if (this.onGameEnd) {
             this.onGameEnd({
                 totalScore: this.totalScore,
-                totalQuestions: this.currentRound - 1,
-                roundsReached: this.currentRound - 1,
+                totalQuestions: this.roundHistory.length,
+                roundsReached: this.roundHistory.length,
                 correctCount: this.correctCount,
                 roundHistory: this.roundHistory,
                 highestStreak: this.getHighestStreak(),
