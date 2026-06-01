@@ -415,12 +415,12 @@ describe('OrdenaContinenteView', () => {
             expect(incorrect.textContent).toBe('✗ 1 incorrectos');
         });
 
-        it('muestra porcentaje de score', () => {
+        it('muestra puntuación de score', () => {
             view.render(mockItems, mockZones, {});
             view.showSummary({ correct: 3, incorrect: 1, score: 75, timeFormatted: '01:30' });
 
             const score = container.querySelector('.oc-summary__score');
-            expect(score.textContent).toBe('75%');
+            expect(score.textContent).toBe('75 pts');
         });
 
         it('muestra tiempo formateado', () => {

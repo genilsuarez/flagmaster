@@ -435,11 +435,23 @@ export class GameSessionManager {
         if (this.activeController && this.activeController.roundHistory) {
             const controllerHistory = this.activeController.roundHistory;
             if (controllerHistory.length > 0) {
-                this.session.roundHistory = controllerHistory.map(r => ({
-                    correct: r.correct,
-                    points: r.points || 0,
-                    timeMs: r.timeRemaining != null ? r.timeRemaining * 1000 : (r.timeMs || 0),
-                }));
+                // OrdenaContinente sends batch results: one entry with results array
+                const firstEntry = controllerHistory[0];
+                if (firstEntry && firstEntry.results && Array.isArray(firstEntry.results)) {
+                    // Batch mode (OrdenaContinente): expand results to individual round entries
+                    // Base 100 per correct, -15 penalty per incorrect
+                    this.session.roundHistory = firstEntry.results.map(r => ({
+                        correct: r.isCorrect,
+                        points: r.isCorrect ? 100 : -15,
+                        timeMs: 0,
+                    }));
+                } else {
+                    this.session.roundHistory = controllerHistory.map(r => ({
+                        correct: r.correct,
+                        points: r.points || 0,
+                        timeMs: r.timeRemaining != null ? r.timeRemaining * 1000 : (r.timeMs || 0),
+                    }));
+                }
             }
         }
 
@@ -536,11 +548,24 @@ export class GameSessionManager {
         }
         if (data.roundHistory) {
             // Use controller's round history for accurate data
-            this.session.roundHistory = data.roundHistory.map(r => ({
-                correct: r.correct,
-                points: r.points || 0,
-                timeMs: r.timeRemaining != null ? r.timeRemaining * 1000 : 0,
-            }));
+            // OrdenaContinente sends batch results: one entry with correct/incorrect counts
+            // and a results array. Expand to individual entries for buildSessionResults().
+            const firstEntry = data.roundHistory[0];
+            if (firstEntry && firstEntry.results && Array.isArray(firstEntry.results)) {
+                // Batch mode (OrdenaContinente): expand results to individual round entries
+                // Base 100 per correct, -15 penalty per incorrect
+                this.session.roundHistory = firstEntry.results.map(r => ({
+                    correct: r.isCorrect,
+                    points: r.isCorrect ? 100 : -15,
+                    timeMs: 0,
+                }));
+            } else {
+                this.session.roundHistory = data.roundHistory.map(r => ({
+                    correct: r.correct,
+                    points: r.points || 0,
+                    timeMs: r.timeRemaining != null ? r.timeRemaining * 1000 : 0,
+                }));
+            }
         }
         if (data.totalRounds !== undefined) {
             this.session.currentRound = data.totalRounds;

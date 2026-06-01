@@ -270,7 +270,7 @@ export class OrdenaContinenteController {
         const evalResult = evaluate(assignmentsByContinent, this._state.items);
         this._state.results = evalResult;
 
-        // Show results in view
+        // Show results in view (inline feedback: green/red on each item)
         this._view.showResults(evalResult.results);
 
         // Calculate time elapsed
@@ -279,7 +279,7 @@ export class OrdenaContinenteController {
         const seconds = timeElapsed % 60;
         const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-        // Show summary
+        // Show summary inline (not as a blocking overlay)
         this._view.showSummary({
             correct: evalResult.correct,
             incorrect: evalResult.incorrect,
@@ -303,14 +303,8 @@ export class OrdenaContinenteController {
             this.onRoundEnd(roundEntry);
         }
 
-        // Invoke onGameEnd
-        if (this.onGameEnd) {
-            this.onGameEnd({
-                totalScore: evalResult.score,
-                roundHistory: this.roundHistory,
-                totalRounds: 1,
-            });
-        }
+        // Show continue button — user reviews inline feedback before ending
+        this._showContinueButton(evalResult);
 
         this.isActive = false;
     }
@@ -355,7 +349,7 @@ export class OrdenaContinenteController {
         const evalResult = evaluate(assignmentsByContinent, this._state.items);
         this._state.results = evalResult;
 
-        // Show results in view
+        // Show results in view (inline feedback)
         this._view.showResults(evalResult.results);
 
         // Calculate time elapsed (equals timeLimit since timeout)
@@ -364,7 +358,7 @@ export class OrdenaContinenteController {
         const seconds = timeElapsed % 60;
         const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-        // Show summary
+        // Show summary inline
         this._view.showSummary({
             correct: evalResult.correct,
             incorrect: evalResult.incorrect,
@@ -388,16 +382,28 @@ export class OrdenaContinenteController {
             this.onRoundEnd(roundEntry);
         }
 
-        // Invoke onGameEnd
-        if (this.onGameEnd) {
-            this.onGameEnd({
-                totalScore: evalResult.score,
-                roundHistory: this.roundHistory,
-                totalRounds: 1,
-            });
-        }
+        // Show continue button — user reviews inline feedback before ending
+        this._showContinueButton(evalResult);
 
         this.isActive = false;
+    }
+
+    /**
+     * Shows a "Continuar" button so the user can review inline feedback
+     * before the game-end modal appears.
+     * @param {Object} evalResult - Evaluation result from EvaluationEngine
+     * @private
+     */
+    _showContinueButton(evalResult) {
+        this._view.showContinueButton(() => {
+            if (this.onGameEnd) {
+                this.onGameEnd({
+                    totalScore: evalResult.score,
+                    roundHistory: this.roundHistory,
+                    totalRounds: 1,
+                });
+            }
+        });
     }
 
     /**

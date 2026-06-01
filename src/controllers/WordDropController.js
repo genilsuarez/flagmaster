@@ -4,6 +4,7 @@
  */
 import { WordDropService } from '../services/WordDropService.js';
 import { WordDropView } from '../views/WordDropView.js';
+import { StreakService } from '../services/StreakService.js';
 
 export class WordDropController {
     /**
@@ -22,6 +23,7 @@ export class WordDropController {
         this.onIncorrectAnswer = options.onIncorrectAnswer || null;
         this.service = new WordDropService();
         this.view = new WordDropView();
+        this.streakService = new StreakService();
 
         this.countries = [];
         this.currentIndex = 0;
@@ -35,6 +37,7 @@ export class WordDropController {
         this.speed = 'normal';
         this.roundTransitionTimeout = null;
         this.revealStartTimeout = null;
+        this.roundHistory = [];
 
         this.bindEvents();
     }
@@ -124,6 +127,10 @@ export class WordDropController {
         this.lives = 3;
         this.isActive = true;
         this.phase = 'revealing';
+        this.roundHistory = [];
+
+        // Reset streak
+        this.streakService.reset();
 
         this.view.show();
         this.view.reset();
@@ -204,10 +211,21 @@ export class WordDropController {
         const elapsedSeconds = this.view.getElapsedAnswerSeconds();
         const result = this.service.validateAnswer(answer);
 
-        // Time penalty: first 5 seconds free, then -3 pts per second after that
-        const penaltySeconds = Math.max(0, elapsedSeconds - 5);
-        const timePenalty = penaltySeconds * 3;
-        const adjustedScore = result.correct ? Math.max(10, result.score - timePenalty) : result.score;
+        let adjustedScore;
+        if (result.correct) {
+            // Record correct in streak and get multiplier
+            const streakResult = this.streakService.recordCorrect();
+
+            // Apply streak multiplier to base score, then subtract time penalty
+            const baseWithStreak = Math.round(result.score * streakResult.multiplier);
+            const penaltySeconds = Math.max(0, elapsedSeconds - 5);
+            const timePenalty = penaltySeconds * 3;
+            adjustedScore = Math.max(10, baseWithStreak - timePenalty);
+        } else {
+            // Record incorrect in streak (resets to 0)
+            this.streakService.recordIncorrect();
+            adjustedScore = result.score; // -15
+        }
 
         // Reveal all letters
         this.view.revealAllLetters(this.service.currentRound.word);
@@ -231,6 +249,13 @@ export class WordDropController {
         } else {
             if (this.onIncorrectAnswer) this.onIncorrectAnswer();
         }
+
+        // Record round result
+        this.roundHistory.push({
+            correct: result.correct,
+            points: adjustedScore,
+            timeRemaining: 0,
+        });
 
         // If wrong in survival mode, lose a life
         if (!result.correct && this.isSurvivalMode) {
@@ -261,8 +286,18 @@ export class WordDropController {
         this.totalScore -= 15;
         this.view.updateScore(Math.max(0, this.totalScore));
 
+        // Record incorrect in streak (resets multiplier)
+        this.streakService.recordIncorrect();
+
         // Notify streak callback for GameSessionManager integration
         if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+
+        // Record round result
+        this.roundHistory.push({
+            correct: false,
+            points: -15,
+            timeRemaining: 0,
+        });
 
         if (this.isSurvivalMode) {
             this.lives--;
@@ -292,8 +327,18 @@ export class WordDropController {
         this.totalScore -= 15;
         this.view.updateScore(Math.max(0, this.totalScore));
 
+        // Record incorrect in streak (resets multiplier)
+        this.streakService.recordIncorrect();
+
         // Notify streak callback for GameSessionManager integration
         if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+
+        // Record round result
+        this.roundHistory.push({
+            correct: false,
+            points: -15,
+            timeRemaining: 0,
+        });
 
         if (this.isSurvivalMode) {
             this.lives--;
@@ -330,8 +375,18 @@ export class WordDropController {
         this.view.revealAllLetters(this.service.currentRound.word);
         this.view.showTimeoutFeedback(this.service.currentRound.word, this.service.currentRound.country?.flagUrl);
 
+        // Record incorrect in streak (resets multiplier)
+        this.streakService.recordIncorrect();
+
         // Notify streak callback for GameSessionManager integration
         if (this.onIncorrectAnswer) this.onIncorrectAnswer();
+
+        // Record round result
+        this.roundHistory.push({
+            correct: false,
+            points: 0,
+            timeRemaining: 0,
+        });
 
         // Survival mode: lose a life
         if (this.isSurvivalMode) {
@@ -386,25 +441,7 @@ export class WordDropController {
      * @private
      */
     buildRoundHistory() {
-        // WordDropController doesn't track per-round history internally,
-        // so we build a synthetic one based on final state
-        const history = [];
-        // We don't have detailed per-round data, so provide what we can
-        for (let i = 0; i < this.currentIndex; i++) {
-            history.push({
-                correct: true, // approximation — detailed tracking would require more state
-                points: 0,
-                timeRemaining: 0,
-            });
-        }
-        // Mark incorrect rounds based on lives lost
-        if (this.isSurvivalMode) {
-            const livesLost = Math.max(0, 3 - this.lives);
-            for (let i = 0; i < livesLost && i < history.length; i++) {
-                history[history.length - 1 - i] = { correct: false, points: 0, timeRemaining: 0 };
-            }
-        }
-        return history;
+        return this.roundHistory;
     }
 
     /**

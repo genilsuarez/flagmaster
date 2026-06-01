@@ -431,7 +431,7 @@ export class OrdenaContinenteView {
 
         const scoreLine = document.createElement('p');
         scoreLine.className = 'oc-summary__score';
-        scoreLine.textContent = `${summary.score}%`;
+        scoreLine.textContent = `${summary.score} pts`;
 
         const timeLine = document.createElement('p');
         timeLine.className = 'oc-summary__time';
@@ -447,6 +447,39 @@ export class OrdenaContinenteView {
 
         this.elements.wrapper.appendChild(overlay);
         this.elements.summary = overlay;
+    }
+
+    /**
+     * Muestra un botón "Continuar" para que el usuario revise el feedback inline
+     * antes de pasar al modal de fin de juego.
+     * @param {function} onContinue - Callback al presionar el botón
+     */
+    showContinueButton(onContinue) {
+        if (!this.elements.wrapper) return;
+
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'oc-continue-container';
+
+        const btn = document.createElement('button');
+        btn.className = 'oc-continue-btn';
+        btn.textContent = 'Continuar';
+        btn.setAttribute('aria-label', 'Continuar al resumen final');
+        btn.addEventListener('click', () => {
+            btn.disabled = true;
+            if (onContinue) onContinue();
+        });
+
+        btnContainer.appendChild(btn);
+
+        // Insert after the summary if it exists, otherwise at the end
+        if (this.elements.summary) {
+            this.elements.summary.appendChild(btnContainer);
+        } else {
+            this.elements.wrapper.appendChild(btnContainer);
+        }
+
+        // Focus the button for accessibility
+        requestAnimationFrame(() => btn.focus());
     }
 
     /**
@@ -1047,6 +1080,49 @@ export class OrdenaContinenteView {
     font-size: var(--fs-body-sm);
     color: var(--charcoal);
     margin: 0;
+}
+
+/* ─── Botón Continuar ────────────────────────────────────────── */
+
+.oc-continue-container {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-md);
+}
+
+.oc-continue-btn {
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    font-weight: 600;
+    color: var(--warm-white);
+    background: var(--deep-sage);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-xl);
+    cursor: pointer;
+    transition: background-color var(--duration-quick) var(--ease-gentle),
+                transform var(--duration-quick) var(--ease-gentle);
+    min-height: 44px;
+}
+
+.oc-continue-btn:hover {
+    background: var(--sage);
+    transform: translateY(-1px);
+}
+
+.oc-continue-btn:active {
+    transform: translateY(0);
+}
+
+.oc-continue-btn:focus-visible {
+    outline: 2px solid var(--deep-sage);
+    outline-offset: 2px;
+}
+
+.oc-continue-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 `;
         document.head.appendChild(style);

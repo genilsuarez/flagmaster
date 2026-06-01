@@ -258,7 +258,7 @@ describe('OrdenaContinenteController', () => {
     });
 
     describe('_handleVerify', () => {
-        it('evaluates assignments and invokes onGameEnd', () => {
+        it('evaluates assignments and invokes onGameEnd after continue', () => {
             const ctrl = new OrdenaContinenteController({ container, onRoundEnd, onGameEnd });
             ctrl.start(createTestPool(), createDefaultOptions());
 
@@ -272,6 +272,14 @@ describe('OrdenaContinenteController', () => {
             ctrl._handleVerify();
 
             expect(ctrl._state.isEvaluated).toBe(true);
+            // onGameEnd is deferred until user clicks continue
+            expect(onGameEnd).not.toHaveBeenCalled();
+
+            // Simulate clicking the continue button
+            const continueBtn = container.querySelector('.oc-continue-btn');
+            expect(continueBtn).not.toBeNull();
+            continueBtn.click();
+
             expect(onGameEnd).toHaveBeenCalledTimes(1);
 
             const gameEndData = onGameEnd.mock.calls[0][0];
@@ -334,7 +342,7 @@ describe('OrdenaContinenteController', () => {
     });
 
     describe('_handleTimeout', () => {
-        it('marks pending items as incorrect and invokes onGameEnd', () => {
+        it('marks pending items as incorrect and invokes onGameEnd after continue', () => {
             const ctrl = new OrdenaContinenteController({ container, onRoundEnd, onGameEnd });
             ctrl.start(createTestPool(), { ...createDefaultOptions(), timerMode: 'on', timeLimit: 60 });
 
@@ -349,6 +357,14 @@ describe('OrdenaContinenteController', () => {
             ctrl._handleTimeout();
 
             expect(ctrl._state.isEvaluated).toBe(true);
+            // onGameEnd is deferred until user clicks continue
+            expect(onGameEnd).not.toHaveBeenCalled();
+
+            // Simulate clicking the continue button
+            const continueBtn = container.querySelector('.oc-continue-btn');
+            expect(continueBtn).not.toBeNull();
+            continueBtn.click();
+
             expect(onGameEnd).toHaveBeenCalledTimes(1);
 
             const gameEndData = onGameEnd.mock.calls[0][0];
@@ -398,6 +414,14 @@ describe('OrdenaContinenteController', () => {
             vi.advanceTimersByTime(5000);
 
             expect(ctrl._state.isEvaluated).toBe(true);
+            // onGameEnd is deferred until user clicks continue
+            expect(onGameEnd).not.toHaveBeenCalled();
+
+            // Simulate clicking the continue button
+            const continueBtn = container.querySelector('.oc-continue-btn');
+            expect(continueBtn).not.toBeNull();
+            continueBtn.click();
+
             expect(onGameEnd).toHaveBeenCalled();
         });
 
