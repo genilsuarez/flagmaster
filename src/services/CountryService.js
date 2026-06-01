@@ -49,6 +49,10 @@ export class CountryService {
 
     getAvailableContinents() {
         const continents = new Set(this.countries.map(country => country.continent));
+        // If no countries loaded yet, return known continents as fallback
+        if (continents.size === 0) {
+            return ['All', 'Africa', 'America', 'Asia', 'Europe', 'Oceania'];
+        }
         return ['All', ...Array.from(continents).sort()];
     }
 

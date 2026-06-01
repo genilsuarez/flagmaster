@@ -309,10 +309,18 @@ export class BottomSheetView {
         this.continentSelect.id = 'bs-continent';
         this.continentSelect.className = 'bottom-sheet__control';
         const continents = this.countryService.getAvailableContinents();
+        const continentLabels = {
+            'All': '🌍 Todos',
+            'Africa': '🌍 África',
+            'America': '🌎 América',
+            'Asia': '🌏 Asia',
+            'Europe': '🇪🇺 Europa',
+            'Oceania': '🏝️ Oceanía',
+        };
         for (const c of continents) {
             const option = document.createElement('option');
             option.value = c;
-            option.textContent = c === 'All' ? '🌍 Todos' : c;
+            option.textContent = continentLabels[c] || c;
             if (c === this.continent) option.selected = true;
             this.continentSelect.appendChild(option);
         }
