@@ -88,12 +88,7 @@ export class BottomSheetView {
         this._triggerElement = document.activeElement;
 
         // Ensure country data is loaded before rendering filters
-        try {
-            await this.countryService.ready();
-        } catch {
-            // If country data fails to load, we still open the sheet
-            // with maxCountryCount = 0; the user will see the warning.
-        }
+        await this.countryService.ready();
 
         // Initialize mode options with defaults
         this.modeOptions = {};
@@ -1122,9 +1117,7 @@ export class BottomSheetView {
      */
     _getEffectivePoolSize() {
         if (this.countryCount && this.countryCount >= MIN_POOL_SIZE) {
-            return this.maxCountryCount > 0
-                ? Math.min(this.countryCount, this.maxCountryCount)
-                : this.countryCount;
+            return Math.min(this.countryCount, this.maxCountryCount);
         }
         return this.maxCountryCount;
     }

@@ -21,6 +21,7 @@ export class CountryService {
      * Returns a promise that resolves when countries are loaded.
      * If already loaded, resolves immediately.
      * If no load has been initiated, triggers one automatically.
+     * If a previous load failed, retries.
      * @returns {Promise<void>}
      */
     async ready() {
@@ -28,7 +29,13 @@ export class CountryService {
         if (!this._loadingPromise) {
             this._loadingPromise = this._fetchCountries();
         }
-        await this._loadingPromise;
+        try {
+            await this._loadingPromise;
+        } catch {
+            // Previous attempt failed — retry once
+            this._loadingPromise = this._fetchCountries();
+            await this._loadingPromise;
+        }
     }
 
     /** @private */
