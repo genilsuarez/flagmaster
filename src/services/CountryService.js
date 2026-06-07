@@ -6,9 +6,33 @@ import { Country } from '../models/Country.js';
 export class CountryService {
     constructor() {
         this.countries = [];
+        /** @type {Promise<Country[]>|null} Resolves when country data is loaded */
+        this._loadingPromise = null;
     }
 
     async loadCountries() {
+        if (this._loadingPromise) return this._loadingPromise;
+
+        this._loadingPromise = this._fetchCountries();
+        return this._loadingPromise;
+    }
+
+    /**
+     * Returns a promise that resolves when countries are loaded.
+     * If already loaded, resolves immediately.
+     * If no load has been initiated, triggers one automatically.
+     * @returns {Promise<void>}
+     */
+    async ready() {
+        if (this.countries.length > 0) return;
+        if (!this._loadingPromise) {
+            this._loadingPromise = this._fetchCountries();
+        }
+        await this._loadingPromise;
+    }
+
+    /** @private */
+    async _fetchCountries() {
         try {
             const response = await fetch(`${import.meta.env.BASE_URL}assets/data/flags.json`);
             const data = await response.json();

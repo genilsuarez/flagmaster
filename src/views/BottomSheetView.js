@@ -78,7 +78,7 @@ export class BottomSheetView {
      * Animates in, renders config, traps focus.
      * @param {string} modeId
      */
-    open(modeId) {
+    async open(modeId) {
         if (this.isOpen) this.close();
 
         this.modeId = modeId;
@@ -86,6 +86,9 @@ export class BottomSheetView {
         if (!this.mode) return;
 
         this._triggerElement = document.activeElement;
+
+        // Ensure country data is loaded before rendering filters
+        await this.countryService.ready();
 
         // Initialize mode options with defaults
         this.modeOptions = {};
@@ -1113,6 +1116,10 @@ export class BottomSheetView {
      * @private
      */
     _getEffectivePoolSize() {
+        // If country data hasn't loaded yet, maxCountryCount is 0 — report 0
+        // so the play button stays disabled until data is available.
+        if (this.maxCountryCount <= 0) return 0;
+
         if (this.countryCount && this.countryCount >= MIN_POOL_SIZE) {
             return Math.min(this.countryCount, this.maxCountryCount);
         }
@@ -1153,12 +1160,12 @@ export class BottomSheetView {
             this.countryCountInput.max = String(this.maxCountryCount);
             this.countryCountInput.placeholder = `Máx: ${this.maxCountryCount}`;
 
-            if (this.countryCount && this.countryCount >= prevMax) {
+            if (this.countryCount && prevMax > 0 && this.countryCount >= prevMax) {
                 // Was at (or above) the previous max — treat as "use maximum",
                 // so reset to null and clear the input to reflect the new max.
                 this.countryCount = null;
                 this.countryCountInput.value = '';
-            } else if (this.countryCount && this.countryCount > this.maxCountryCount) {
+            } else if (this.countryCount && this.maxCountryCount > 0 && this.countryCount > this.maxCountryCount) {
                 // Clamp to new max if the custom value exceeds it
                 this.countryCount = this.maxCountryCount;
                 this.countryCountInput.value = String(this.maxCountryCount);
@@ -1177,7 +1184,11 @@ export class BottomSheetView {
     _onCountryCountChange() {
         const val = parseInt(this.countryCountInput.value, 10);
         if (!isNaN(val) && val > 0) {
-            this.countryCount = Math.min(val, this.maxCountryCount);
+            // Only clamp to maxCountryCount if it has been properly calculated (> 0).
+            // A maxCountryCount of 0 indicates country data hasn't loaded yet.
+            this.countryCount = this.maxCountryCount > 0
+                ? Math.min(val, this.maxCountryCount)
+                : val;
             this._dirtyCountryCount = true;
         } else {
             this.countryCount = null;
@@ -1200,6 +1211,9 @@ export class BottomSheetView {
         if (!this.countryCountInput) return;
         const raw = parseInt(this.countryCountInput.value, 10);
         if (isNaN(raw) || this.countryCountInput.value.trim() === '') return; // empty = no limit, leave as-is
+
+        // Don't clamp if maxCountryCount hasn't been calculated yet (data not loaded)
+        if (this.maxCountryCount <= 0) return;
 
         const clamped = Math.max(MIN_POOL_SIZE, Math.min(raw, this.maxCountryCount));
         this.countryCount = clamped;

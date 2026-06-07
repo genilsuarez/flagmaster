@@ -128,6 +128,7 @@ describe('Accessibility: BottomSheetView', () => {
         countryService = {
             getAvailableContinents: () => ['All', 'Africa', 'America', 'Asia', 'Europe', 'Oceania'],
             getMaxCountryCount: () => 50,
+            ready: () => Promise.resolve(),
         };
         onPlay = vi.fn();
         onDismiss = vi.fn();
@@ -147,26 +148,26 @@ describe('Accessibility: BottomSheetView', () => {
     });
 
     describe('Dialog semantics', () => {
-        it('has role="dialog" when open', () => {
-            bottomSheet.open('flagRush');
+        it('has role="dialog" when open', async () => {
+            await bottomSheet.open('flagRush');
             expect(bottomSheet.sheet.getAttribute('role')).toBe('dialog');
         });
 
-        it('has aria-modal="true" when open', () => {
-            bottomSheet.open('flagRush');
+        it('has aria-modal="true" when open', async () => {
+            await bottomSheet.open('flagRush');
             expect(bottomSheet.sheet.getAttribute('aria-modal')).toBe('true');
         });
 
-        it('has aria-label describing the mode configuration', () => {
-            bottomSheet.open('flagRush');
+        it('has aria-label describing the mode configuration', async () => {
+            await bottomSheet.open('flagRush');
             const label = bottomSheet.sheet.getAttribute('aria-label');
             expect(label).toContain('Configuración');
         });
     });
 
     describe('Focus trap', () => {
-        it('Tab cycles within the sheet (last to first)', () => {
-            bottomSheet.open('flagRush');
+        it('Tab cycles within the sheet (last to first)', async () => {
+            await bottomSheet.open('flagRush');
 
             const focusableElements = bottomSheet.sheet.querySelectorAll(
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -185,8 +186,8 @@ describe('Accessibility: BottomSheetView', () => {
             expect(tabEvent.defaultPrevented).toBe(true);
         });
 
-        it('Shift+Tab cycles within the sheet (first to last)', () => {
-            bottomSheet.open('flagRush');
+        it('Shift+Tab cycles within the sheet (first to last)', async () => {
+            await bottomSheet.open('flagRush');
 
             const focusableElements = bottomSheet.sheet.querySelectorAll(
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -205,8 +206,8 @@ describe('Accessibility: BottomSheetView', () => {
             expect(tabEvent.defaultPrevented).toBe(true);
         });
 
-        it('Escape closes the sheet', () => {
-            bottomSheet.open('flagRush');
+        it('Escape closes the sheet', async () => {
+            await bottomSheet.open('flagRush');
             expect(bottomSheet.isOpen).toBe(true);
 
             const escEvent = new KeyboardEvent('keydown', {
@@ -219,14 +220,14 @@ describe('Accessibility: BottomSheetView', () => {
             expect(bottomSheet.isOpen).toBe(false);
         });
 
-        it('restores focus to trigger element on close', () => {
+        it('restores focus to trigger element on close', async () => {
             // Create a trigger button and focus it
             const trigger = document.createElement('button');
             trigger.textContent = 'Open';
             document.body.appendChild(trigger);
             trigger.focus();
 
-            bottomSheet.open('flagRush');
+            await bottomSheet.open('flagRush');
             expect(bottomSheet._triggerElement).toBe(trigger);
 
             bottomSheet.close();
