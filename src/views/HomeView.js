@@ -111,8 +111,8 @@ export class HomeView {
         // Logo
         const logo = document.createElement('span');
         logo.className = 'home-view__logo';
-        logo.textContent = '🌍 FlagQuiz';
-        logo.setAttribute('aria-label', 'FlagQuiz');
+        logo.textContent = '🌍 FlagMaster';
+        logo.setAttribute('aria-label', 'FlagMaster');
 
         // Streak badge
         const streakBadge = document.createElement('span');

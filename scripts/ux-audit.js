@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const BASE_URL = 'http://127.0.0.1:3000/flagsquiz/';
+const BASE_URL = 'http://127.0.0.1:3000/flagmaster/';
 const OUT_DIR = path.join(__dirname, '../.playwright-mcp');
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 

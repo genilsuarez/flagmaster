@@ -1,4 +1,4 @@
-# FlagsQuiz - Guía para Claude Code
+# FlagMaster - Guía para Claude Code
 
 ## Contexto del Proyecto
 

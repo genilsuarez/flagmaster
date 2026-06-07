@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..', '..');
 
 const REPO_OWNER = 'genilsuarez';
-const REPO_NAME  = 'flagsquiz';
+const REPO_NAME  = 'flagmaster';
 const PAGES_URL  = `https://${REPO_OWNER}.github.io/${REPO_NAME}/`;
 
 function run(cmd) {

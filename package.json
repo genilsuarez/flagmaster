@@ -1,5 +1,5 @@
 {
-  "name": "FlagsQuiz",
+  "name": "flagmaster",
   "version": "1.0.0",
   "description": "Interactive flag guessing game with MVC architecture",
   "type": "module",

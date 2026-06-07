@@ -1,4 +1,4 @@
-# 🌍 Flag Quiz — Editorial Luxe Edition
+# 🌍 FlagMaster — Editorial Luxe Edition
 
 Una aplicación de quiz de banderas con diseño editorial refinado y arquitectura MVC moderna.
 

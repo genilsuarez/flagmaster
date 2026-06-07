@@ -1,4 +1,4 @@
-# Flag Quiz — Editorial Luxe Design System
+# FlagMaster — Editorial Luxe Design System
 
 ## Visión de Diseño
 
