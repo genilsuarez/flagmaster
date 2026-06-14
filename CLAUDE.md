@@ -111,6 +111,10 @@ npm run preview  # Preview del build
 - **Testing**: Probar en navegador antes de reportar como completo
 - **Git**: Commits descriptivos, no usar `--no-verify`
 
+## Specs de Kiro
+
+`.kiro/specs/` contiene specs de features (requirements.md, design.md, tasks.md por feature). Antes de implementar una feature nueva, revisar si ya existe un spec — y si se trabaja sobre uno, respetar sus requirements y marcar progreso en tasks.md.
+
 ## Archivos Clave
 
 - `index.html`: Punto de entrada
